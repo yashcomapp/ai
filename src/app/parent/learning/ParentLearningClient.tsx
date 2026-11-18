@@ -12,36 +12,8 @@ import { formatDateOrFallback } from '@/lib/dateUtils';
 import { getProgressColor } from '@/types/scorecard.types';
 import { MASTERY_THRESHOLDS } from '@/lib/dashboardMetrics';
 import { getCanonicalSubjectName } from '@/lib/questionTypes';
-
-interface LearningTopicItem {
-  topicCode: string;
-  topicName: string;
-  topicNumber: string;
-  chapterCode: string;
-  chapterName: string;
-  chapterNumber: string;
-  subjectCode: string;
-  subjectName: string;
-  mastery: number;
-  confidence: number;
-  priorityScore: number;
-  lastAttempt: string | null;
-  attempts: number;
-  lastScore: number;
-  state: string;
-  practiceCount: number;
-  targetQuestions?: number;
-  totalQuestions?: number;
-  isAbsentExam?: boolean;
-}
-
-interface LearningPathData {
-  studentCode: string;
-  needsAttention: LearningTopicItem[];
-  continuePractice: LearningTopicItem[];
-  revision: LearningTopicItem[];
-  mastered: LearningTopicItem[];
-}
+import { LearningTopicItem, LearningPathData } from '@/types/learning.types';
+import { LearningStatusBar, LearningTabControls, LearningPracticeFilterBar } from '@/components/learning';
 
 export default function ParentLearningClient() {
   const { firebaseUser } = useAuth();
@@ -285,196 +257,29 @@ export default function ParentLearningClient() {
         {!isLoading && !swrError && data && (
           <>
             {/* Streamlined Single-Line Active Syllabus Coverage Status */}
-            {(() => {
-              const masteredCount = data.mastered?.length || 0;
-              const practiceCount = data.continuePractice?.length || 0;
-              const focusCount = data.needsAttention?.length || 0;
-              const totalConducted = masteredCount + practiceCount + focusCount;
-              const completionPercent = totalConducted > 0 ? Math.round((masteredCount / totalConducted) * 100) : 0;
-              const isAllExhausted = totalConducted > 0 && practiceCount === 0 && focusCount === 0;
-
-              return (
-                <div style={{
-                  background: isAllExhausted 
-                    ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.12), rgba(56, 189, 248, 0.12))' 
-                    : 'var(--surface)',
-                  border: `1px solid ${isAllExhausted ? 'rgba(52, 211, 153, 0.4)' : 'var(--border-light)'}`,
-                  borderRadius: 'var(--radius)',
-                  padding: '8px 12px',
-                  marginBottom: '10px',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  gap: '10px'
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', fontWeight: 700, color: 'var(--text)', whiteSpace: 'nowrap' }}>
-                    <span style={{ color: 'var(--text-muted)', fontWeight: 800 }}>Status:</span>
-                    <span style={{ color: isAllExhausted ? 'var(--success)' : 'var(--accent)', fontWeight: 800 }}>
-                      {masteredCount} / {totalConducted} Topics Done
-                    </span>
-                    <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600 }}>
-                      ({completionPercent}%)
-                    </span>
-                  </div>
-                  <div style={{ flex: '1', maxWidth: '140px', height: '6px', background: 'var(--surface-2)', borderRadius: '3px', overflow: 'hidden' }}>
-                    <div style={{ width: `${completionPercent}%`, height: '100%', background: isAllExhausted ? 'var(--success)' : 'var(--accent)', transition: 'width 0.3s ease' }}></div>
-                  </div>
-                </div>
-              );
-            })()}
+            <LearningStatusBar
+              masteredCount={data.mastered?.length || 0}
+              totalConducted={(data.mastered?.length || 0) + (data.continuePractice?.length || 0) + (data.needsAttention?.length || 0)}
+            />
 
             {/* Tab Controls: Uniform 2-Line Symmetric Layout */}
-            <div className="review-tabs" style={{ display: 'flex', gap: '6px', marginBottom: '10px', borderBottom: 'none' }}>
-              <button
-                className={`tab-btn ${activeTab === 'needsAttention' ? 'active' : ''}`}
-                onClick={() => setActiveTab('needsAttention')}
-                style={{
-                  flex: 1,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  padding: '8px 4px',
-                  borderBottom: activeTab === 'needsAttention' ? '2px solid var(--accent)' : '2px solid transparent'
-                }}
-              >
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap', fontSize: '13px', fontWeight: 700 }}>
-                  <span>🚨</span><span>Focus</span>
-                </span>
-                <span className="tab-count" style={{ marginTop: '4px', marginInline: 'auto' }}>
-                  {data ? data.needsAttention.length : 0}
-                </span>
-              </button>
-
-              <button
-                className={`tab-btn ${activeTab === 'continuePractice' ? 'active' : ''}`}
-                onClick={() => setActiveTab('continuePractice')}
-                style={{
-                  flex: 1,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  padding: '8px 4px',
-                  borderBottom: activeTab === 'continuePractice' ? '2px solid var(--accent)' : '2px solid transparent'
-                }}
-              >
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap', fontSize: '13px', fontWeight: 700 }}>
-                  <span>🔄</span><span>Practice</span>
-                </span>
-                <span className="tab-count" style={{ marginTop: '4px', marginInline: 'auto' }}>
-                  {data ? data.continuePractice.length : 0}
-                </span>
-              </button>
-
-              <button
-                className={`tab-btn ${activeTab === 'mastered' ? 'active' : ''}`}
-                onClick={() => setActiveTab('mastered')}
-                style={{
-                  flex: 1,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  padding: '8px 4px',
-                  borderBottom: activeTab === 'mastered' ? '2px solid var(--accent)' : '2px solid transparent'
-                }}
-              >
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap', fontSize: '13px', fontWeight: 700 }}>
-                  <span>🏆</span><span>Mastered</span>
-                </span>
-                <span className="tab-count" style={{ marginTop: '4px', marginInline: 'auto' }}>
-                  {data ? data.mastered.length : 0}
-                </span>
-              </button>
-            </div>
+            <LearningTabControls
+              activeTab={activeTab}
+              onSelectTab={setActiveTab}
+              counts={{
+                needsAttention: data.needsAttention?.length || 0,
+                continuePractice: data.continuePractice?.length || 0,
+                mastered: data.mastered?.length || 0
+              }}
+            />
 
             {/* Practice Sub-filters in ONE Line with Horizontal Touch Scroll */}
             {activeTab === 'continuePractice' && (
-              <div style={{
-                display: 'flex',
-                gap: '6px',
-                marginBottom: '12px',
-                flexWrap: 'nowrap',
-                overflowX: 'auto',
-                alignItems: 'center',
-                paddingBottom: '4px',
-                WebkitOverflowScrolling: 'touch'
-              }}>
-                <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginRight: '2px', whiteSpace: 'nowrap' }}>
-                  Filter:
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setPracticeSubFilter('all')}
-                  style={{
-                    padding: '3px 9px',
-                    borderRadius: '20px',
-                    fontSize: '11px',
-                    fontWeight: 700,
-                    whiteSpace: 'nowrap',
-                    border: '1px solid ' + (practiceSubFilter === 'all' ? 'var(--accent)' : 'var(--border-light)'),
-                    background: practiceSubFilter === 'all' ? 'var(--accent)' : 'var(--bg-soft)',
-                    color: practiceSubFilter === 'all' ? '#ffffff' : 'var(--text-muted)',
-                    cursor: 'pointer'
-                  }}
-                >
-                  All Practice ({practiceBreakdown.total})
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPracticeSubFilter('zero')}
-                  style={{
-                    padding: '3px 9px',
-                    borderRadius: '20px',
-                    fontSize: '11px',
-                    fontWeight: 800,
-                    whiteSpace: 'nowrap',
-                    border: '1px solid ' + (practiceSubFilter === 'zero' ? '#ef4444' : 'var(--border-light)'),
-                    background: practiceSubFilter === 'zero' ? 'rgba(239, 68, 68, 0.18)' : 'var(--bg-soft)',
-                    color: practiceSubFilter === 'zero' ? '#ef4444' : 'var(--text-muted)',
-                    cursor: 'pointer'
-                  }}
-                >
-                  🔴 Zero Practice ({practiceBreakdown.zero})
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPracticeSubFilter('in_progress')}
-                  style={{
-                    padding: '3px 9px',
-                    borderRadius: '20px',
-                    fontSize: '11px',
-                    fontWeight: 700,
-                    whiteSpace: 'nowrap',
-                    border: '1px solid ' + (practiceSubFilter === 'in_progress' ? '#f59e0b' : 'var(--border-light)'),
-                    background: practiceSubFilter === 'in_progress' ? 'rgba(245, 158, 11, 0.18)' : 'var(--bg-soft)',
-                    color: practiceSubFilter === 'in_progress' ? '#f59e0b' : 'var(--text-muted)',
-                    cursor: 'pointer'
-                  }}
-                >
-                  🟡 In Progress ({practiceBreakdown.inProgress})
-                </button>
-                {practiceBreakdown.locked > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => setPracticeSubFilter('locked')}
-                    style={{
-                      padding: '3px 9px',
-                      borderRadius: '20px',
-                      fontSize: '11px',
-                      fontWeight: 700,
-                      whiteSpace: 'nowrap',
-                      border: '1px solid ' + (practiceSubFilter === 'locked' ? '#94a3b8' : 'var(--border-light)'),
-                      background: practiceSubFilter === 'locked' ? 'rgba(148, 163, 184, 0.25)' : 'var(--bg-soft)',
-                      color: practiceSubFilter === 'locked' ? 'var(--text)' : 'var(--text-muted)',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    🔒 Quota Locked ({practiceBreakdown.locked})
-                  </button>
-                )}
-              </div>
+              <LearningPracticeFilterBar
+                activeFilter={practiceSubFilter}
+                onSelectFilter={setPracticeSubFilter}
+                breakdown={practiceBreakdown}
+              />
             )}
 
             {/* Empty state */}

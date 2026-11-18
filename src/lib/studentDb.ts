@@ -1130,17 +1130,17 @@ export async function getStudentLearningData(userData: any, preloadedData?: Prel
 
   const batchIds = deriveStudentBatchIds(userData);
 
-  // 1. Fetch batches to get all associated class codes (for multi-class enrolled students) in 1 batch RPC
-  const batchRefs = batchIds.map((id: string) => adminDb.collection('batches').doc(id));
-  const batchSnaps = batchRefs.length > 0 ? await adminDb.getAll(...batchRefs).catch(() => []) : [];
+  // 1. Resolve classes for student from in-memory cached batches (Rule W)
+  const batchesSnap = await getCachedBatches();
+  const batchIdSet = new Set(batchIds);
   const allClasses = new Set<string>();
   if (userData.class) {
     const m = String(userData.class).match(/\d+/);
     if (m) allClasses.add(m[0]);
     else allClasses.add(String(userData.class));
   }
-  batchSnaps.forEach((snap: any) => {
-    if (snap && snap.exists) {
+  batchesSnap.docs.forEach((snap: any) => {
+    if (batchIdSet.has(snap.id)) {
       const d = snap.data();
       const cls = d.class || d.classCode;
       if (cls) {

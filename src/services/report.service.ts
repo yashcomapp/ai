@@ -989,7 +989,7 @@ export class ReportService {
       if (!snap) return;
       snap.docs.forEach((doc: any) => {
         const d = doc.data();
-        if (d.status === 'inactive') return;
+        if (d.status === 'inactive' || isDemoUser(d)) return;
         const sCode = d.studentCode || doc.id;
         const isAuto = d.autonomous === true || d.isAutonomous === true || d.mode === 'autonomous';
         const displayName = isAuto ? `# ${d.name || 'Student'}` : (d.name || 'Student');
