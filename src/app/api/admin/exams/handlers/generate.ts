@@ -482,14 +482,17 @@ export async function GET(req: NextRequest) {
               if (subNum.startsWith(`${topNumStr}.`)) return true;
               if (id.includes(`-${topNumStr}.`) || id.includes(`-${topNumStr}-`)) return true;
 
-              // Title / Concept match
-              if (cleanTopTitle && (qTopicClean === cleanTopTitle || qTopicClean.includes(cleanTopTitle) || cleanTopTitle.includes(qTopicClean))) return true;
-              if (cleanTopTitle && (qConceptClean === cleanTopTitle || qConceptClean.includes(cleanTopTitle) || cleanTopTitle.includes(qConceptClean))) return true;
+              // Title / Concept match (strictly require non-empty target string)
+              if (cleanTopTitle && qTopicClean && (qTopicClean === cleanTopTitle || qTopicClean.includes(cleanTopTitle) || cleanTopTitle.includes(qTopicClean))) return true;
+              if (cleanTopTitle && qConceptClean && (qConceptClean === cleanTopTitle || qConceptClean.includes(cleanTopTitle) || cleanTopTitle.includes(qConceptClean))) return true;
 
               // Check if matches any of its subtopics
               if (subtopics.some((st: any) => {
                 const stClean = cleanStringForMatch(st.name || st.title);
-                return stClean && (qTopicClean === stClean || qTopicClean.includes(stClean) || stClean.includes(qTopicClean) || qConceptClean === stClean);
+                return stClean && (
+                  (qTopicClean && (qTopicClean === stClean || qTopicClean.includes(stClean) || stClean.includes(qTopicClean))) ||
+                  (qConceptClean && qConceptClean === stClean)
+                );
               })) {
                 return true;
               }
@@ -575,9 +578,26 @@ export async function GET(req: NextRequest) {
               });
             }
 
-            // Top-level topic objective/subjective count is the total unique questions under this topic branch
-            top.objectiveCount = topicBranchQuestions.filter(q => q.isObjective).length;
-            top.subjectiveCount = topicBranchQuestions.filter(q => !q.isObjective).length;
+            // Top-level topic objective/subjective count
+            if (subtopics.length > 0) {
+              const directObj = topicBranchQuestions.filter(q => {
+                if (!q.isObjective) return false;
+                const tCode = String(q.tCode || '');
+                return tCode === cleanTopicCode || String(q.topNum || '') === topNumStr;
+              }).length;
+              const directSubj = topicBranchQuestions.filter(q => {
+                if (q.isObjective) return false;
+                const tCode = String(q.tCode || '');
+                return tCode === cleanTopicCode || String(q.topNum || '') === topNumStr;
+              }).length;
+              const subObj = subtopics.reduce((acc: number, s: any) => acc + (Number(s.objectiveCount) || 0), 0);
+              const subSubj = subtopics.reduce((acc: number, s: any) => acc + (Number(s.subjectiveCount) || 0), 0);
+              top.objectiveCount = directObj + subObj;
+              top.subjectiveCount = directSubj + subSubj;
+            } else {
+              top.objectiveCount = topicBranchQuestions.filter(q => q.isObjective).length;
+              top.subjectiveCount = topicBranchQuestions.filter(q => !q.isObjective).length;
+            }
             if (subtopics.length > 0) {
               top.testsCount = Math.max(directTopicTests, ...subtopics.map((s: any) => s.testsCount || 0));
             } else {
