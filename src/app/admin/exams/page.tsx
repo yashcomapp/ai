@@ -590,17 +590,18 @@ export default function AdminExamsPage() {
     const { examId, type, targetType, selectedBatches, selectedStudents, openMode, startAtStr, endAtStr, attemptLimit, examDuration, examMode, classroomDuration, classroomTimePerQ, lateEntryRestriction } = assignModal;
 
     const batchesArr = targetType === 'student' ? [] : Array.from(selectedBatches);
-    const studentsArr = targetType === 'batch' ? [] : Array.from(selectedStudents);
+    const studentsArr = (targetType === 'batch' && selectedStudents.size === 0) ? [] : Array.from(selectedStudents);
+    const effectiveTargetType = (batchesArr.length > 0 && studentsArr.length > 0) ? 'mixed' : targetType;
 
-    if (targetType === 'batch' && batchesArr.length === 0) {
+    if (effectiveTargetType === 'batch' && batchesArr.length === 0) {
       alert('Please select at least one batch to assign.');
       return;
     }
-    if (targetType === 'student' && studentsArr.length === 0) {
+    if (effectiveTargetType === 'student' && studentsArr.length === 0) {
       alert('Please select at least one student to assign.');
       return;
     }
-    if (targetType === 'mixed' && batchesArr.length === 0 && studentsArr.length === 0) {
+    if (effectiveTargetType === 'mixed' && batchesArr.length === 0 && studentsArr.length === 0) {
       alert('Please select at least one batch or student to assign.');
       return;
     }
@@ -637,7 +638,7 @@ export default function AdminExamsPage() {
         body: JSON.stringify({
           examId,
           type,
-          targetType,
+          targetType: effectiveTargetType,
           targetBatches: batchesArr,
           targetStudents: studentsArr,
           openMode,
@@ -676,17 +677,18 @@ export default function AdminExamsPage() {
     const { id, collection, targetType, selectedBatches, selectedStudents, openMode, startAtStr, endAtStr, attemptLimit, examDuration, lateEntryRestriction } = editModal;
 
     const batchesArr = targetType === 'student' ? [] : Array.from(selectedBatches);
-    const studentsArr = targetType === 'batch' ? [] : Array.from(selectedStudents);
+    const studentsArr = (targetType === 'batch' && selectedStudents.size === 0) ? [] : Array.from(selectedStudents);
+    const effectiveTargetType = (batchesArr.length > 0 && studentsArr.length > 0) ? 'mixed' : targetType;
 
-    if (targetType === 'batch' && batchesArr.length === 0) {
+    if (effectiveTargetType === 'batch' && batchesArr.length === 0) {
       alert('Please select at least one batch for the assignment.');
       return;
     }
-    if (targetType === 'student' && studentsArr.length === 0) {
+    if (effectiveTargetType === 'student' && studentsArr.length === 0) {
       alert('Please select at least one student for the assignment.');
       return;
     }
-    if (targetType === 'mixed' && batchesArr.length === 0 && studentsArr.length === 0) {
+    if (effectiveTargetType === 'mixed' && batchesArr.length === 0 && studentsArr.length === 0) {
       alert('Please select at least one batch or student for the assignment.');
       return;
     }
@@ -721,7 +723,7 @@ export default function AdminExamsPage() {
         body: JSON.stringify({
           id,
           collection,
-          targetType,
+          targetType: effectiveTargetType,
           targetBatches: batchesArr,
           targetStudents: studentsArr,
           openMode,

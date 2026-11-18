@@ -1,5 +1,5 @@
 'use client';
-import { getStudentModeSuffix } from '@/types/user.types';
+import { getStudentMode, getStudentModeSuffix } from '@/types/user.types';
 import DateTimeInputDMY from '@/components/DateTimeInputDMY';
 import React, { useEffect, useState, useMemo, Suspense } from 'react';
 import { useAuth } from '@/context/AuthContext';
@@ -423,7 +423,7 @@ function ExamReportContent() {
     const targetBatches = ba.targetBatches || [];
     if (targetBatches.length > 0) {
       students.forEach(s => {
-        if (isDemo(s)) return;
+        if (isDemo(s) || getStudentMode(s) === 'limited') return;
         const sBatchIds = s.batchIds && s.batchIds.length ? s.batchIds : (s.batchId ? [s.batchId] : []);
         if (s.studentCode && sBatchIds.some((b: string) => targetBatches.includes(b))) {
           assignedCodes.add(s.studentCode.trim().toUpperCase());

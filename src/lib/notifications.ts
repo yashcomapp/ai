@@ -2,6 +2,7 @@ import * as admin from 'firebase-admin';
 import { adminDb } from '@/lib/firebase/admin';
 import { formatTimeIST, getDateKeyIST } from '@/lib/dateUtils';
 import { fetchTopicIndexByCodes } from '@/lib/syllabusServerUtils';
+import { getStudentMode } from '@/types/user.types';
 
 // In-memory deduplication cache to prevent duplicate notifications within cooldown period
 const recentNotificationCache = new Map<string, number>();
@@ -364,17 +365,81 @@ export async function notifyNewExam(
       snaps.forEach(snap => {
         if (!snap) return;
         snap.docs.forEach(doc => {
-          studentUids.add(doc.id);
           const data = doc.data();
+          // STRICT PERIMETER: Limited mode students NEVER receive batch-wide notifications
+          if (getStudentMode(data) === 'limited') return;
+          studentUids.add(doc.id);
           if (data.studentCode) studentCodes.push(data.studentCode);
           if (data.parentEmail) parentEmails.push(data.parentEmail);
         });
       });
+    } else if (targetType === 'mixed') {
+      // Mixed: Batch members (excluding limited mode) + Explicitly targeted students
+      if (targetBatches.length > 0) {
+        const batchChunks: string[][] = [];
+        for (let i = 0; i < targetBatches.length; i += 30) {
+          batchChunks.push(targetBatches.slice(i, i + 30));
+        }
+
+        const snaps = await Promise.all(
+          batchChunks.flatMap(chunk => [
+            adminDb.collection('users')
+              .where('role', '==', 'student')
+              .where('batchIds', 'array-contains-any', chunk)
+              .get()
+              .catch(() => null),
+            adminDb.collection('users')
+              .where('role', '==', 'student')
+              .where('batchId', 'in', chunk)
+              .get()
+              .catch(() => null)
+          ])
+        );
+
+        snaps.forEach(snap => {
+          if (!snap) return;
+          snap.docs.forEach(doc => {
+            const data = doc.data();
+            if (getStudentMode(data) === 'limited') return;
+            studentUids.add(doc.id);
+            if (data.studentCode) studentCodes.push(data.studentCode);
+            if (data.parentEmail) parentEmails.push(data.parentEmail);
+          });
+        });
+      }
+
+      if (targetStudents.length > 0) {
+        const studentChunks: string[][] = [];
+        for (let i = 0; i < targetStudents.length; i += 30) {
+          studentChunks.push(targetStudents.slice(i, i + 30));
+        }
+
+        const snaps = await Promise.all(
+          studentChunks.map(chunk =>
+            adminDb.collection('users')
+              .where('role', '==', 'student')
+              .where('studentCode', 'in', chunk)
+              .get()
+              .catch(() => null)
+          )
+        );
+
+        snaps.forEach(snap => {
+          if (!snap) return;
+          snap.docs.forEach(doc => {
+            studentUids.add(doc.id);
+            const data = doc.data();
+            if (data.studentCode) studentCodes.push(data.studentCode);
+            if (data.parentEmail) parentEmails.push(data.parentEmail);
+          });
+        });
+      }
     } else {
-      // Fallback: mixed or not specified, notify all active students
+      // Fallback: not specified, notify only active non-limited students
       const allStuds = await adminDb.collection('users').where('role', '==', 'student').get();
       for (const doc of allStuds.docs) {
         const data = doc.data();
+        if (getStudentMode(data) === 'limited') return;
         studentUids.add(doc.id);
         if (data.studentCode) studentCodes.push(data.studentCode);
         if (data.parentEmail) parentEmails.push(data.parentEmail);

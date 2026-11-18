@@ -1,6 +1,7 @@
 import { adminDb } from '@/lib/firebase/admin';
 import { getDateKeyIST, parseDateInput } from '@/lib/dateUtils';
 import { isDemoUser } from '@/lib/studentDb';
+import { getStudentMode } from '@/types/user.types';
 
 export interface FaultCategory {
   id: string;
@@ -402,10 +403,11 @@ export class FaultService {
 
       // Helper to evaluate if a student was assigned/targeted for a specific exam
       const isStudentAssignedToExam = (
-        student: { studentCode: string; batchIds?: string[]; batchId?: string; classNum?: string | number },
+        student: { studentCode: string; batchIds?: string[]; batchId?: string; classNum?: string | number; studentMode?: string; role?: string },
         examData: any,
         examAssignments: any[]
       ): boolean => {
+        const isLimited = getStudentMode(student) === 'limited';
         const sCodeUpper = (student.studentCode || '').toUpperCase();
         const sBatches: string[] = (Array.isArray(student.batchIds) && student.batchIds.length > 0
           ? student.batchIds
@@ -418,7 +420,8 @@ export class FaultService {
             if (Array.isArray(a.targetStudents) && a.targetStudents.map((c: string) => String(c).toUpperCase()).includes(sCodeUpper)) {
               return true;
             }
-            if (Array.isArray(a.targetBatches) && a.targetBatches.some((b: string) => sBatches.includes(String(b).trim()))) {
+            // Strict Perimeter: Limited Mode students NEVER inherit batch assignments
+            if (!isLimited && Array.isArray(a.targetBatches) && a.targetBatches.some((b: string) => sBatches.includes(String(b).trim()))) {
               return true;
             }
           }
@@ -431,6 +434,9 @@ export class FaultService {
         if (targetStudentsList.length > 0) {
           return targetStudentsList.includes(sCodeUpper);
         }
+
+        // Mode 3 (Limited Mode): If not explicitly targeted in targetStudents, they are NEVER assigned
+        if (isLimited) return false;
 
         // 3. Class match check
         const examClassRaw = examData.classNum || examData.class;

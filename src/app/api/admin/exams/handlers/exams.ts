@@ -1070,12 +1070,14 @@ export async function POST(req: NextRequest) {
       : (origExamData.topicCode ? [origExamData.topicCode] : []);
     const topicCode: string = origExamData.topicCode || (topicCodes[0] || '');
 
-    const resolvedTargetType = targetType || 'batch';
+    const incomingBatches = Array.isArray(targetBatches) ? targetBatches : [];
+    const incomingStudents = Array.isArray(targetStudents) ? targetStudents : [];
+    const resolvedTargetType = targetType || (incomingBatches.length > 0 && incomingStudents.length > 0 ? 'mixed' : (incomingBatches.length > 0 ? 'batch' : 'student'));
     const payload: any = {
       examId: examId,
       targetType: resolvedTargetType,
-      targetBatches: resolvedTargetType === 'student' ? [] : (Array.isArray(targetBatches) ? targetBatches : []),
-      targetStudents: resolvedTargetType === 'batch' ? [] : (Array.isArray(targetStudents) ? targetStudents : []),
+      targetBatches: resolvedTargetType === 'student' ? [] : incomingBatches,
+      targetStudents: resolvedTargetType === 'batch' ? [] : incomingStudents,
       openMode: openMode || 'immediate',
       startAt: admin.firestore.Timestamp.fromDate(startAt),
       endAt: admin.firestore.Timestamp.fromDate(endAt),
@@ -1290,17 +1292,19 @@ export async function PUT(req: NextRequest) {
       updates.examDuration = Number(examDuration);
     }
 
-    const resolvedTargetType = targetType || assignData.targetType || 'batch';
+    const incomingEditBatches = Array.isArray(targetBatches) ? targetBatches : (assignData.targetBatches || []);
+    const incomingEditStudents = Array.isArray(targetStudents) ? targetStudents : (assignData.targetStudents || []);
+    const resolvedTargetType = targetType || (incomingEditBatches.length > 0 && incomingEditStudents.length > 0 ? 'mixed' : (incomingEditBatches.length > 0 ? 'batch' : 'student'));
     updates.targetType = resolvedTargetType;
     if (resolvedTargetType === 'student') {
       updates.targetBatches = [];
-      updates.targetStudents = Array.isArray(targetStudents) ? targetStudents : (assignData.targetStudents || []);
+      updates.targetStudents = incomingEditStudents;
     } else if (resolvedTargetType === 'batch') {
-      updates.targetBatches = Array.isArray(targetBatches) ? targetBatches : (assignData.targetBatches || []);
+      updates.targetBatches = incomingEditBatches;
       updates.targetStudents = [];
     } else {
-      if (Array.isArray(targetBatches)) updates.targetBatches = targetBatches;
-      if (Array.isArray(targetStudents)) updates.targetStudents = targetStudents;
+      updates.targetBatches = incomingEditBatches;
+      updates.targetStudents = incomingEditStudents;
     }
 
     const isRescheduled = assignData.startAt && Math.abs(updatedStart.getTime() - (assignData.startAt.toDate ? assignData.startAt.toDate().getTime() : new Date(assignData.startAt).getTime())) > 600000;

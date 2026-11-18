@@ -37,6 +37,8 @@ export default function TargetPicker({
   const candidateStudents = relevantBatches.flatMap(([_, g]) => g.list);
   const limitedStudents = candidateStudents.filter(s => getStudentMode(s) === 'limited');
   const allLimitedSelected = limitedStudents.length > 0 && limitedStudents.every(s => selectedStudents.has(s.studentCode));
+  const anyLimitedSelected = limitedStudents.some(s => selectedStudents.has(s.studentCode));
+  const selectedLimitedCount = limitedStudents.filter(s => selectedStudents.has(s.studentCode)).length;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -129,6 +131,68 @@ export default function TargetPicker({
           ))}
         </div>
       </div>
+
+      {/* Batch Mode: Dedicated Mode 3 (Limited Mode) Exclusion & Inclusion Control */}
+      {targetType === 'batch' && selectedBatches.size > 0 && (
+        <div style={{
+          marginTop: '6px',
+          padding: '8px 12px',
+          background: 'rgba(245, 158, 11, 0.08)',
+          border: '1px solid rgba(245, 158, 11, 0.35)',
+          borderRadius: 'var(--radius-sm)'
+        }}>
+          {limitedStudents.length > 0 ? (
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '12px', fontWeight: 700, color: 'var(--warning, #d97706)' }}>
+                  <input 
+                    type="checkbox"
+                    checked={allLimitedSelected}
+                    onChange={(e) => {
+                      const shouldSelect = e.target.checked;
+                      limitedStudents.forEach(s => {
+                        if (shouldSelect) {
+                          if (!selectedStudents.has(s.studentCode)) onToggleStudent(s.studentCode);
+                        } else {
+                          if (selectedStudents.has(s.studentCode)) onToggleStudent(s.studentCode);
+                        }
+                      });
+                    }}
+                  />
+                  <span>◇ Include Mode 3 (Limited) Students ({limitedStudents.length}) from Selected Batch{selectedBatches.size > 1 ? 'es' : ''}</span>
+                </label>
+                <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 600 }}>
+                  {allLimitedSelected ? 'All Included' : anyLimitedSelected ? `${selectedLimitedCount}/${limitedStudents.length} Included` : 'Excluded by default'}
+                </span>
+              </div>
+              <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px', marginLeft: '24px', lineHeight: '1.4' }}>
+                🔒 <strong>Perimeter Guard:</strong> Limited Mode students are automatically excluded from entire batch exams. Check this box to also assign this exam to them.
+              </div>
+
+              {/* Show individual student pills if included */}
+              {(allLimitedSelected || anyLimitedSelected) && (
+                <div style={{ marginTop: '8px', marginLeft: '24px', display: 'flex', flexWrap: 'wrap', gap: '8px', paddingTop: '6px', borderTop: '1px dashed rgba(245, 158, 11, 0.3)' }}>
+                  {limitedStudents.map(s => (
+                    <label key={s.studentCode} style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '11px', background: 'var(--surface)', padding: '2px 8px', borderRadius: '4px', border: '1px solid var(--border-light)', cursor: 'pointer' }}>
+                      <input 
+                        type="checkbox"
+                        checked={selectedStudents.has(s.studentCode)}
+                        onChange={() => onToggleStudent(s.studentCode)}
+                      />
+                      <span>◇ {s.name}</span>
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '5px' }}>
+              <span>🔒</span>
+              <span><strong>Perimeter Guard:</strong> Limited Mode (Mode 3) students are automatically excluded from entire batch exams. (0 Limited students in selected batch{selectedBatches.size > 1 ? 'es' : ''})</span>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Student selections grouped by selected batch */}
       {(targetType === 'student' || targetType === 'mixed') && (
