@@ -85,7 +85,15 @@ export async function GET(req: NextRequest) {
       adminDb.collection('subjectiveExams').where('batchId', '==', batchId).select('name', 'title', 'scheduledDate', 'createdAt', 'topicCodes', 'topicCode', 'questionCodes').get().catch(() => ({ docs: [] } as any))
     ]);
 
-    const examDataMap = new Map<string, { examId: string; name: string; date: string; type: string; topicCodes: string[]; rawTopicCodes: string[] }>();
+    const examDataMap = new Map<string, {
+      examId: string;
+      name: string;
+      date: string;
+      type: string;
+      topicCodes: string[];
+      rawCodesByTopic: Record<string, string[]>;
+      questionCounts: Record<string, number>;
+    }>();
 
     // Process exams already directly attached to batch
     batchExamsSnap.docs.forEach((d: any) => {
@@ -97,7 +105,8 @@ export async function GET(req: NextRequest) {
         date: formatDateFromField(data.scheduledDate || data.createdAt),
         type: 'objective',
         topicCodes: extracted.normalized,
-        rawTopicCodes: extracted.raw
+        rawCodesByTopic: extracted.rawCodesByTopic,
+        questionCounts: extracted.questionCounts
       });
     });
 
@@ -110,7 +119,8 @@ export async function GET(req: NextRequest) {
         date: formatDateFromField(data.scheduledDate || data.createdAt),
         type: 'subjective',
         topicCodes: extracted.normalized,
-        rawTopicCodes: extracted.raw
+        rawCodesByTopic: extracted.rawCodesByTopic,
+        questionCounts: extracted.questionCounts
       });
     });
 
@@ -151,7 +161,8 @@ export async function GET(req: NextRequest) {
           date: formatDateFromField(data.scheduledDate || data.createdAt),
           type: 'objective',
           topicCodes: extracted.normalized,
-          rawTopicCodes: extracted.raw
+          rawCodesByTopic: extracted.rawCodesByTopic,
+          questionCounts: extracted.questionCounts
         });
       }
     });
@@ -166,33 +177,44 @@ export async function GET(req: NextRequest) {
           date: formatDateFromField(data.scheduledDate || data.createdAt),
           type: 'subjective',
           topicCodes: extracted.normalized,
-          rawTopicCodes: extracted.raw
+          rawCodesByTopic: extracted.rawCodesByTopic,
+          questionCounts: extracted.questionCounts
         });
       }
     });
 
     // 4. Map conducted exams to canonical topic codes and track raw code variants
     const topicExamsMap: { [canonicalTopicCode: string]: Array<{ examId: string; name: string; date: string; type: string }> } = {};
+    const topicQuestionsTestedMap: { [canonicalTopicCode: string]: number } = {};
     const topicVariantsMap = new Map<string, Set<string>>();
 
     examDataMap.forEach(exam => {
-      exam.topicCodes.forEach((tc, idx) => {
+      exam.topicCodes.forEach((tc) => {
         if (!tc) return;
         if (!topicExamsMap[tc]) topicExamsMap[tc] = [];
-        topicExamsMap[tc].push({
-          examId: exam.examId,
-          name: exam.name,
-          date: exam.date,
-          type: exam.type
-        });
+        
+        // Ensure each unique exam is added at most once per canonical topic code
+        const alreadyExists = topicExamsMap[tc].some(e => e.examId === exam.examId);
+        if (!alreadyExists) {
+          topicExamsMap[tc].push({
+            examId: exam.examId,
+            name: exam.name,
+            date: exam.date,
+            type: exam.type
+          });
+        }
+
+        // Add questions tested count from this exam
+        const qCount = exam.questionCounts[tc] || 0;
+        topicQuestionsTestedMap[tc] = (topicQuestionsTestedMap[tc] || 0) + qCount;
 
         if (!topicVariantsMap.has(tc)) {
           topicVariantsMap.set(tc, new Set<string>());
         }
         topicVariantsMap.get(tc)!.add(tc);
-        const rawCode = exam.rawTopicCodes?.[idx];
-        if (rawCode) {
-          topicVariantsMap.get(tc)!.add(rawCode);
+        const rawList = exam.rawCodesByTopic[tc];
+        if (rawList) {
+          rawList.forEach(rawCode => topicVariantsMap.get(tc)!.add(rawCode));
         }
       });
     });
@@ -367,6 +389,7 @@ export async function GET(req: NextRequest) {
       className: string;
       hasNumericals: boolean;
       examsConductedCount: number;
+      questionsTestedCount: number;
       exams: Array<{ examId: string; name: string; date: string; type: string }>;
       batchAvgScore: number;
       totalStudents: number;
@@ -458,6 +481,7 @@ export async function GET(req: NextRequest) {
         className: clsName,
         hasNumericals,
         examsConductedCount: topicExamsMap[tc].length,
+        questionsTestedCount: topicQuestionsTestedMap[tc] || 0,
         exams: topicExamsMap[tc],
         batchAvgScore: batchAvg,
         totalStudents: batchStudents.length,
@@ -496,37 +520,60 @@ export async function GET(req: NextRequest) {
 // Helper Functions
 // ---------------------------------------------------------------------------
 
-function extractTopicsFromExam(examData: any): { normalized: string[]; raw: string[] } {
-  if (!examData) return { normalized: [], raw: [] };
-  const rawCodes: string[] = [];
-  const normalizedCodes: string[] = [];
+function extractTopicsFromExam(examData: any): {
+  normalized: string[];
+  rawCodesByTopic: Record<string, string[]>;
+  questionCounts: Record<string, number>;
+} {
+  if (!examData) return { normalized: [], rawCodesByTopic: {}, questionCounts: {} };
+  const normalizedSet = new Set<string>();
+  const rawCodesByTopic: Record<string, Set<string>> = {};
+  const questionCounts: Record<string, number> = {};
 
-  const addCode = (rawStr: string) => {
+  const registerTopic = (rawStr: string) => {
     const trimmed = String(rawStr || '').trim();
-    if (!trimmed) return;
+    if (!trimmed) return null;
     const norm = normalizeTopicCode(trimmed);
-    if (norm) {
-      rawCodes.push(trimmed);
-      normalizedCodes.push(norm);
+    if (!norm) return null;
+
+    normalizedSet.add(norm);
+    if (!rawCodesByTopic[norm]) {
+      rawCodesByTopic[norm] = new Set<string>();
     }
+    rawCodesByTopic[norm].add(trimmed);
+    return norm;
   };
 
   if (Array.isArray(examData.topicCodes)) {
-    examData.topicCodes.forEach((tc: any) => addCode(tc));
+    examData.topicCodes.forEach((tc: any) => registerTopic(tc));
   }
 
   if (examData.topicCode) {
-    addCode(examData.topicCode);
+    registerTopic(examData.topicCode);
   }
 
   if (Array.isArray(examData.questionCodes)) {
     examData.questionCodes.forEach((qc: any) => {
       const derived = deriveTopicCodeFromQuestionCode(String(qc || '').trim());
-      if (derived) addCode(derived);
+      if (derived) {
+        const norm = registerTopic(derived);
+        if (norm) {
+          questionCounts[norm] = (questionCounts[norm] || 0) + 1;
+        }
+      }
     });
   }
 
-  return { normalized: normalizedCodes, raw: rawCodes };
+  const finalRawCodes: Record<string, string[]> = {};
+  Object.keys(rawCodesByTopic).forEach(norm => {
+    finalRawCodes[norm] = Array.from(rawCodesByTopic[norm]);
+  });
+
+  return {
+    normalized: Array.from(normalizedSet),
+    rawCodesByTopic: finalRawCodes,
+    questionCounts
+  };
 }
 
 function formatDateFromField(field: any): string {

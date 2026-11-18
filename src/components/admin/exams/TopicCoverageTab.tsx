@@ -28,6 +28,7 @@ interface ConductedTopic {
   className: string;
   hasNumericals: boolean;
   examsConductedCount: number;
+  questionsTestedCount?: number;
   exams: TopicExam[];
   batchAvgScore: number;
   totalStudents: number;
@@ -546,17 +547,38 @@ export default function TopicCoverageTab({ batches }: TopicCoverageTabProps) {
 
                       {/* Exams Tested */}
                       <td style={{ padding: '8px 12px' }}>
-                        <span style={{
-                          background: '#0f172a',
-                          color: '#e2e8f0',
-                          padding: '2px 6px',
-                          borderRadius: '4px',
-                          fontWeight: 700,
-                          fontSize: '11px',
-                          border: '1px solid #334155'
-                        }}>
-                          {topic.examsConductedCount} Exam{topic.examsConductedCount === 1 ? '' : 's'}
-                        </span>
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                          <span
+                            title={topic.exams && topic.exams.length > 0 ? `Exams:\n${topic.exams.map((e, idx) => `${idx + 1}. ${e.name} (${e.date || 'No date'})`).join('\n')}` : undefined}
+                            style={{
+                              background: '#0f172a',
+                              color: '#e2e8f0',
+                              padding: '2px 6px',
+                              borderRadius: '4px',
+                              fontWeight: 700,
+                              fontSize: '11px',
+                              border: '1px solid #334155',
+                              cursor: topic.exams && topic.exams.length > 0 ? 'help' : 'default'
+                            }}
+                          >
+                            {topic.examsConductedCount} Exam{topic.examsConductedCount === 1 ? '' : 's'}
+                          </span>
+                          {typeof topic.questionsTestedCount === 'number' && topic.questionsTestedCount > 0 && (
+                            <span
+                              title={`${topic.questionsTestedCount} total question${topic.questionsTestedCount === 1 ? '' : 's'} tested across ${topic.examsConductedCount} exam${topic.examsConductedCount === 1 ? '' : 's'}`}
+                              style={{
+                                fontSize: '10px',
+                                color: '#94a3b8',
+                                background: 'rgba(148, 163, 184, 0.1)',
+                                padding: '2px 5px',
+                                borderRadius: '3px',
+                                border: '1px solid rgba(148, 163, 184, 0.2)'
+                              }}
+                            >
+                              {topic.questionsTestedCount} Qs
+                            </span>
+                          )}
+                        </div>
                       </td>
 
                       {/* Batch Avg */}
