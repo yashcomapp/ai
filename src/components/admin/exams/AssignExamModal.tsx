@@ -261,26 +261,6 @@ export function AssignExamModal({
                 }} 
               /> 🌙 9 PM Test
             </label>
-            <label style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', whiteSpace: 'nowrap', background: assignModal.isTodaySlot ? 'rgba(16, 185, 129, 0.2)' : 'rgba(16, 185, 129, 0.08)', padding: '2px 8px', borderRadius: '4px', border: '1px solid rgba(16, 185, 129, 0.25)' }}>
-              <input 
-                type="checkbox" 
-                checked={!!assignModal.isTodaySlot} 
-                onChange={(e) => {
-                  const checked = e.target.checked;
-                  setAssignModal(prev => {
-                    let updates: any = { isTodaySlot: checked, isMorningTest: false, isEveningTest: false };
-                    if (checked) {
-                      updates.openMode = 'scheduled';
-                      updates.lateEntryRestriction = false;
-                      const todayStr = getDateKeyIST();
-                      updates.startAtStr = `${todayStr}T06:20`;
-                      updates.endAtStr = `${todayStr}T23:59`;
-                    }
-                    return { ...prev, ...updates };
-                  });
-                }} 
-              /> 📅 Today Slot (06:20 AM – 11:59 PM)
-            </label>
           </div>
 
           <ScheduleTimingInputs

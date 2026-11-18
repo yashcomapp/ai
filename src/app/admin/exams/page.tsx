@@ -234,7 +234,6 @@ export default function AdminExamsPage() {
     classroomTimePerQ: number;
     isMorningTest?: boolean;
     isEveningTest?: boolean;
-    isTodaySlot?: boolean;
     resetAttempts?: boolean;
     startsCount?: number;
   }>({
@@ -257,8 +256,7 @@ export default function AdminExamsPage() {
     classroomDuration: 60,
     classroomTimePerQ: 5,
     isMorningTest: false,
-    isEveningTest: false,
-    isTodaySlot: false
+    isEveningTest: false
   });
 
   const [assigning, setAssigning] = useState(false);
@@ -281,7 +279,6 @@ export default function AdminExamsPage() {
     lateEntryRestriction: boolean;
     isMorningTest?: boolean;
     isEveningTest?: boolean;
-    isTodaySlot?: boolean;
     resetAttempts?: boolean;
     startsCount?: number;
   }>({
@@ -302,7 +299,6 @@ export default function AdminExamsPage() {
     lateEntryRestriction: false,
     isMorningTest: false,
     isEveningTest: false,
-    isTodaySlot: false,
     resetAttempts: false,
     startsCount: 0
   });
@@ -517,8 +513,7 @@ export default function AdminExamsPage() {
       classroomDuration: normDuration || 60,
       classroomTimePerQ: 5,
       isMorningTest: false,
-      isEveningTest: false,
-      isTodaySlot: false
+      isEveningTest: false
     });
   };
 
@@ -579,7 +574,6 @@ export default function AdminExamsPage() {
       lateEntryRestriction: activeAssign.lateEntryRestriction === true,
       isMorningTest: false,
       isEveningTest: false,
-      isTodaySlot: false,
       resetAttempts: startsCount > 0,
       startsCount
     });
