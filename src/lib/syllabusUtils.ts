@@ -102,6 +102,20 @@ export function matchTopicCode(examTopicCodes: any, cleanCode: string, number: s
     const c = String(code).toLowerCase().trim();
     if (c === cleanCodeLower) return true;
     if (c === numStr) return true;
+
+    // Cross-subject conflict prevention: if both codes specify a subject part, they must be compatible
+    const cParts = c.split(/[-_]/);
+    const targetParts = cleanCodeLower.split(/[-_]/);
+    if (cParts.length >= 3 && targetParts.length >= 3) {
+      const cSubj = cParts[2];
+      const targetSubj = targetParts[2];
+      const isSubjCompatible = cSubj === targetSubj ||
+        (cSubj === 'math' && targetSubj === 'mth') || (cSubj === 'mth' && targetSubj === 'math') ||
+        (cSubj === 'sci' && targetSubj === 'scit') || (cSubj === 'scit' && targetSubj === 'sci');
+      if (!isSubjCompatible) {
+        return false;
+      }
+    }
     
     const compareC = c.replace(/[-_]/g, '.');
     if (compareC === compareNum) return true;

@@ -8,38 +8,9 @@ import {
   getCanonicalBoardName, 
   getCanonicalClass, 
   getCanonicalSubjectCode,
-  buildSyllabusHierarchyFromDocs 
+  buildSyllabusHierarchyFromDocs,
+  matchTopicCode 
 } from '@/lib/syllabusUtils';
-
-const matchTopicCode = (examTopicCodes: any, cleanCode: string, number: string, chapNum: string) => {
-  if (!Array.isArray(examTopicCodes)) return false;
-  const cleanCodeLower = String(cleanCode || '').toLowerCase().trim();
-  const numStr = String(number || '').trim();
-  const chapNumStr = String(chapNum || '').trim();
-  
-  const compareNum = numStr.replace(/[-_]/g, '.');
-  const compareChapNum = `${chapNumStr}.${numStr}`.replace(/[-_]/g, '.');
-
-  return examTopicCodes.some((code: any) => {
-    if (!code) return false;
-    const c = String(code).toLowerCase().trim();
-    if (c === cleanCodeLower) return true;
-    if (c === numStr) return true;
-    
-    const compareC = c.replace(/[-_]/g, '.');
-    if (compareC === compareNum) return true;
-    if (compareC === compareChapNum) return true;
-    
-    // Boundary-aware suffix match for full topic code
-    if (cleanCodeLower.endsWith('-' + c) || cleanCodeLower.endsWith('_' + c)) return true;
-    
-    // Boundary-aware suffix match for exam code ending in topic number
-    if (c.endsWith('-' + compareNum) || c.endsWith('_' + compareNum)) return true;
-    if (c.endsWith('-' + compareChapNum) || c.endsWith('_' + compareChapNum)) return true;
-
-    return false;
-  });
-};
 
 export async function GET(req: NextRequest) {
   try {
@@ -158,22 +129,48 @@ export async function GET(req: NextRequest) {
             .get()
         ]);
 
+        const isExamForSubject = (exam: any) => {
+          const isPractice = exam.id.startsWith('PRACTICE_') ||
+            exam.type === 'practice' ||
+            exam.type === 'home_practice' ||
+            exam.isPractice === true;
+          if (isPractice) return false;
+
+          const eSc = String(exam.subjectCode || '').toLowerCase().trim();
+          const targetSc = String(subjectData.subjectCode || '').toLowerCase().trim();
+          if (eSc && targetSc) {
+            const scMatch = eSc === targetSc ||
+              (eSc === 'math' && targetSc === 'mth') || (eSc === 'mth' && targetSc === 'math') ||
+              (eSc === 'sci' && targetSc === 'scit') || (eSc === 'scit' && targetSc === 'sci');
+            if (!scMatch) return false;
+          }
+
+          const targetSubj = String(subjectData.subject || '').toLowerCase().trim();
+          if (targetSubj) {
+            const eSubj = String(exam.subject || '').toLowerCase().trim();
+            const eSubjects: string[] = Array.isArray(exam.subjects)
+              ? exam.subjects.map((s: any) => String(s || '').toLowerCase().trim()).filter(Boolean)
+              : [];
+            if (eSubj || eSubjects.length > 0) {
+              const subjMatch = (eSubj && (eSubj.includes(targetSubj) || targetSubj.includes(eSubj))) ||
+                eSubjects.some(s => s.includes(targetSubj) || targetSubj.includes(s));
+              if (!subjMatch && !eSc) return false;
+            }
+          }
+
+          const hasAnySubjectInfo = Boolean(eSc || exam.subject || (Array.isArray(exam.subjects) && exam.subjects.length > 0));
+          if (!hasAnySubjectInfo && targetSc) return false;
+
+          return true;
+        };
+
         examsList = examsSnap.docs
           .map(doc => ({ id: doc.id, ...doc.data() as any }))
-          .filter(exam => {
-            const isPractice = exam.id.startsWith('PRACTICE_') || exam.type === 'practice' || exam.isPractice === true;
-            const scMatch = !subjectData.subjectCode || exam.subjectCode === subjectData.subjectCode;
-            const subjMatch = !subjectData.subject || (Array.isArray(exam.subjects) && exam.subjects.includes(subjectData.subject)) || exam.subject === subjectData.subject;
-            return !isPractice && (scMatch || subjMatch);
-          });
+          .filter(exam => isExamForSubject(exam));
 
         subjectiveExamsList = subjectiveExamsSnap.docs
           .map(doc => ({ id: doc.id, ...doc.data() as any }))
-          .filter(exam => {
-            const isPractice = exam.id.startsWith('PRACTICE_') || exam.type === 'home_practice' || exam.isPractice === true;
-            const subjMatch = !subjectData.subject || exam.subject === subjectData.subject || exam.subjectCode === subjectData.subjectCode;
-            return !isPractice && subjMatch;
-          });
+          .filter(exam => isExamForSubject(exam));
       } catch (examErr) {
         console.warn('Exams count query bypassed:', examErr);
       }

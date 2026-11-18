@@ -321,33 +321,54 @@ export async function GET(req: NextRequest) {
             .catch(() => null)
         ]);
 
-        const scLower = String(subjectData.subjectCode || '').toLowerCase();
-        const subjLower = String(subjectData.subject || '').toLowerCase();
+        const scLower = String(subjectData.subjectCode || '').toLowerCase().trim();
+        const subjLower = String(subjectData.subject || '').toLowerCase().trim();
+
+        const isExamForSubject = (exam: any, isSubjective = false) => {
+          const isPractice = exam.id.startsWith('PRACTICE_') ||
+            exam.type === 'practice' ||
+            exam.type === 'home_practice' ||
+            exam.isPractice === true;
+          if (isPractice) return false;
+
+          const eSc = String(exam.subjectCode || '').toLowerCase().trim();
+          const eSubj = String(exam.subject || '').toLowerCase().trim();
+          const eSubjects: string[] = Array.isArray(exam.subjects)
+            ? exam.subjects.map((s: any) => String(s || '').toLowerCase().trim()).filter(Boolean)
+            : [];
+
+          // 1. If exam has explicit subjectCode, it must be compatible with target subjectCode
+          if (eSc && scLower) {
+            const scMatch = eSc === scLower ||
+              (eSc === 'math' && scLower === 'mth') || (eSc === 'mth' && scLower === 'math') ||
+              (eSc === 'sci' && scLower === 'scit') || (eSc === 'scit' && scLower === 'sci');
+            if (!scMatch) return false;
+          }
+
+          // 2. If exam has explicit subject name or subjects array, it must not contradict target subject
+          if (subjLower && (eSubj || eSubjects.length > 0)) {
+            const subjMatch = (eSubj && (eSubj.includes(subjLower) || subjLower.includes(eSubj))) ||
+              eSubjects.some(s => s.includes(subjLower) || subjLower.includes(s));
+            if (!subjMatch && !eSc) return false;
+          }
+
+          // 3. If neither subjectCode nor subject matched target, reject
+          const hasAnySubjectInfo = Boolean(eSc || eSubj || eSubjects.length > 0);
+          if (!hasAnySubjectInfo && scLower) return false;
+
+          return true;
+        };
 
         if (examsSnap && !examsSnap.empty) {
           examsList = examsSnap.docs
             .map(doc => ({ id: doc.id, ...doc.data() as any }))
-            .filter(exam => {
-              const isPractice = exam.id.startsWith('PRACTICE_') || exam.type === 'practice' || exam.isPractice === true;
-              const eSc = String(exam.subjectCode || '').toLowerCase();
-              const eSubj = String(exam.subject || '').toLowerCase();
-              const scMatch = !scLower || eSc === scLower || (eSc === 'math' && scLower === 'mth') || (eSc === 'mth' && scLower === 'math');
-              const subjMatch = !subjLower || (Array.isArray(exam.subjects) && exam.subjects.some((s: string) => String(s).toLowerCase().includes(subjLower) || subjLower.includes(String(s).toLowerCase()))) || eSubj.includes(subjLower) || subjLower.includes(eSubj);
-              return !isPractice && (scMatch || subjMatch);
-            });
+            .filter(exam => isExamForSubject(exam, false));
         }
 
         if (subjectiveExamsSnap && !subjectiveExamsSnap.empty) {
           subjectiveExamsList = subjectiveExamsSnap.docs
             .map(doc => ({ id: doc.id, ...doc.data() as any }))
-            .filter(exam => {
-              const isPractice = exam.id.startsWith('PRACTICE_') || exam.type === 'home_practice' || exam.isPractice === true;
-              const eSc = String(exam.subjectCode || '').toLowerCase();
-              const eSubj = String(exam.subject || '').toLowerCase();
-              const scMatch = !scLower || eSc === scLower || (eSc === 'math' && scLower === 'mth') || (eSc === 'mth' && scLower === 'math');
-              const subjMatch = !subjLower || eSubj.includes(subjLower) || subjLower.includes(eSubj);
-              return !isPractice && (scMatch || subjMatch);
-            });
+            .filter(exam => isExamForSubject(exam, true));
         }
       } catch (examErr) {
         console.warn('Exams count query bypassed in generate handler:', examErr);
