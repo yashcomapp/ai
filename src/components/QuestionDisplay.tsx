@@ -665,10 +665,14 @@ export const QuestionDisplay: React.FC<QuestionDisplayProps> = React.memo(({
 
   // Resolved options list
   let resolvedOptions: any[] | null = null;
-  if (Array.isArray(rawOptions) && rawOptions.length > 0) {
+  if (isAR) {
+    if (Array.isArray(rawOptions) && rawOptions.length === 4 && typeof rawOptions[0] === 'string' && rawOptions[0].includes('Assertion')) {
+      resolvedOptions = rawOptions;
+    } else {
+      resolvedOptions = DEFAULT_ASSERTION_REASON_OPTIONS;
+    }
+  } else if (Array.isArray(rawOptions) && rawOptions.length > 0) {
     resolvedOptions = rawOptions;
-  } else if (isAR) {
-    resolvedOptions = DEFAULT_ASSERTION_REASON_OPTIONS;
   } else if (isTrueFalseType(qType)) {
     resolvedOptions = ['True', 'False'];
   }
@@ -679,7 +683,7 @@ export const QuestionDisplay: React.FC<QuestionDisplayProps> = React.memo(({
     : (question?.isCorrect ?? Boolean(
         qUserAnswer &&
         qCorrectAnswer &&
-        normalizeOptionAnswer(qUserAnswer, resolvedOptions || []) === normalizeOptionAnswer(qCorrectAnswer, resolvedOptions || [])
+        evaluateQuestionAnswer(qType || 'OSC', qUserAnswer, qCorrectAnswer, resolvedOptions || [])
       ));
 
   const isUnanswered = !qUserAnswer || String(qUserAnswer).trim() === '' || String(qUserAnswer).toLowerCase() === 'blank';
@@ -840,7 +844,7 @@ export const QuestionDisplay: React.FC<QuestionDisplayProps> = React.memo(({
   const renderPracticeOptions = () => {
     if (!resolvedOptions || resolvedOptions.length === 0) {
       if (isNumericalType(qType) || isFillBlanksType(qType)) {
-        const isCorrectInput = isSubmitted && evaluateQuestionAnswer(qType, qUserAnswer, qCorrectAnswer);
+        const isCorrectInput = isSubmitted && (typeof isCorrect === 'boolean' ? isCorrect : evaluateQuestionAnswer(qType, qUserAnswer, qCorrectAnswer));
         return (
           <div style={{ marginTop: '10px' }}>
             <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-muted)', marginBottom: '6px' }}>
@@ -909,12 +913,22 @@ export const QuestionDisplay: React.FC<QuestionDisplayProps> = React.memo(({
       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
         {resolvedOptions.map((opt: any, oi: number) => {
           const letter = String.fromCharCode(65 + oi);
+          const optKey = getRawOptionKey(opt);
           const optText = getRawOptionText(opt);
-          const isSelected = isMulti
-            ? (Array.isArray(qUserAnswer) ? qUserAnswer.includes(letter) : String(qUserAnswer).includes(letter))
-            : normalizeOptionAnswer(qUserAnswer, resolvedOptions!) === normalizeOptionAnswer(letter, resolvedOptions!);
 
-          const isThisCorrect = normalizeOptionAnswer(letter, resolvedOptions!) === normalizeOptionAnswer(qCorrectAnswer, resolvedOptions!);
+          const isSelected = isOptionSelectedByUser(qUserAnswer, optKey, oi, optText, resolvedOptions!);
+          const correctAns = (Array.isArray(qCorrectAnswers) && qCorrectAnswers.length > 0) ? qCorrectAnswers : qCorrectAnswer;
+          let isThisCorrect = isOptionCorrect(correctAns, optKey, oi, optText, resolvedOptions!);
+
+          // Authoritative Failsafe:
+          // If the question was already evaluated as correct by the practice engine,
+          // the student's selected option MUST be marked correct and can NEVER be displayed as incorrect!
+          if (effectiveIsCorrect && isSelected) {
+            isThisCorrect = true;
+          }
+          if (isSubmitted && !effectiveIsCorrect && isSelected && !isMulti) {
+            isThisCorrect = false;
+          }
 
           let border = '1px solid var(--border-light, #e2e8f0)';
           let bg = 'var(--surface, #fff)';
@@ -991,6 +1005,9 @@ export const QuestionDisplay: React.FC<QuestionDisplayProps> = React.memo(({
           // Failsafe
           if (effectiveIsCorrect && isUserOpt) {
             isCorrectOpt = true;
+          }
+          if (isSubmitted && !effectiveIsCorrect && isUserOpt && !isMulti) {
+            isCorrectOpt = false;
           }
 
           let border = '1px solid var(--border-light, #e2e8f0)';

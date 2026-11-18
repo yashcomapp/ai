@@ -238,6 +238,42 @@ export function formatRichText(text: any): string {
 }
 
 
+export function classifyAssertionReasonAnswer(value: any): string {
+  if (!value) return '';
+  let v = String(value).trim();
+
+  const letterMatch = v.match(/^(?:option\s+)?\(?([A-D])\)?[:.\-\s]?$/i);
+  if (letterMatch) return letterMatch[1].toUpperCase();
+
+  v = v.replace(/^option[:\s]*/i, '').toLowerCase();
+
+  const mentionsBoth = /\bboth\b/.test(v);
+  const notCorrectExplanation = /not\s+(?:the\s+)?correct explanation/.test(v);
+  const isCorrectExplanation = /correct explanation/.test(v) && !notCorrectExplanation;
+
+  if (mentionsBoth && isCorrectExplanation) return 'A';
+  if (mentionsBoth && notCorrectExplanation) return 'B';
+
+  const reasonIndex = v.search(/\b(?:reason|r\s+is|r\b[:.\-\s])/i);
+  let assertionPart = v;
+  let reasonPart = '';
+  if (reasonIndex !== -1) {
+    assertionPart = v.slice(0, reasonIndex);
+    reasonPart = v.slice(reasonIndex);
+  }
+
+  const assertionTrue = /\btrue\b/.test(assertionPart);
+  const assertionFalse = /\bfalse\b/.test(assertionPart);
+  const reasonTrue = /\btrue\b/.test(reasonPart);
+  const reasonFalse = /\bfalse\b/.test(reasonPart);
+
+  if (assertionTrue && reasonFalse) return 'C';
+  if (assertionFalse && reasonTrue) return 'D';
+
+  const fallback = v.match(/^([a-d])/i);
+  return fallback ? fallback[1].toUpperCase() : v.toUpperCase();
+}
+
 export function normalizeOptionAnswer(value: any, options?: any[]): string {
   if (value === undefined || value === null || value === '') return '';
 
@@ -255,6 +291,32 @@ export function normalizeOptionAnswer(value: any, options?: any[]): string {
     if (!options || !options.length) return letter;
     const idx = letter.charCodeAt(0) - 65;
     if (idx >= 0 && idx < options.length) return letter;
+  }
+
+  // 1b. Check if valueStr represents an Assertion & Reason answer
+  if (/both\s+(?:assertion|a)\b/i.test(valueStr) || /\b(?:assertion|a)\s+is\s+(?:true|false)\b/i.test(valueStr)) {
+    const arLetter = classifyAssertionReasonAnswer(valueStr);
+    if (arLetter && /^[A-D]$/.test(arLetter)) {
+      if (!options || !options.length) return arLetter;
+      const idx = arLetter.charCodeAt(0) - 65;
+      if (idx >= 0 && idx < options.length) return arLetter;
+    }
+  }
+
+  // 1c. Check if valueStr represents True/False
+  if (/^(?:true|t|yes|correct)$/i.test(valueStr)) {
+    if (Array.isArray(options) && options.length > 0) {
+      const idx = options.findIndex(opt => /^(?:true|t|yes|correct)$/i.test((opt && typeof opt === 'object') ? (opt.text ?? opt.value ?? '') : String(opt)));
+      if (idx !== -1) return String.fromCharCode(65 + idx);
+    }
+    return 'A';
+  }
+  if (/^(?:false|f|no|incorrect)$/i.test(valueStr)) {
+    if (Array.isArray(options) && options.length > 0) {
+      const idx = options.findIndex(opt => /^(?:false|f|no|incorrect)$/i.test((opt && typeof opt === 'object') ? (opt.text ?? opt.value ?? '') : String(opt)));
+      if (idx !== -1) return String.fromCharCode(65 + idx);
+    }
+    return 'B';
   }
 
   // 2. Match against options array by exact text, stripped text, and normalized math-aware text
@@ -375,31 +437,6 @@ export function isSubjectiveType(type: any): boolean {
   return CANONICAL_SUBJECTIVE_TYPES.includes(toCanonicalQuestionType(type));
 }
 
-function classifyAssertionReasonAnswer(value: any): string {
-  if (!value) return '';
-  let v = String(value).trim();
-
-  const letterMatch = v.match(/^([A-D])$/i);
-  if (letterMatch) return letterMatch[1].toUpperCase();
-
-  v = v.replace(/^option[:\s]*/i, '').toLowerCase();
-
-  const mentionsBoth = /\bboth\b/.test(v);
-  const notCorrectExplanation = /not\s+(the\s+)?correct explanation/.test(v);
-  const isCorrectExplanation = /correct explanation/.test(v) && !notCorrectExplanation;
-  const assertionFalse = /assertion[^.]*\bfalse\b/.test(v) || /\ba\s+is\s+false\b/.test(v);
-  const reasonFalse = /reason[^.]*\bfalse\b/.test(v) || /\br\s+is\s+false\b/.test(v);
-  const assertionTrue = /assertion[^.]*\btrue\b/.test(v) || /\ba\s+is\s+true\b/.test(v);
-  const reasonTrue = /reason[^.]*\btrue\b/.test(v) || /\br\s+is\s+true\b/.test(v);
-
-  if (mentionsBoth && isCorrectExplanation) return 'A';
-  if (mentionsBoth && notCorrectExplanation) return 'B';
-  if (assertionTrue && reasonFalse) return 'C';
-  if (assertionFalse && reasonTrue) return 'D';
-
-  const fallback = v.match(/^([a-d])/i);
-  return fallback ? fallback[1].toUpperCase() : v.toUpperCase();
-}
 
 export function evaluateQuestionAnswer(type: string, userAnswer: any, correctAnswer: any, options?: any[]): boolean {
   if (isBlank(userAnswer)) return false;
@@ -1626,10 +1663,16 @@ export function parseAnswerList(ansInput: any): string[] {
       if (Array.isArray(parsed)) return parsed.map(x => String(x).trim()).filter(Boolean);
     } catch {}
   }
-  if (str.includes(',')) {
-    return str.split(',').map(x => x.trim()).filter(Boolean);
+  // Do not split numbers with digit-grouping commas, e.g. 10,000 or 6,00,000 or ₹10,000
+  // Do not split coordinate / tuple forms wrapped in parentheses, e.g. (2, 0, -5, 0, 3)
+  if (/^\(.*\)$/.test(str)) {
+    return [str];
   }
-  return [str];
+  const nonDigitComma = str.replace(/(?<=\d),(?=\d)/g, '');
+  if (!nonDigitComma.includes(',')) {
+    return [str];
+  }
+  return str.split(',').map(x => x.trim()).filter(Boolean);
 }
 
 export function cleanStringForMatch(s: any): string {
@@ -1640,10 +1683,13 @@ export function cleanStringForMatch(s: any): string {
     .replace(/\\(?:text|mathrm|mathbf|mathit|mathsf|mathtt)\{([^}]+)\}/g, '$1')
     .replace(/\\\(|\\\)|\\\[|\\\]|\$+/g, '')       // Strip math delimiter wrappers
     .replace(/[\u2212\u2013\u2014]/g, '-')         // Normalize unicode minus / en-dash / em-dash to ASCII minus
+    .replace(/[₹\u20b9]|(?:^|[^\w])(?:rs\.?|inr)(?:[^\w]|$)/gi, '') // Strip currency symbols (₹, Rs., INR)
     .replace(/\\times|\\cdot|×/g, '*')
     .replace(/\\div|÷/g, '/')
     .replace(/\\pm/g, '+-')
     .replace(/\\\\/g, '\\')
+    .replace(/(?<=\d),(?=\d)/g, '')                 // Strip number grouping commas: 10,000 -> 10000
+    .replace(/[\(\)]/g, '')                         // Strip rogue remaining parentheses
     .replace(/\s+/g, '')                           // Strip whitespace
     .toLowerCase()
     .trim();
@@ -1759,6 +1805,11 @@ export function isOptionSelectedByUser(userAns: any, optKey: string, optIndex: n
     if (itemUpper === charCode) return true;
     if (optKey && (itemStr.toLowerCase() === 'option_' + charCode.toLowerCase() || itemStr.toLowerCase() === 'option_' + String(optKey).toLowerCase())) return true;
 
+    // Assertion & Reason classification match
+    if (/both\s+(?:assertion|a)\b/i.test(itemStr) || /\b(?:assertion|a)\s+is\s+(?:true|false)\b/i.test(itemStr)) {
+      if (classifyAssertionReasonAnswer(itemStr) === charCode) return true;
+    }
+
     if (allOptions && Array.isArray(allOptions) && allOptions.length > 0) {
       const normLetter = normalizeOptionAnswer(item, allOptions);
       if (normLetter && normLetter === charCode) return true;
@@ -1773,6 +1824,14 @@ export function isOptionSelectedByUser(userAns: any, optKey: string, optIndex: n
 }
 
 export function isOptionCorrect(correctAns: any, optKey: string, optIndex: number, optText?: string, allOptions?: any[]): boolean {
+  // If the option itself is explicitly marked as correct in allOptions metadata
+  if (allOptions && Array.isArray(allOptions) && allOptions[optIndex]) {
+    const targetOpt = allOptions[optIndex];
+    if (targetOpt && typeof targetOpt === 'object' && (targetOpt.isCorrect === true || targetOpt.correct === true)) {
+      return true;
+    }
+  }
+
   const list = parseAnswerList(correctAns);
   if (list.length === 0) return false;
   const charCode = String.fromCharCode(65 + optIndex);
@@ -1793,6 +1852,11 @@ export function isOptionCorrect(correctAns: any, optKey: string, optIndex: numbe
 
     if (itemUpper === charCode) return true;
     if (optKey && (itemStr.toLowerCase() === 'option_' + charCode.toLowerCase() || itemStr.toLowerCase() === 'option_' + String(optKey).toLowerCase())) return true;
+
+    // Assertion & Reason classification match
+    if (/both\s+(?:assertion|a)\b/i.test(itemStr) || /\b(?:assertion|a)\s+is\s+(?:true|false)\b/i.test(itemStr)) {
+      if (classifyAssertionReasonAnswer(itemStr) === charCode) return true;
+    }
 
     if (allOptions && Array.isArray(allOptions) && allOptions.length > 0) {
       const normLetter = normalizeOptionAnswer(item, allOptions);

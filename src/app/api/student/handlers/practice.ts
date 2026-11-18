@@ -5,7 +5,7 @@ import { adminDb } from '@/lib/firebase/admin';
 import { verifyRole, isStudentLimited } from '@/lib/auth';
 import { QuestionRepository } from '@/repositories/question.repository';
 import { PracticeService } from '@/services/practice.service';
-import { shuffleArray, isObjectiveType, isSingleChoiceType, isMultipleChoiceType, isAssertionReasonType, isQuestionQuarantined } from '@/lib/questionTypes';
+import { shuffleArray, isObjectiveType, isSingleChoiceType, isMultipleChoiceType, isAssertionReasonType, isQuestionQuarantined, DEFAULT_ASSERTION_REASON_OPTIONS } from '@/lib/questionTypes';
 import { getDateKeyIST } from '@/lib/dateUtils';
 import { getRequiredConfidence } from '@/lib/studentDb';
 import { MASTERY_THRESHOLDS } from '@/lib/dashboardMetrics';
@@ -650,12 +650,10 @@ export async function GET(req: NextRequest) {
 
         // Standard Options for assertion_reason questions
         if (!options || options.length === 0) {
-          options = [
-            { text: 'Both A and R are true and R is the correct explanation of A', value: 'A' },
-            { text: 'Both A and R are true but R is NOT the correct explanation of A', value: 'B' },
-            { text: 'A is true but R is false', value: 'C' },
-            { text: 'A is false but R is true', value: 'D' }
-          ];
+          options = DEFAULT_ASSERTION_REASON_OPTIONS.map((optText, idx) => ({
+            text: optText,
+            value: String.fromCharCode(65 + idx)
+          }));
         }
       } else if (Array.isArray(options)) {
         options = options.map((opt: any) => (typeof opt === 'object' ? opt : { text: String(opt), value: String(opt) }));
