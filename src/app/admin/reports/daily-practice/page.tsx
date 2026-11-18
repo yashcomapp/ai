@@ -520,7 +520,7 @@ export default function DailyPracticeSummaryPage() {
 
         const pendingTopics = s.totalAssignedTopics ? Math.max(0, s.totalAssignedTopics - (s.topicsAttemptedCount || 0)) : 0;
         const topicCoverageChip = s.totalAssignedTopics 
-          ? `<div style="display:inline-flex; flex-direction:column; align-items:center; gap:2px;"><div style="font-size: 11px; font-weight: 800; color: #0f172a; white-space: nowrap;"><span>${s.topicsAttemptedCount || 0} Practiced</span><span style="color: #cbd5e1; margin: 0 4px;">•</span><span style="color: #16a34a;">${s.masteredTopicsCount || 0} Mastered</span></div><div style="font-size: 10px; font-weight: 700; color: #64748b;">of ${s.totalAssignedTopics} Topics${pendingTopics > 0 ? ` <span style="color: #dc2626;">(${pendingTopics} pend)</span>` : ''}</div></div>`
+          ? `<div style="display:inline-flex; flex-direction:column; align-items:center; gap:2px;"><div style="font-size: 11px; font-weight: 800; color: #0f172a; white-space: nowrap;"><span>${s.topicsAttemptedCount || 0} practiced</span>, <span style="color: #16a34a;">${s.masteredTopicsCount || 0} mastered</span></div><div style="font-size: 10px; font-weight: 700; color: #64748b; white-space: nowrap;"><span style="color: ${pendingTopics > 0 ? '#dc2626' : '#16a34a'};">${pendingTopics} unpracticed</span> out of ${s.totalAssignedTopics} topics</div></div>`
           : '—';
 
         return `
@@ -1307,21 +1307,14 @@ export default function DailyPracticeSummaryPage() {
                                   border: '1px solid ' + ((row.topicsAttemptedCount || 0) >= row.totalAssignedTopics ? '#86efac' : 'var(--border-light)'),
                                   whiteSpace: 'nowrap'
                                 }}>
-                                  <span>🔄 {row.topicsAttemptedCount || 0} Practiced</span>
-                                  <span style={{ color: 'var(--border-light, #94a3b8)' }}>•</span>
-                                  <span style={{ color: (row.masteredTopicsCount || 0) > 0 ? '#16a34a' : 'inherit' }}>🏆 {row.masteredTopicsCount || 0} Mastered</span>
+                                  <span>🔄 {row.topicsAttemptedCount || 0} practiced</span>,
+                                  <span style={{ color: (row.masteredTopicsCount || 0) > 0 ? '#16a34a' : 'inherit' }}>🏆 {row.masteredTopicsCount || 0} mastered</span>
                                 </div>
-                                <div style={{ fontSize: '10px', fontWeight: 600, color: 'var(--text-muted)' }}>
-                                  of {row.totalAssignedTopics} conducted topics
-                                  {pendingTopics > 0 ? (
-                                    <span style={{ color: '#ef4444', fontWeight: 800, marginLeft: '4px' }}>
-                                      ({pendingTopics} unpracticed)
-                                    </span>
-                                  ) : (
-                                    <span style={{ color: '#16a34a', fontWeight: 800, marginLeft: '4px' }}>
-                                      (✨ All Practiced)
-                                    </span>
-                                  )}
+                                <div style={{ fontSize: '10px', fontWeight: 600, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+                                  <span style={{ color: pendingTopics > 0 ? '#ef4444' : '#16a34a', fontWeight: 800 }}>
+                                    {pendingTopics} unpracticed
+                                  </span>{' '}
+                                  out of {row.totalAssignedTopics} topics
                                 </div>
                               </div>
                             ) : (

@@ -86,25 +86,17 @@ export default function ParentLearningClient() {
   const [expandedSubjects, toggleSubject, isSubjectExpanded, setExpandedSubjects] = useToggleSet();
   const [expandedChapters, toggleChapterSet, isChapterExpanded, setExpandedChapters] = useToggleSet();
 
-  // Auto-expand all subjects & chapters on load + smart defaulting
+  // Auto-expand first subject on load (keep chapters collapsed to prevent clutter)
   useEffect(() => {
-    if (data) {
-      const allSubjs = new Set<string>();
-      const allChaps = new Set<string>();
-      [
+    if (data && expandedSubjects.size === 0) {
+      const firstSub = [
         ...data.needsAttention,
         ...data.continuePractice,
         ...(data.revision || []),
         ...data.mastered
-      ].forEach(t => {
-        if (t.subjectName) allSubjs.add(t.subjectName);
-        if (t.subjectName && t.chapterName) allChaps.add(`${t.subjectName}||${t.chapterName}`);
-      });
-      if (expandedSubjects.size === 0 && allSubjs.size > 0) {
-        setExpandedSubjects(allSubjs);
-      }
-      if (expandedChapters.size === 0 && allChaps.size > 0) {
-        setExpandedChapters(allChaps);
+      ][0]?.subjectName;
+      if (firstSub) {
+        setExpandedSubjects(new Set([firstSub]));
       }
 
       // Smart tab defaulting: If focus (needsAttention) has 0 topics, switch to practice or all
