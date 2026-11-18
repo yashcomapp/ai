@@ -163,6 +163,24 @@ export default function ParentLearningClient() {
 
   const activeChildName = children.find(c => c.code === selectedChildCode)?.name || selectedChildCode;
 
+  const allTopicsList = useMemo(() => {
+    if (!data) return [];
+    return [
+      ...(data.needsAttention || []),
+      ...(data.continuePractice || []),
+      ...(data.mastered || [])
+    ];
+  }, [data]);
+
+  const practicedCount = useMemo(() => {
+    if (data?.counts?.uniqueTopicsPracticed !== undefined) {
+      return data.counts.uniqueTopicsPracticed;
+    }
+    return allTopicsList.filter(t => (t.practiceCount || 0) > 0 || (t.attempts || 0) > 0 || (t.confidence || 0) > 0).length;
+  }, [data, allTopicsList]);
+
+  const totalConductedCount = data?.counts?.totalAssignedCount || allTopicsList.length;
+
   return (
     <ParentPageShell maxWidth="960px" backHref="/parent">
       <div style={{ maxWidth: '960px', margin: '0 auto', padding: '12px 14px 40px' }}>
@@ -256,10 +274,11 @@ export default function ParentLearningClient() {
 
         {!isLoading && !swrError && data && (
           <>
-            {/* Streamlined Single-Line Active Syllabus Coverage Status */}
+            {/* Streamlined Active Syllabus Coverage Status */}
             <LearningStatusBar
-              masteredCount={data.mastered?.length || 0}
-              totalConducted={(data.mastered?.length || 0) + (data.continuePractice?.length || 0) + (data.needsAttention?.length || 0)}
+              masteredCount={data.counts?.masteredCount ?? (data.mastered?.length || 0)}
+              practicedCount={practicedCount}
+              totalConducted={totalConductedCount}
             />
 
             {/* Tab Controls: Uniform 2-Line Symmetric Layout */}

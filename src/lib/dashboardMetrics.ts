@@ -185,6 +185,7 @@ export interface ClassifyAssignedTopicsResult {
   practicingCount: number;
   needsAttentionCount: number;
   unattemptedCount: number;
+  uniqueTopicsPracticed: number;
   totalAssignedCount: number;
   overallMastery: number;
   lqScore: number;
@@ -450,6 +451,8 @@ export function classifyAssignedTopics(input: ClassifyAssignedTopicsInput): Clas
     ? (totalAssignedCount > 0 ? Math.round(totalRetentionSum / totalAssignedCount) : 100)
     : 100;
 
+  const uniqueTopicsPracticed = allClassified.filter(it => (it.practiceCount || 0) > 0 || (it.attempts || 0) > 0 || (it.confidence || 0) > 0).length;
+
   return {
     topics: allClassified,
     mastered,
@@ -459,6 +462,7 @@ export function classifyAssignedTopics(input: ClassifyAssignedTopicsInput): Clas
     practicingCount: practicing.length,
     needsAttentionCount: needsAttention.length,
     unattemptedCount,
+    uniqueTopicsPracticed,
     totalAssignedCount,
     overallMastery,
     lqScore,

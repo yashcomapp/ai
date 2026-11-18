@@ -1181,19 +1181,20 @@ export async function getStudentLearningData(userData: any, preloadedData?: Prel
   let subAssignmentsSnap = preloadedData?.subAssignmentsSnap;
   let evalsSnap = preloadedData?.evalsSnap;
 
+  let loadedCoreData: StudentCoreData | null = null;
   if (!masterySnaps || !parentReviewsSnap || !reviewsSnap || !attemptsSnap || !evalsSnap) {
     // Rule C2: Reuse cached student core data if not explicitly preloaded
     const studentMode = getStudentMode(userData);
     const isLimited = studentMode === 'limited';
-    const coreData = await loadStudentCoreData(studentCode, batchIds, isLimited, bypassCache);
-    masterySnaps = masterySnaps || coreData.masterySnapshot;
-    parentReviewsSnap = parentReviewsSnap || coreData.parentReviewsSnapshot;
-    attemptsSnap = attemptsSnap || coreData.examAttemptsSnapshot;
-    reviewsSnap = reviewsSnap || coreData.reviewsSnapshot;
-    subAttemptsSnap = subAttemptsSnap || coreData.attemptsSnapshot;
-    objAssignmentsSnap = objAssignmentsSnap || { docs: coreData.rawAssignments.objectiveDocs };
-    subAssignmentsSnap = subAssignmentsSnap || { docs: coreData.rawAssignments.subjectiveDocs };
-    evalsSnap = evalsSnap || coreData.evaluationsSnapshot;
+    loadedCoreData = await loadStudentCoreData(studentCode, batchIds, isLimited, bypassCache);
+    masterySnaps = masterySnaps || loadedCoreData.masterySnapshot;
+    parentReviewsSnap = parentReviewsSnap || loadedCoreData.parentReviewsSnapshot;
+    attemptsSnap = attemptsSnap || loadedCoreData.examAttemptsSnapshot;
+    reviewsSnap = reviewsSnap || loadedCoreData.reviewsSnapshot;
+    subAttemptsSnap = subAttemptsSnap || loadedCoreData.attemptsSnapshot;
+    objAssignmentsSnap = objAssignmentsSnap || { docs: loadedCoreData.rawAssignments.objectiveDocs };
+    subAssignmentsSnap = subAssignmentsSnap || { docs: loadedCoreData.rawAssignments.subjectiveDocs };
+    evalsSnap = evalsSnap || loadedCoreData.evaluationsSnapshot;
   }
 
   // Identify absent exams and collect their topics
@@ -1258,6 +1259,22 @@ export async function getStudentLearningData(userData: any, preloadedData?: Prel
 
   const absentTopicCodes = new Set<string>();
   const rawConductedTopicCodes = new Set<string>(preloadedData?.conductedTopicCodes || []);
+
+  if (rawConductedTopicCodes.size === 0 && loadedCoreData) {
+    const allAssignmentsList = [
+      ...loadedCoreData.rawAssignments.batchAssignmentsSnapshot.docs,
+      ...loadedCoreData.rawAssignments.studentAssignmentsSnapshot.docs
+    ];
+    const coreConducted = extractConductedTopicCodes({
+      classroomExams: loadedCoreData.classroomExamsSnap?.docs?.map((d: any) => d.data()) || [],
+      homePractice: loadedCoreData.homePracticeSnap?.docs?.map((d: any) => d.data()) || [],
+      assignments: allAssignmentsList.map((d: any) => d.data()),
+      objectiveExams: new Map(),
+      practiceReviews: loadedCoreData.parentReviewsSnapshot?.docs?.map((d: any) => d.data()) || [],
+      objectiveReviews: loadedCoreData.reviewsSnapshot?.docs?.map((d: any) => d.data()) || []
+    });
+    coreConducted.forEach(c => rawConductedTopicCodes.add(c));
+  }
 
   const allAssignedExamIds = new Set<string>();
   objAssignmentsSnap.docs.forEach((d: any) => {
@@ -1487,13 +1504,15 @@ export async function getStudentLearningData(userData: any, preloadedData?: Prel
       masteredCount: classified.masteredCount,
       practicingCount: classified.practicingCount,
       needsAttentionCount: classified.needsAttentionCount,
-      totalAssignedCount: classified.totalAssignedCount
+      totalAssignedCount: classified.totalAssignedCount,
+      uniqueTopicsPracticed: classified.uniqueTopicsPracticed
     },
     stats: {
       masteredCount: classified.masteredCount,
       practicingCount: classified.practicingCount,
       needsAttentionCount: classified.needsAttentionCount,
-      totalAssignedCount: classified.totalAssignedCount
+      totalAssignedCount: classified.totalAssignedCount,
+      uniqueTopicsPracticed: classified.uniqueTopicsPracticed
     }
   };
 

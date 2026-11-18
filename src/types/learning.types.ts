@@ -47,6 +47,20 @@ export interface LearningPathData {
   continuePractice: LearningTopicItem[];
   revision: LearningTopicItem[];
   mastered: LearningTopicItem[];
+  counts?: {
+    masteredCount: number;
+    practicingCount: number;
+    needsAttentionCount: number;
+    totalAssignedCount: number;
+    uniqueTopicsPracticed?: number;
+  };
+  stats?: {
+    masteredCount: number;
+    practicingCount: number;
+    needsAttentionCount: number;
+    totalAssignedCount: number;
+    uniqueTopicsPracticed?: number;
+  };
 }
 
 export type StudentLearningTopicItem = LearningTopicItem;

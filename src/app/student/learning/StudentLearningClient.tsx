@@ -189,6 +189,24 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
     return { zero, inProgress, locked, total: list.length };
   }, [data?.needsAttention]);
 
+  const allTopicsList = useMemo(() => {
+    if (!data) return [];
+    return [
+      ...(data.needsAttention || []),
+      ...(data.continuePractice || []),
+      ...(data.mastered || [])
+    ];
+  }, [data]);
+
+  const practicedCount = useMemo(() => {
+    if (data?.counts?.uniqueTopicsPracticed !== undefined) {
+      return data.counts.uniqueTopicsPracticed;
+    }
+    return allTopicsList.filter(t => (t.practiceCount || 0) > 0 || (t.attempts || 0) > 0 || (t.confidence || 0) > 0).length;
+  }, [data, allTopicsList]);
+
+  const totalConductedCount = data?.counts?.totalAssignedCount || allTopicsList.length;
+
   const deferredSearchTerm = useDeferredValue(searchTerm);
 
   // Filter topics based on active tab and search query
@@ -388,11 +406,12 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
               </div>
             )}
 
-            {/* Streamlined Single-Line Active Syllabus Coverage Status */}
+            {/* Streamlined Active Syllabus Coverage Status */}
             {data && (
               <LearningStatusBar
-                masteredCount={data.mastered?.length || 0}
-                totalConducted={(data.mastered?.length || 0) + (data.continuePractice?.length || 0) + (data.needsAttention?.length || 0)}
+                masteredCount={data.counts?.masteredCount ?? (data.mastered?.length || 0)}
+                practicedCount={practicedCount}
+                totalConducted={totalConductedCount}
               />
             )}
 

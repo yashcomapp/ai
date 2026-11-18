@@ -484,7 +484,7 @@ export default function DailyPracticeSummaryPage() {
 
         const pendingTopics = s.totalAssignedTopics ? Math.max(0, s.totalAssignedTopics - (s.topicsAttemptedCount || 0)) : 0;
         const topicCoverageChip = s.totalAssignedTopics 
-          ? `<span style="font-size: 11px; font-weight: 700; color: #475569;">${s.topicsAttemptedCount || 0}/${s.totalAssignedTopics}${pendingTopics > 0 ? ` <span style="font-size: 9.5px; color: #dc2626; font-weight: 800;">(${pendingTopics} pend)</span>` : ''}</span>`
+          ? `<div style="display:inline-flex; flex-direction:column; align-items:center; gap:2px;"><span style="font-size: 11px; font-weight: 800; color: #1e293b;">${s.topicsAttemptedCount || 0}/${s.totalAssignedTopics} Practiced</span><span style="font-size: 10px; font-weight: 800; color: #16a34a;">${s.masteredTopicsCount || 0}/${s.totalAssignedTopics} Mastered</span></div>`
           : '—';
 
         return `
@@ -587,7 +587,7 @@ export default function DailyPracticeSummaryPage() {
                 <tr style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1;">
                   <th style="padding: 8px 10px; font-weight: 800; text-align: center; color: #475569; width: 44px;">Rank</th>
                   <th style="padding: 8px 10px; font-weight: 800; text-align: left; color: #475569;">Student</th>
-                  <th style="padding: 8px 10px; font-weight: 800; text-align: center; color: #475569;">Coverage</th>
+                  <th style="padding: 8px 10px; font-weight: 800; text-align: center; color: #475569;">Coverage (Practiced/Mastered)</th>
                   <th style="padding: 8px 10px; font-weight: 800; text-align: center; color: #475569;">Sessions</th>
                   <th style="padding: 8px 10px; font-weight: 800; text-align: center; color: #475569;">Questions</th>
                   <th style="padding: 8px 10px; font-weight: 800; text-align: center; color: #475569;">Accuracy</th>
@@ -1051,7 +1051,7 @@ export default function DailyPracticeSummaryPage() {
                     <th 
                       style={{ padding: '10px 14px', textAlign: 'center', fontWeight: 700, color: 'var(--text-muted)' }}
                     >
-                      Topic Coverage
+                      Topic Coverage (Practiced / Mastered)
                     </th>
                     <th 
                       onClick={() => handleSort('sessionsCount')}
@@ -1221,25 +1221,32 @@ export default function DailyPracticeSummaryPage() {
                           </td>
                           <td style={{ padding: '10px 14px', textAlign: 'center' }}>
                             {row.totalAssignedTopics ? (
-                              <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
+                              <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: '3px' }}>
                                 <span style={{ 
-                                  fontSize: '11.5px', 
+                                  fontSize: '11px', 
                                   fontWeight: 800, 
                                   padding: '2px 8px',
                                   borderRadius: '4px',
                                   background: (row.topicsAttemptedCount || 0) >= row.totalAssignedTopics ? '#dcfce7' : 'var(--bg-soft)',
                                   color: (row.topicsAttemptedCount || 0) >= row.totalAssignedTopics ? '#14532d' : 'var(--text)',
                                   border: '1px solid ' + ((row.topicsAttemptedCount || 0) >= row.totalAssignedTopics ? '#86efac' : 'var(--border-light)')
-                                }}>
-                                  {row.topicsAttemptedCount || 0} / {row.totalAssignedTopics}
+                                }} title="Topics Practiced">
+                                  🔄 {row.topicsAttemptedCount || 0} / {row.totalAssignedTopics} Practiced
+                                </span>
+                                <span style={{ 
+                                  fontSize: '10.5px', 
+                                  fontWeight: 700, 
+                                  color: (row.masteredTopicsCount || 0) > 0 ? 'var(--success, #16a34a)' : 'var(--text-muted)'
+                                }} title="Topics Mastered">
+                                  🏆 {row.masteredTopicsCount || 0} / {row.totalAssignedTopics} Mastered
                                 </span>
                                 {pendingTopics > 0 ? (
-                                  <span style={{ fontSize: '10px', fontWeight: 800, color: 'var(--danger, #ef4444)' }}>
-                                    {pendingTopics} pending
+                                  <span style={{ fontSize: '9.5px', fontWeight: 800, color: 'var(--danger, #ef4444)' }}>
+                                    {pendingTopics} unpracticed
                                   </span>
                                 ) : (
-                                  <span style={{ fontSize: '10px', fontWeight: 800, color: '#16a34a' }}>
-                                    100% Covered
+                                  <span style={{ fontSize: '9.5px', fontWeight: 800, color: '#16a34a' }}>
+                                    ✨ All Practiced
                                   </span>
                                 )}
                               </div>

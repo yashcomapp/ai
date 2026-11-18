@@ -7,14 +7,17 @@ import React from 'react';
 // ==============================================================================
 export interface LearningStatusBarProps {
   masteredCount: number;
+  practicedCount?: number;
   totalConducted: number;
 }
 
 export const LearningStatusBar: React.FC<LearningStatusBarProps> = React.memo(({
   masteredCount,
+  practicedCount,
   totalConducted
 }) => {
   const completionPercent = totalConducted > 0 ? Math.round((masteredCount / totalConducted) * 100) : 0;
+  const practicedPercent = totalConducted > 0 && practicedCount !== undefined ? Math.round((practicedCount / totalConducted) * 100) : 0;
   const isAllExhausted = totalConducted > 0 && masteredCount === totalConducted;
 
   return (
@@ -24,24 +27,81 @@ export const LearningStatusBar: React.FC<LearningStatusBarProps> = React.memo(({
         : 'var(--surface)',
       border: `1px solid ${isAllExhausted ? 'rgba(52, 211, 153, 0.4)' : 'var(--border-light)'}`,
       borderRadius: 'var(--radius)',
-      padding: '8px 12px',
-      marginBottom: '10px',
+      padding: '10px 14px',
+      marginBottom: '12px',
       display: 'flex',
+      flexWrap: 'wrap',
       justifyContent: 'space-between',
       alignItems: 'center',
-      gap: '10px'
+      gap: '12px'
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', fontWeight: 700, color: 'var(--text)', whiteSpace: 'nowrap' }}>
-        <span style={{ color: 'var(--text-muted)', fontWeight: 800 }}>Status:</span>
-        <span style={{ color: isAllExhausted ? 'var(--success)' : 'var(--accent)', fontWeight: 800 }}>
-          {masteredCount} / {totalConducted} Topics Done
-        </span>
-        <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600 }}>
-          ({completionPercent}%)
-        </span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
+        {practicedCount !== undefined ? (
+          <>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12.5px', fontWeight: 700, color: 'var(--text)', whiteSpace: 'nowrap' }}>
+              <span style={{ color: 'var(--text-muted)' }}>🔄 Practiced:</span>
+              <span style={{ color: 'var(--text)', fontWeight: 800 }}>
+                {practicedCount} / {totalConducted}
+              </span>
+              <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600 }}>
+                ({practicedPercent}%)
+              </span>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12.5px', fontWeight: 700, color: 'var(--text)', whiteSpace: 'nowrap' }}>
+              <span style={{ color: 'var(--text-muted)' }}>🏆 Mastered:</span>
+              <span style={{ color: isAllExhausted ? 'var(--success)' : 'var(--accent)', fontWeight: 800 }}>
+                {masteredCount} / {totalConducted}
+              </span>
+              <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600 }}>
+                ({completionPercent}%)
+              </span>
+            </div>
+          </>
+        ) : (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', fontWeight: 700, color: 'var(--text)', whiteSpace: 'nowrap' }}>
+            <span style={{ color: 'var(--text-muted)', fontWeight: 800 }}>Status:</span>
+            <span style={{ color: isAllExhausted ? 'var(--success)' : 'var(--accent)', fontWeight: 800 }}>
+              {masteredCount} / {totalConducted} Topics Done
+            </span>
+            <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600 }}>
+              ({completionPercent}%)
+            </span>
+          </div>
+        )}
       </div>
-      <div style={{ flex: '1', maxWidth: '140px', height: '6px', background: 'var(--surface-2)', borderRadius: '3px', overflow: 'hidden' }}>
-        <div style={{ width: `${completionPercent}%`, height: '100%', background: isAllExhausted ? 'var(--success)' : 'var(--accent)', transition: 'width 0.3s ease' }}></div>
+
+      <div style={{ flex: '1', minWidth: '120px', maxWidth: '200px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div style={{ flex: '1', height: '7px', background: 'var(--surface-2)', borderRadius: '4px', overflow: 'hidden', position: 'relative' }}>
+          {practicedCount !== undefined && (
+            <div 
+              style={{ 
+                position: 'absolute', 
+                top: 0, 
+                left: 0, 
+                width: `${practicedPercent}%`, 
+                height: '100%', 
+                background: 'rgba(59, 130, 246, 0.4)', 
+                borderRadius: '4px',
+                transition: 'width 0.3s ease'
+              }} 
+              title={`Practiced: ${practicedPercent}%`} 
+            />
+          )}
+          <div 
+            style={{ 
+              position: 'absolute', 
+              top: 0, 
+              left: 0, 
+              width: `${completionPercent}%`, 
+              height: '100%', 
+              background: isAllExhausted ? 'var(--success)' : 'var(--accent)', 
+              borderRadius: '4px', 
+              transition: 'width 0.3s ease' 
+            }} 
+            title={`Mastered: ${completionPercent}%`} 
+          />
+        </div>
       </div>
     </div>
   );
