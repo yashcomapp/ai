@@ -71,7 +71,7 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
   useEffect(() => {
     setMounted(true);
     // Warm up parent subroutes during background idle time
-    const routes = ['/parent/review', '/parent/attendance', '/parent/fees', '/parent/chat'];
+    const routes = ['/parent/review', '/parent/attendance', '/parent/fees', '/parent/chat', '/parent/learning'];
     const timer = setTimeout(() => {
       routes.forEach(r => router.prefetch(r));
     }, 1200);

@@ -7,6 +7,7 @@ import { classifyAssignedTopics } from '@/lib/dashboardMetrics';
 import { getFromCache, setInCache, getCachedBatches } from '@/lib/firebase/cache';
 import { getCachedSyllabusTopicsMap } from '@/lib/syllabusServerUtils';
 import { getStudentMode } from '@/types/user.types';
+import { isDemoUser } from '@/lib/studentDb';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -73,8 +74,8 @@ export async function GET(req: NextRequest) {
       batchStudents = legacySnap.docs.map(d => ({ id: d.id, ...d.data() }));
     }
 
-    // Exclude inactive students per Rule 2C and Limited Mode students who cannot access practice/remediation
-    batchStudents = batchStudents.filter((s: any) => s.status !== 'inactive' && s.studentCode && getStudentMode(s) !== 'limited');
+    // Exclude inactive students per Rule 2C, demo accounts, and Limited Mode students who cannot access practice/remediation
+    batchStudents = batchStudents.filter((s: any) => s.status !== 'inactive' && s.studentCode && getStudentMode(s) !== 'limited' && !isDemoUser(s));
     const studentCodes = batchStudents.map((s: any) => String(s.studentCode).trim());
 
     // 3. Find all conducted/assigned exams for this batch

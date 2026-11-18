@@ -991,6 +991,7 @@ export const QuestionDisplay: React.FC<QuestionDisplayProps> = React.memo(({
      D. Render Review Mode Options & Comparison (mode='review')
      ----------------------------------------------------------------------- */
   const renderReviewOptions = () => {
+    const isMulti = isMultipleChoiceType(qType);
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '10px' }}>
         {resolvedOptions && resolvedOptions.length > 0 && resolvedOptions.map((opt: any, oi: number) => {

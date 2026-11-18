@@ -3,6 +3,7 @@ import { getAssignmentsForBatches } from '@/services/exam.service';
 import { getDateKeyIST } from '@/lib/dateUtils';
 import { ReportCacheManager } from '@/lib/reportCache';
 import { getStudentMode } from '@/types/user.types';
+import { isDemoUser } from '@/lib/studentDb';
 
 export type InterventionCategory = 
   | 'missed_exam'       // Step 1: Baseline Exam missed
@@ -82,7 +83,7 @@ export class InterventionService {
 
     const activeStudents = studentsSnap.docs
       .map(d => ({ id: d.id, ...d.data() } as any))
-      .filter(s => s.status !== 'inactive' && getStudentMode(s) !== 'limited');
+      .filter(s => s.status !== 'inactive' && getStudentMode(s) !== 'limited' && !isDemoUser(s));
 
     const studentMap = new Map<string, any>();
     const allBatchIds = new Set<string>();

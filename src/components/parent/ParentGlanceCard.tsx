@@ -97,13 +97,17 @@ export const ParentGlanceCard = React.memo(function ParentGlanceCard({
           </div>
         </div>
 
-        {/* Stat 2: LQ Score */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', justifyContent: 'center', gap: '2px', background: 'var(--surface-2)', padding: '8px 4px', borderRadius: '10px', border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)' }}>
+        {/* Stat 2: LQ Score / Topic Mastery (LOS) */}
+        <div 
+          onClick={() => router.push(`/parent/learning?studentCode=${selectedChildCode}`)}
+          style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', justifyContent: 'center', gap: '2px', cursor: 'pointer', background: 'var(--surface-2)', padding: '8px 4px', borderRadius: '10px', border: '1px solid var(--border)', transition: 'all 0.2s', boxShadow: 'var(--shadow-sm)' }}
+          title="Click to view Learning OS (LOS) and Topic Mastery"
+        >
           <div style={{ fontSize: '1.55rem', fontWeight: 800, color: 'var(--success)', lineHeight: 1 }}>
             {lqScore}%
           </div>
           <div style={{ fontSize: '11px', color: 'var(--text)', fontWeight: 800 }}>
-            LQ Score
+            LQ Score / LOS
           </div>
           <div style={{ fontSize: '9.5px', color: 'var(--text-muted)', fontWeight: 600 }}>
             टॉपिक मास्टरी

@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
-import { Rocket, Calendar, ClipboardList, Receipt, MessageSquare } from 'lucide-react';
+import { Rocket, Calendar, ClipboardList, Receipt, MessageSquare, Compass } from 'lucide-react';
 import { ParentDashboardData } from './types';
 
 interface ParentQuickActionsProps {
@@ -39,10 +39,10 @@ export const ParentQuickActions = React.memo(function ParentQuickActions({
           Quick Actions / त्वरित कार्य
         </h3>
       </div>
-      {/* Bento Grid: 4 Action Modules in 1 Single Line */}
+      {/* Bento Grid: 5 Action Modules */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(4, 1fr)',
+        gridTemplateColumns: 'repeat(5, 1fr)',
         gap: '6px',
         alignItems: 'stretch'
       }}>
@@ -199,6 +199,45 @@ export const ParentQuickActions = React.memo(function ParentQuickActions({
           </div>
           <div style={{ fontSize: '9.5px', color: 'var(--info)', fontWeight: 800, whiteSpace: 'nowrap', marginTop: '1px' }}>
             Messages / चैट
+          </div>
+        </div>
+
+        {/* Bento Item 5: Learning OS (LOS) */}
+        <div
+          onClick={() => router.push(`/parent/learning?studentCode=${selectedChildCode}`)}
+          style={{
+            background: 'var(--surface-2)',
+            border: '1.5px solid var(--border)',
+            borderRadius: 'var(--radius-sm)',
+            padding: '8px 3px',
+            cursor: 'pointer',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            textAlign: 'center',
+            gap: '3px',
+            transition: 'all 0.2s ease',
+            boxShadow: 'var(--shadow-sm)'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.borderColor = 'var(--accent)';
+            e.currentTarget.style.transform = 'translateY(-2px)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.borderColor = 'var(--border)';
+            e.currentTarget.style.transform = 'translateY(0)';
+          }}
+        >
+          <Compass size={22} color="var(--accent)" />
+          <div style={{ fontSize: '10px', fontWeight: 800, color: 'var(--text)', lineHeight: 1.15, whiteSpace: 'nowrap' }}>
+            Learning OS
+          </div>
+          <div style={{ fontSize: '9px', color: 'var(--text-muted)', lineHeight: 1 }}>
+            टॉपिक मास्टरी
+          </div>
+          <div style={{ fontSize: '9.5px', color: 'var(--accent)', fontWeight: 800, whiteSpace: 'nowrap', marginTop: '1px' }}>
+            LOS View
           </div>
         </div>
       </div>

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { GET as getDashboard } from '../handlers/dashboard';
 import { GET as getNotificationHistory } from '../handlers/notificationHistory';
 import { GET as getReview, POST as postReview } from '../handlers/review';
+import { GET as getLearning } from '../handlers/learning';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,6 +18,8 @@ export async function GET(req: NextRequest, { params }: { params: { slug?: strin
         return await getNotificationHistory(req);
       case 'review':
         return await getReview(req);
+      case 'learning':
+        return await getLearning(req);
       default:
         return NextResponse.json({ message: `Unknown parent GET route: ${subroute}` }, { status: 404 });
     }

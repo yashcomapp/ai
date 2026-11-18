@@ -155,7 +155,6 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
   const [sortField, setSortField] = useState<'topicName' | 'mastery' | 'attempts' | 'lastAttempt'>('mastery');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
   const [pdfSelectorOpen, setPdfSelectorOpen] = useState(false);
-  const [showSlabGuide, setShowSlabGuide] = useState(false);
 
   const handleSort = (field: 'topicName' | 'mastery' | 'attempts' | 'lastAttempt') => {
     if (sortField === field) {
@@ -417,71 +416,6 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
           </>
         ) : (
           <>
-            {/* System Transparency & Mastery Slabs Guide Card */}
-            <div style={{
-              background: 'linear-gradient(135deg, rgba(37, 99, 235, 0.05), rgba(16, 185, 129, 0.05))',
-              border: '1.5px solid var(--border-light)',
-              borderRadius: 'var(--radius)',
-              padding: '10px 14px',
-              marginBottom: '12px',
-              boxShadow: 'var(--shadow-sm)'
-            }}>
-              <div 
-                onClick={() => setShowSlabGuide(!showSlabGuide)}
-                style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  justifyContent: 'space-between', 
-                  cursor: 'pointer',
-                  userSelect: 'none'
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ fontSize: '1.2rem' }}>ℹ️</span>
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                      <span style={{ fontWeight: 800, fontSize: '13px', color: 'var(--text)' }}>
-                        Topic Mastery Standard: 2 Practice Sets to Master
-                      </span>
-                      <span style={{ fontSize: '11px', color: 'var(--accent)', fontWeight: 600 }}>
-                        {showSlabGuide ? 'Hide Rules ▲' : 'View Rules ▼'}
-                      </span>
-                    </div>
-                    <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                      🎯 <strong>Standard Quota:</strong> Exactly 2 practice sets assigned per topic (12 questions total) • Achieve ≥90% accuracy for Certified Mastered
-                    </div>
-                  </div>
-                </div>
-                <span style={{
-                  fontSize: '10px',
-                  fontWeight: 700,
-                  background: 'var(--surface)',
-                  padding: '2px 8px',
-                  borderRadius: '12px',
-                  border: '1px solid var(--border)',
-                  color: 'var(--text-muted)'
-                }}>
-                  Zero-Collision Vaults
-                </span>
-              </div>
-
-              {showSlabGuide && (
-                <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px dashed var(--border-light)' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '8px', fontSize: '11px', color: 'var(--text-muted)' }}>
-                    <div style={{ padding: '8px 10px', background: 'var(--surface)', borderRadius: '6px', border: '1px solid var(--border-light)' }}>
-                      <strong style={{ color: 'var(--success)' }}>🏆 Mastered Standard:</strong> Complete 2 practice sets (12 verified questions) with ≥90% accuracy to earn Certified Mastered status.
-                    </div>
-                    <div style={{ padding: '8px 10px', background: 'var(--surface)', borderRadius: '6px', border: '1px solid var(--border-light)' }}>
-                      <strong style={{ color: 'var(--text)' }}>🔒 Zero-Collision Vaults:</strong> Questions in Practice are dedicated to self-study only and will never appear on scheduled exams.
-                    </div>
-                    <div style={{ padding: '8px 10px', background: 'var(--surface)', borderRadius: '6px', border: '1px solid var(--border-light)' }}>
-                      <strong style={{ color: 'var(--text)' }}>⏱️ Deliberation Gate:</strong> Minimum 18s/question deliberate solving required. Rushed sessions (&lt; 18s/Q) are voided with a 30-min cooldown.
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-
             {/* Search & Toolbars */}
             <div style={{ display: 'flex', gap: '8px', marginBottom: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
               <input 
@@ -499,7 +433,7 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
               </div>
             )}
 
-            {/* Active Conducted Syllabus Progress Indicator */}
+            {/* Streamlined Single-Line Active Syllabus Coverage Status */}
             {data && (() => {
               const masteredCount = data.mastered?.length || 0;
               const practiceCount = data.continuePractice?.length || 0;
@@ -515,87 +449,117 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
                     : 'var(--surface)',
                   border: `1px solid ${isAllExhausted ? 'rgba(52, 211, 153, 0.4)' : 'var(--border-light)'}`,
                   borderRadius: 'var(--radius)',
-                  padding: '10px 14px',
+                  padding: '8px 12px',
                   marginBottom: '10px',
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center',
-                  flexWrap: 'wrap',
-                  gap: '8px'
+                  gap: '10px'
                 }}>
-                  <div>
-                    <div style={{ fontSize: '12.5px', fontWeight: 800, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span>{isAllExhausted ? '🎉 All Conducted Topics Mastered!' : '📖 Active Syllabus Coverage (Conducted in Exams)'}</span>
-                      <span className="badge" style={{
-                        background: isAllExhausted ? 'var(--success-bg)' : 'var(--surface-2)',
-                        color: isAllExhausted ? 'var(--success)' : 'var(--accent)',
-                        border: `1px solid ${isAllExhausted ? 'rgba(52, 211, 153, 0.4)' : 'var(--border)'}`,
-                        fontSize: '10px',
-                        fontWeight: 700,
-                        padding: '1px 6px'
-                      }}>
-                        {masteredCount} / {totalConducted} Topics ({completionPercent}%)
-                      </span>
-                    </div>
-                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                      {isAllExhausted ? (
-                        'Student has completed and mastered 100% of the syllabus pool tested so far. Next practice unlocks with upcoming exams.'
-                      ) : (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                          <span>{practiceCount + focusCount} topic(s) open for practice:</span>
-                          <span style={{ color: '#ef4444', fontWeight: 800 }}>
-                            {focusBreakdown.zero + practiceBreakdown.zero} pending zero practice
-                          </span>
-                          <span>•</span>
-                          <span style={{ color: '#f59e0b', fontWeight: 700 }}>
-                            {focusBreakdown.inProgress + practiceBreakdown.inProgress} in progress
-                          </span>
-                          {(focusBreakdown.locked + practiceBreakdown.locked) > 0 && (
-                            <>
-                              <span>•</span>
-                              <span style={{ color: 'var(--text-muted)', fontWeight: 700 }}>
-                                {focusBreakdown.locked + practiceBreakdown.locked} quota locked
-                              </span>
-                            </>
-                          )}
-                        </div>
-                      )}
-                    </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', fontWeight: 700, color: 'var(--text)', whiteSpace: 'nowrap' }}>
+                    <span style={{ color: 'var(--text-muted)', fontWeight: 800 }}>Status:</span>
+                    <span style={{ color: isAllExhausted ? 'var(--success)' : 'var(--accent)', fontWeight: 800 }}>
+                      {masteredCount} / {totalConducted} Topics Done
+                    </span>
+                    <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600 }}>
+                      ({completionPercent}%)
+                    </span>
                   </div>
-                  <div style={{ width: '120px', height: '6px', background: 'var(--surface-2)', borderRadius: '3px', overflow: 'hidden' }}>
+                  <div style={{ flex: '1', maxWidth: '140px', height: '6px', background: 'var(--surface-2)', borderRadius: '3px', overflow: 'hidden' }}>
                     <div style={{ width: `${completionPercent}%`, height: '100%', background: isAllExhausted ? 'var(--success)' : 'var(--accent)', transition: 'width 0.3s ease' }}></div>
                   </div>
                 </div>
               );
             })()}
 
-            {/* Tab Controls (Focus is fully restored) */}
-            <div className="review-tabs" style={{ display: 'flex', gap: '6px', marginBottom: '10px', overflowX: 'auto', paddingBottom: '2px' }}>
-              <button className={`tab-btn ${activeTab === 'needsAttention' ? 'active' : ''}`} onClick={() => setActiveTab('needsAttention')}>
-                🚨 Focus <span className="tab-count">{data ? data.needsAttention.length : 0}</span>
+            {/* Tab Controls: Uniform 2-Line Symmetric Layout */}
+            <div className="review-tabs" style={{ display: 'flex', gap: '6px', marginBottom: '10px', borderBottom: 'none' }}>
+              <button 
+                className={`tab-btn ${activeTab === 'needsAttention' ? 'active' : ''}`} 
+                onClick={() => setActiveTab('needsAttention')}
+                style={{
+                  flex: 1,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '8px 4px',
+                  borderBottom: activeTab === 'needsAttention' ? '2px solid var(--accent)' : '2px solid transparent'
+                }}
+              >
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap', fontSize: '13px', fontWeight: 700 }}>
+                  <span>🚨</span><span>Focus</span>
+                </span>
+                <span className="tab-count" style={{ marginTop: '4px', marginInline: 'auto' }}>
+                  {data ? data.needsAttention.length : 0}
+                </span>
               </button>
-              <button className={`tab-btn ${activeTab === 'continuePractice' ? 'active' : ''}`} onClick={() => setActiveTab('continuePractice')}>
-                🔄 Practice <span className="tab-count">{data ? data.continuePractice.length : 0}</span>
+              <button 
+                className={`tab-btn ${activeTab === 'continuePractice' ? 'active' : ''}`} 
+                onClick={() => setActiveTab('continuePractice')}
+                style={{
+                  flex: 1,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '8px 4px',
+                  borderBottom: activeTab === 'continuePractice' ? '2px solid var(--accent)' : '2px solid transparent'
+                }}
+              >
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap', fontSize: '13px', fontWeight: 700 }}>
+                  <span>🔄</span><span>Practice</span>
+                </span>
+                <span className="tab-count" style={{ marginTop: '4px', marginInline: 'auto' }}>
+                  {data ? data.continuePractice.length : 0}
+                </span>
               </button>
-              <button className={`tab-btn ${activeTab === 'mastered' ? 'active' : ''}`} onClick={() => setActiveTab('mastered')}>
-                🏆 Mastered <span className="tab-count">{data ? data.mastered.length : 0}</span>
+              <button 
+                className={`tab-btn ${activeTab === 'mastered' ? 'active' : ''}`} 
+                onClick={() => setActiveTab('mastered')}
+                style={{
+                  flex: 1,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '8px 4px',
+                  borderBottom: activeTab === 'mastered' ? '2px solid var(--accent)' : '2px solid transparent'
+                }}
+              >
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap', fontSize: '13px', fontWeight: 700 }}>
+                  <span>🏆</span><span>Mastered</span>
+                </span>
+                <span className="tab-count" style={{ marginTop: '4px', marginInline: 'auto' }}>
+                  {data ? data.mastered.length : 0}
+                </span>
               </button>
             </div>
 
-            {/* Practice Sub-filters for Zero Practice / In-Progress / Locked */}
+            {/* Practice Sub-filters in ONE Line with Horizontal Touch Scroll */}
             {activeTab === 'continuePractice' && (
-              <div style={{ display: 'flex', gap: '6px', marginBottom: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
-                <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginRight: '4px' }}>
+              <div style={{
+                display: 'flex',
+                gap: '6px',
+                marginBottom: '12px',
+                flexWrap: 'nowrap',
+                overflowX: 'auto',
+                alignItems: 'center',
+                paddingBottom: '4px',
+                WebkitOverflowScrolling: 'touch'
+              }}>
+                <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginRight: '2px', whiteSpace: 'nowrap' }}>
                   Filter:
                 </span>
                 <button
                   type="button"
                   onClick={() => setPracticeSubFilter('all')}
                   style={{
-                    padding: '3px 10px',
+                    padding: '3px 9px',
                     borderRadius: '20px',
                     fontSize: '11px',
                     fontWeight: 700,
+                    whiteSpace: 'nowrap',
                     border: '1px solid ' + (practiceSubFilter === 'all' ? 'var(--accent)' : 'var(--border-light)'),
                     background: practiceSubFilter === 'all' ? 'var(--accent)' : 'var(--bg-soft)',
                     color: practiceSubFilter === 'all' ? '#ffffff' : 'var(--text-muted)',
@@ -608,10 +572,11 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
                   type="button"
                   onClick={() => setPracticeSubFilter('zero')}
                   style={{
-                    padding: '3px 10px',
+                    padding: '3px 9px',
                     borderRadius: '20px',
                     fontSize: '11px',
                     fontWeight: 800,
+                    whiteSpace: 'nowrap',
                     border: '1px solid ' + (practiceSubFilter === 'zero' ? '#ef4444' : 'var(--border-light)'),
                     background: practiceSubFilter === 'zero' ? 'rgba(239, 68, 68, 0.18)' : 'var(--bg-soft)',
                     color: practiceSubFilter === 'zero' ? '#ef4444' : 'var(--text-muted)',
@@ -624,10 +589,11 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
                   type="button"
                   onClick={() => setPracticeSubFilter('in_progress')}
                   style={{
-                    padding: '3px 10px',
+                    padding: '3px 9px',
                     borderRadius: '20px',
                     fontSize: '11px',
                     fontWeight: 700,
+                    whiteSpace: 'nowrap',
                     border: '1px solid ' + (practiceSubFilter === 'in_progress' ? '#f59e0b' : 'var(--border-light)'),
                     background: practiceSubFilter === 'in_progress' ? 'rgba(245, 158, 11, 0.18)' : 'var(--bg-soft)',
                     color: practiceSubFilter === 'in_progress' ? '#f59e0b' : 'var(--text-muted)',
@@ -641,10 +607,11 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
                     type="button"
                     onClick={() => setPracticeSubFilter('locked')}
                     style={{
-                      padding: '3px 10px',
+                      padding: '3px 9px',
                       borderRadius: '20px',
                       fontSize: '11px',
                       fontWeight: 700,
+                      whiteSpace: 'nowrap',
                       border: '1px solid ' + (practiceSubFilter === 'locked' ? '#94a3b8' : 'var(--border-light)'),
                       background: practiceSubFilter === 'locked' ? 'rgba(148, 163, 184, 0.25)' : 'var(--bg-soft)',
                       color: practiceSubFilter === 'locked' ? 'var(--text)' : 'var(--text-muted)',

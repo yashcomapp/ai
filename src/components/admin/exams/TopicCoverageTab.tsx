@@ -721,7 +721,10 @@ export default function TopicCoverageTab({ batches }: TopicCoverageTabProps) {
                           </div>
 
                           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '8px' }}>
-                            {topic.students.map((st) => (
+                            {topic.students.filter(st => {
+                              const name = String(st.name || '').trim().toLowerCase();
+                              return name !== 'student user' && name !== 'demo student' && name !== 'test student' && name !== 'demo user';
+                            }).map((st) => (
                               <div
                                 key={st.studentCode}
                                 style={{
