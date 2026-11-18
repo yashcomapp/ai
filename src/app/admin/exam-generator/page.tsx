@@ -657,6 +657,16 @@ export default function AdminExamGeneratorPage() {
       return false;
     }
 
+    // Strict Subject Guardrail: Question and Topic MUST belong to the same subject!
+    const qSubjCode = String(q.subjectCode || (q.questionCode ? q.questionCode.split('-')[2] : '')).toLowerCase().trim();
+    const tSubjCode = String(t.subjectCode || (t.topicCode ? t.topicCode.split('-')[2] : '')).toLowerCase().trim();
+    if (qSubjCode && tSubjCode) {
+      const isCompat = qSubjCode === tSubjCode ||
+        (qSubjCode === 'math' && tSubjCode === 'mth') || (qSubjCode === 'mth' && tSubjCode === 'math') ||
+        (qSubjCode === 'sci' && tSubjCode === 'scit') || (qSubjCode === 'scit' && tSubjCode === 'sci');
+      if (!isCompat) return false;
+    }
+
     const qTopNum = String(q.topicNumber || '').trim();
     const qTopCode = String(q.topicCode || '').trim();
     const qTopicName = String(q.topic || q.topicName || '').trim().toLowerCase();

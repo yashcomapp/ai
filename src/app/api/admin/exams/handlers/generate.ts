@@ -122,9 +122,12 @@ export async function GET(req: NextRequest) {
           const s = String(q.subject || '').toLowerCase();
           const sc = String(q.subjectCode || '').toLowerCase();
 
-          const sMatch = searchSubjects.length === 0 || searchSubjects.some(subLower => 
-            s === subLower || sc === subLower || s.includes(subLower) || subLower.includes(s)
-          );
+          const sMatch = searchSubjects.length === 0 || searchSubjects.some(subLower => {
+            if (!subLower) return false;
+            if (s && (s === subLower || s.includes(subLower) || subLower.includes(s))) return true;
+            if (sc && (sc === subLower || (sc === 'math' && subLower === 'mth') || (sc === 'mth' && subLower === 'math') || (sc === 'sci' && subLower === 'scit') || (sc === 'scit' && subLower === 'sci'))) return true;
+            return false;
+          });
 
           if (!sMatch) return false;
 
@@ -272,11 +275,22 @@ export async function GET(req: NextRequest) {
             const targetBCode = getCanonicalBoardCode(boardVal || subjectData.boardCode || subjectData.board);
             if (qBCode !== targetBCode) return null;
 
-            const s = String(q.subject || '').toLowerCase();
-            const sc = String(q.subjectCode || '').toLowerCase();
-            const targetSub = String(subjectVal || subjectData.subject || '').toLowerCase();
-            const targetSubCode = String(subjectData.subjectCode || '').toLowerCase();
-            const sMatch = s === targetSub || sc === targetSubCode || sc === targetSub || s === targetSubCode || s.includes(targetSub);
+            const s = String(q.subject || '').toLowerCase().trim();
+            const sc = String(q.subjectCode || '').toLowerCase().trim();
+            const targetSub = String(subjectVal || subjectData.subject || '').toLowerCase().trim();
+            const targetSubCode = String(subjectData.subjectCode || '').toLowerCase().trim();
+
+            if (sc && targetSubCode) {
+              const scCompat = sc === targetSubCode ||
+                (sc === 'math' && targetSubCode === 'mth') || (sc === 'mth' && targetSubCode === 'math') ||
+                (sc === 'sci' && targetSubCode === 'scit') || (sc === 'scit' && targetSubCode === 'sci');
+              if (!scCompat) return null;
+            }
+
+            const sMatch = (s && targetSub && (s === targetSub || s.includes(targetSub))) ||
+              (sc && targetSubCode && sc === targetSubCode) ||
+              (sc && targetSub && sc === targetSub) ||
+              (s && targetSubCode && s === targetSubCode);
             if (!sMatch) return null;
 
             let chNum = String(q.chapterNumber || q.chapter || '').replace(/^Ch\.?\s*/i, '').trim();
