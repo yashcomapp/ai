@@ -115,6 +115,15 @@ export default function ParentLearningClient() {
   };
 
   // Sub-filter counts
+  const allTopicsList = useMemo(() => {
+    if (!data) return [];
+    return [
+      ...(data.needsAttention || []),
+      ...(data.continuePractice || []),
+      ...(data.mastered || [])
+    ];
+  }, [data]);
+
   const practiceBreakdown = useMemo(() => {
     if (!data?.continuePractice) return { total: 0, zero: 0, inProgress: 0, locked: 0 };
     let zero = 0;
@@ -129,13 +138,69 @@ export default function ParentLearningClient() {
     return { total: data.continuePractice.length, zero, inProgress, locked };
   }, [data?.continuePractice]);
 
+  const focusBreakdown = useMemo(() => {
+    if (!data?.needsAttention) return { total: 0, zero: 0, inProgress: 0, locked: 0 };
+    let zero = 0;
+    let inProgress = 0;
+    let locked = 0;
+    for (const t of data.needsAttention) {
+      const pCount = t.practiceCount || 0;
+      if (pCount === 0) zero++;
+      else if (pCount < 2) inProgress++;
+      else locked++;
+    }
+    return { total: data.needsAttention.length, zero, inProgress, locked };
+  }, [data?.needsAttention]);
+
+  const allBreakdown = useMemo(() => {
+    let zero = 0;
+    let inProgress = 0;
+    let locked = 0;
+    for (const t of allTopicsList) {
+      const pCount = t.practiceCount || 0;
+      if (pCount === 0) zero++;
+      else if (pCount < 2 && t.state !== 'mastered') inProgress++;
+      else locked++;
+    }
+    return { total: allTopicsList.length, zero, inProgress, locked };
+  }, [allTopicsList]);
+
+  const practicedCount = useMemo(() => {
+    if (data?.counts?.uniqueTopicsPracticed !== undefined) {
+      return data.counts.uniqueTopicsPracticed;
+    }
+    return allTopicsList.filter(t => (t.practiceCount || 0) > 0).length;
+  }, [data, allTopicsList]);
+
+  const totalConductedCount = data?.counts?.totalAssignedCount || allTopicsList.length;
+
   // Group topics for current tab
   const currentTabTopics = useMemo(() => {
     if (!data) return [];
     let list: LearningTopicItem[] = [];
-    if (activeTab === 'all') list = allTopicsList;
-    else if (activeTab === 'needsAttention') list = data.needsAttention || [];
-    else if (activeTab === 'continuePractice') {
+    if (activeTab === 'all') {
+      list = allTopicsList;
+      if (practiceSubFilter !== 'all') {
+        list = list.filter(t => {
+          const pCount = t.practiceCount || 0;
+          if (practiceSubFilter === 'zero') return pCount === 0;
+          if (practiceSubFilter === 'in_progress') return pCount > 0 && pCount < 2 && t.state !== 'mastered';
+          if (practiceSubFilter === 'locked') return pCount >= 2 || t.state === 'mastered';
+          return true;
+        });
+      }
+    } else if (activeTab === 'needsAttention') {
+      list = data.needsAttention || [];
+      if (practiceSubFilter !== 'all') {
+        list = list.filter(t => {
+          const pCount = t.practiceCount || 0;
+          if (practiceSubFilter === 'zero') return pCount === 0;
+          if (practiceSubFilter === 'in_progress') return pCount > 0 && pCount < 2;
+          if (practiceSubFilter === 'locked') return pCount >= 2;
+          return true;
+        });
+      }
+    } else if (activeTab === 'continuePractice') {
       list = (data.continuePractice || []).filter(t => {
         const pCount = t.practiceCount || 0;
         if (practiceSubFilter === 'zero') return pCount === 0;
@@ -155,7 +220,7 @@ export default function ParentLearningClient() {
       );
     }
     return list;
-  }, [data, activeTab, practiceSubFilter, searchTerm]);
+  }, [data, activeTab, practiceSubFilter, searchTerm, allTopicsList]);
 
   // Group by Subject -> Chapter
   const groupedData = useMemo(() => {
@@ -172,24 +237,6 @@ export default function ParentLearningClient() {
   }, [currentTabTopics]);
 
   const activeChildName = children.find(c => c.code === selectedChildCode)?.name || selectedChildCode;
-
-  const allTopicsList = useMemo(() => {
-    if (!data) return [];
-    return [
-      ...(data.needsAttention || []),
-      ...(data.continuePractice || []),
-      ...(data.mastered || [])
-    ];
-  }, [data]);
-
-  const practicedCount = useMemo(() => {
-    if (data?.counts?.uniqueTopicsPracticed !== undefined) {
-      return data.counts.uniqueTopicsPracticed;
-    }
-    return allTopicsList.filter(t => (t.practiceCount || 0) > 0 || (t.attempts || 0) > 0 || (t.confidence || 0) > 0).length;
-  }, [data, allTopicsList]);
-
-  const totalConductedCount = data?.counts?.totalAssignedCount || allTopicsList.length;
 
   return (
     <ParentPageShell maxWidth="960px" backHref="/parent">
@@ -294,7 +341,10 @@ export default function ParentLearningClient() {
             {/* Tab Controls: Uniform 2-Line Symmetric Layout */}
             <LearningTabControls
               activeTab={activeTab}
-              onSelectTab={setActiveTab}
+              onSelectTab={(tab) => {
+                setActiveTab(tab);
+                setPracticeSubFilter('all');
+              }}
               counts={{
                 all: totalConductedCount,
                 needsAttention: data.needsAttention?.length || 0,
@@ -304,25 +354,105 @@ export default function ParentLearningClient() {
             />
 
             {/* Practice Sub-filters in ONE Line with Horizontal Touch Scroll */}
-            {activeTab === 'continuePractice' && (
+            {activeTab !== 'mastered' && (
               <LearningPracticeFilterBar
                 activeFilter={practiceSubFilter}
                 onSelectFilter={setPracticeSubFilter}
-                breakdown={practiceBreakdown}
+                breakdown={
+                  activeTab === 'all'
+                    ? allBreakdown
+                    : activeTab === 'needsAttention'
+                    ? focusBreakdown
+                    : practiceBreakdown
+                }
               />
+            )}
+
+            {/* Unpracticed in Focus Cross-Navigation Banner */}
+            {activeTab === 'continuePractice' && focusBreakdown.zero > 0 && (data?.continuePractice?.length || 0) > 0 && (
+              <div style={{
+                marginBottom: '10px',
+                padding: '8px 12px',
+                borderRadius: '8px',
+                background: 'rgba(239, 68, 68, 0.08)',
+                border: '1px solid rgba(239, 68, 68, 0.25)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '8px',
+                fontSize: '11.5px'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text)' }}>
+                  <span>⚠️</span>
+                  <span>
+                    <strong>${focusBreakdown.zero} unpracticed topic${focusBreakdown.zero > 1 ? 's' : ''}</strong> are currently in Focus.
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveTab('needsAttention');
+                    setPracticeSubFilter('zero');
+                  }}
+                  className="btn btn-sm"
+                  style={{
+                    padding: '3px 10px',
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    background: '#ef4444',
+                    color: '#fff',
+                    borderRadius: '16px',
+                    border: 'none',
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  View in Focus (${focusBreakdown.zero}) →
+                </button>
+              </div>
             )}
 
             {/* Empty state */}
             {currentTabTopics.length === 0 && (
               <div style={{ textAlign: 'center', padding: '40px 16px', background: 'var(--surface)', borderRadius: 'var(--radius)', border: '1px solid var(--border-light)' }}>
                 <div style={{ fontSize: '28px', marginBottom: '8px' }}>
-                  {activeTab === 'mastered' ? '🏆' : (activeTab === 'needsAttention' ? '🎉' : '📖')}
+                  {activeTab === 'mastered' ? '🏆' : (activeTab === 'needsAttention' ? '🎉' : (activeTab === 'continuePractice' && focusBreakdown.zero > 0 ? '🎯' : '📖'))}
                 </div>
                 <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text)', marginBottom: '4px' }}>
                   {activeTab === 'needsAttention'
                     ? 'No topics currently in Focus. Everything tested is progressing solidly!'
-                    : (activeTab === 'mastered' ? 'No topics fully mastered yet. Ongoing practice will certify topics.' : 'No topics currently in this practice filter.')}
+                    : (activeTab === 'mastered'
+                      ? 'No topics fully mastered yet. Ongoing practice will certify topics.'
+                      : (activeTab === 'continuePractice' && focusBreakdown.zero > 0
+                        ? `${focusBreakdown.zero} Unpracticed Topic${focusBreakdown.zero > 1 ? 's' : ''} in Focus`
+                        : 'No topics currently in this practice filter.'))}
                 </div>
+                {activeTab === 'continuePractice' && focusBreakdown.zero > 0 && (
+                  <div style={{ marginTop: '14px', display: 'flex', justifyContent: 'center', gap: '8px' }}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveTab('needsAttention');
+                        setPracticeSubFilter('zero');
+                      }}
+                      className="btn btn-sm btn-primary"
+                      style={{ fontSize: '12px', padding: '6px 14px', borderRadius: '20px' }}
+                    >
+                      🚨 View Focus Topics (${focusBreakdown.zero}) →
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveTab('all');
+                        setPracticeSubFilter('zero');
+                      }}
+                      className="btn btn-sm"
+                      style={{ fontSize: '12px', padding: '6px 14px', borderRadius: '20px', border: '1px solid var(--border-light)', background: 'var(--bg-soft)' }}
+                    >
+                      📋 View All Unpracticed (${allBreakdown.zero}) →
+                    </button>
+                  </div>
+                )}
               </div>
             )}
 

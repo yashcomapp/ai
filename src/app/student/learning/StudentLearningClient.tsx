@@ -207,11 +207,25 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
     ];
   }, [data]);
 
+  const allBreakdown = useMemo(() => {
+    let zero = 0;
+    let inProgress = 0;
+    let locked = 0;
+    allTopicsList.forEach(t => {
+      const maxP = getMaxTopicPractices(t);
+      const pCount = t.practiceCount || 0;
+      if (pCount === 0) zero++;
+      else if (pCount >= maxP || t.state === 'mastered') locked++;
+      else inProgress++;
+    });
+    return { zero, inProgress, locked, total: allTopicsList.length };
+  }, [allTopicsList]);
+
   const practicedCount = useMemo(() => {
     if (data?.counts?.uniqueTopicsPracticed !== undefined) {
       return data.counts.uniqueTopicsPracticed;
     }
-    return allTopicsList.filter(t => (t.practiceCount || 0) > 0 || (t.attempts || 0) > 0 || (t.confidence || 0) > 0).length;
+    return allTopicsList.filter(t => (t.practiceCount || 0) > 0).length;
   }, [data, allTopicsList]);
 
   const totalConductedCount = data?.counts?.totalAssignedCount || allTopicsList.length;
@@ -224,8 +238,28 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
     if (data) {
       if (activeTab === 'all') {
         list = allTopicsList;
+        if (practiceSubFilter !== 'all') {
+          list = list.filter(t => {
+            const maxP = getMaxTopicPractices(t);
+            const pCount = t.practiceCount || 0;
+            if (practiceSubFilter === 'zero') return pCount === 0;
+            if (practiceSubFilter === 'in_progress') return pCount > 0 && pCount < maxP && t.state !== 'mastered';
+            if (practiceSubFilter === 'locked') return pCount >= maxP || t.state === 'mastered';
+            return true;
+          });
+        }
       } else if (activeTab === 'needsAttention') {
         list = data.needsAttention || [];
+        if (practiceSubFilter !== 'all') {
+          list = list.filter(t => {
+            const maxP = getMaxTopicPractices(t);
+            const pCount = t.practiceCount || 0;
+            if (practiceSubFilter === 'zero') return pCount === 0;
+            if (practiceSubFilter === 'in_progress') return pCount > 0 && pCount < maxP;
+            if (practiceSubFilter === 'locked') return pCount >= maxP;
+            return true;
+          });
+        }
       } else if (activeTab === 'continuePractice') {
         list = data.continuePractice || [];
         if (practiceSubFilter !== 'all') {
@@ -429,7 +463,10 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
             {/* Tab Controls: Uniform 2-Line Symmetric Layout */}
             <LearningTabControls
               activeTab={activeTab}
-              onSelectTab={setActiveTab}
+              onSelectTab={(tab) => {
+                setActiveTab(tab);
+                setPracticeSubFilter('all');
+              }}
               counts={{
                 all: totalConductedCount,
                 needsAttention: data ? data.needsAttention.length : 0,
@@ -439,12 +476,62 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
             />
 
             {/* Practice Sub-filters in ONE Line with Horizontal Touch Scroll */}
-            {activeTab === 'continuePractice' && (
+            {activeTab !== 'mastered' && (
               <LearningPracticeFilterBar
                 activeFilter={practiceSubFilter}
                 onSelectFilter={setPracticeSubFilter}
-                breakdown={practiceBreakdown}
+                breakdown={
+                  activeTab === 'all'
+                    ? allBreakdown
+                    : activeTab === 'needsAttention'
+                    ? focusBreakdown
+                    : practiceBreakdown
+                }
               />
+            )}
+
+            {/* Unpracticed in Focus Cross-Navigation Banner */}
+            {activeTab === 'continuePractice' && focusBreakdown.zero > 0 && (data?.continuePractice?.length || 0) > 0 && (
+              <div style={{
+                marginBottom: '10px',
+                padding: '8px 12px',
+                borderRadius: '8px',
+                background: 'rgba(239, 68, 68, 0.08)',
+                border: '1px solid rgba(239, 68, 68, 0.25)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '8px',
+                fontSize: '11.5px'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text)' }}>
+                  <span>⚠️</span>
+                  <span>
+                    You also have <strong>{focusBreakdown.zero} unpracticed topic{focusBreakdown.zero > 1 ? 's' : ''}</strong> in Focus.
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveTab('needsAttention');
+                    setPracticeSubFilter('zero');
+                  }}
+                  className="btn btn-sm"
+                  style={{
+                    padding: '3px 10px',
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    background: '#ef4444',
+                    color: '#fff',
+                    borderRadius: '16px',
+                    border: 'none',
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  View in Focus ({focusBreakdown.zero}) →
+                </button>
+              </div>
             )}
           </>
         )}
@@ -542,33 +629,69 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
                     </div>
                   </div>
                 ) : activeTab === 'continuePractice' ? (
-                  <div>
-                    <div style={{ fontSize: '28px', marginBottom: '6px' }}>🎉</div>
-                    <div style={{ fontWeight: 800, fontSize: '14px', color: 'var(--text)' }}>All Assigned Practice Completed!</div>
-                    <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px', maxWidth: '460px', margin: '4px auto 0 auto', lineHeight: 1.4 }}>
-                      You have completed all regular practice sets from exams conducted to date. Great work on completing all active practice workouts!
-                    </div>
-                    <div style={{ marginTop: '14px', display: 'flex', justifyContent: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                      {(data?.mastered?.length || 0) > 0 && (
+                  focusBreakdown.zero > 0 ? (
+                    <div>
+                      <div style={{ fontSize: '28px', marginBottom: '6px' }}>🎯</div>
+                      <div style={{ fontWeight: 800, fontSize: '14px', color: 'var(--text)' }}>
+                        {focusBreakdown.zero} Unpracticed Topic{focusBreakdown.zero > 1 ? 's' : ''} in Focus
+                      </div>
+                      <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px', maxWidth: '460px', margin: '4px auto 0 auto', lineHeight: 1.4 }}>
+                        You have {focusBreakdown.zero} topic{focusBreakdown.zero > 1 ? 's' : ''} with 0 practice workouts yet waiting in your Focus tab to build foundation.
+                      </div>
+                      <div style={{ marginTop: '14px', display: 'flex', justifyContent: 'center', gap: '8px', flexWrap: 'wrap' }}>
                         <button
                           type="button"
-                          onClick={() => setActiveTab('mastered')}
+                          onClick={() => {
+                            setActiveTab('needsAttention');
+                            setPracticeSubFilter('zero');
+                          }}
                           className="btn btn-sm btn-primary"
                           style={{ fontSize: '12px', padding: '6px 14px', borderRadius: '20px' }}
                         >
-                          🏆 View {data?.mastered?.length} Mastered Topics
+                          🚨 Practice Focus Topics ({focusBreakdown.zero}) →
                         </button>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => setActiveTab('all')}
-                        className="btn btn-sm"
-                        style={{ fontSize: '12px', padding: '6px 14px', borderRadius: '20px', border: '1px solid var(--border-light)', background: 'var(--bg-soft)' }}
-                      >
-                        📋 View All {totalConductedCount} Conducted Topics
-                      </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setActiveTab('all');
+                            setPracticeSubFilter('zero');
+                          }}
+                          className="btn btn-sm"
+                          style={{ fontSize: '12px', padding: '6px 14px', borderRadius: '20px', border: '1px solid var(--border-light)', background: 'var(--bg-soft)' }}
+                        >
+                          📋 View All Unpracticed ({allBreakdown.zero}) →
+                        </button>
+                      </div>
                     </div>
-                  </div>
+                  ) : (
+                    <div>
+                      <div style={{ fontSize: '28px', marginBottom: '6px' }}>🎉</div>
+                      <div style={{ fontWeight: 800, fontSize: '14px', color: 'var(--text)' }}>All Assigned Practice Completed!</div>
+                      <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px', maxWidth: '460px', margin: '4px auto 0 auto', lineHeight: 1.4 }}>
+                        You have completed all regular practice sets from exams conducted to date. Great work on completing all active practice workouts!
+                      </div>
+                      <div style={{ marginTop: '14px', display: 'flex', justifyContent: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                        {(data?.mastered?.length || 0) > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => setActiveTab('mastered')}
+                            className="btn btn-sm btn-primary"
+                            style={{ fontSize: '12px', padding: '6px 14px', borderRadius: '20px' }}
+                          >
+                            🏆 View {data?.mastered?.length} Mastered Topics
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => setActiveTab('all')}
+                          className="btn btn-sm"
+                          style={{ fontSize: '12px', padding: '6px 14px', borderRadius: '20px', border: '1px solid var(--border-light)', background: 'var(--bg-soft)' }}
+                        >
+                          📋 View All {totalConductedCount} Conducted Topics
+                        </button>
+                      </div>
+                    </div>
+                  )
                 ) : (
                   <div style={{ color: 'var(--text-muted)', fontSize: '13px' }}>📚 No topics found in this category.</div>
                 )}
