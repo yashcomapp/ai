@@ -180,9 +180,13 @@ export default function DailyPracticeSummaryPage() {
   const [selectedBatchId, setSelectedBatchId] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
 
+  // Fallback verified earliest exam date in the system (Exam 001)
+  const DEFAULT_EARLIEST_EXAM_DATE = '2026-09-12';
+
   // Date range and duration presets
   const getTodayISTStr = () => getDateKeyIST(new Date());
 
+  const [earliestExamDate, setEarliestExamDate] = useState<string>(DEFAULT_EARLIEST_EXAM_DATE);
   const [durationPreset, setDurationPreset] = useState<DurationPreset>('today');
   const [startDate, setStartDate] = useState<string>(getTodayISTStr());
   const [endDate, setEndDate] = useState<string>(getTodayISTStr());
@@ -218,6 +222,9 @@ export default function DailyPracticeSummaryPage() {
         const data = await res.json();
         setStudents(data.students || []);
         setBatches(data.batches || []);
+        if (data.earliestExamDate) {
+          setEarliestExamDate(data.earliestExamDate);
+        }
       }
     } catch (e) {
       console.error('Error loading practice summary:', e);
@@ -226,50 +233,61 @@ export default function DailyPracticeSummaryPage() {
     }
   };
 
-  // Preset switcher helper
+  // Preset switcher helper with earliest exam bound protection
   const handlePresetChange = (preset: DurationPreset) => {
     setDurationPreset(preset);
     const today = new Date();
     const todayStr = getDateKeyIST(today);
 
+    const clampStart = (candidate: string) => (candidate < earliestExamDate ? earliestExamDate : candidate);
+
     if (preset === 'today') {
-      setStartDate(todayStr);
+      const s = clampStart(todayStr);
+      setStartDate(s);
       setEndDate(todayStr);
-      loadData(todayStr, todayStr);
+      loadData(s, todayStr);
     } else if (preset === 'yesterday') {
       const y = new Date(today);
       y.setDate(y.getDate() - 1);
-      const yStr = getDateKeyIST(y);
-      setStartDate(yStr);
-      setEndDate(yStr);
-      loadData(yStr, yStr);
+      const s = clampStart(getDateKeyIST(y));
+      setStartDate(s);
+      setEndDate(s);
+      loadData(s, s);
     } else if (preset === '7d') {
       const d = new Date(today);
       d.setDate(d.getDate() - 6);
-      const sStr = getDateKeyIST(d);
-      setStartDate(sStr);
+      const s = clampStart(getDateKeyIST(d));
+      setStartDate(s);
       setEndDate(todayStr);
-      loadData(sStr, todayStr);
+      loadData(s, todayStr);
     } else if (preset === '14d') {
       const d = new Date(today);
       d.setDate(d.getDate() - 13);
-      const sStr = getDateKeyIST(d);
-      setStartDate(sStr);
+      const s = clampStart(getDateKeyIST(d));
+      setStartDate(s);
       setEndDate(todayStr);
-      loadData(sStr, todayStr);
+      loadData(s, todayStr);
     } else if (preset === '30d') {
       const d = new Date(today);
       d.setDate(d.getDate() - 29);
-      const sStr = getDateKeyIST(d);
-      setStartDate(sStr);
+      const s = clampStart(getDateKeyIST(d));
+      setStartDate(s);
       setEndDate(todayStr);
-      loadData(sStr, todayStr);
+      loadData(s, todayStr);
     } else if (preset === 'thisMonth') {
       const first = new Date(today.getFullYear(), today.getMonth(), 1);
-      const sStr = getDateKeyIST(first);
-      setStartDate(sStr);
+      const s = clampStart(getDateKeyIST(first));
+      setStartDate(s);
       setEndDate(todayStr);
-      loadData(sStr, todayStr);
+      loadData(s, todayStr);
+    } else if (preset === 'custom') {
+      // Clamping custom range bounds: cannot be prior to earliest exam date
+      if (startDate < earliestExamDate) {
+        setStartDate(earliestExamDate);
+      }
+      if (endDate > todayStr) {
+        setEndDate(todayStr);
+      }
     }
     // 'custom' does not auto-fetch until user applies or picks date
   };
@@ -279,8 +297,21 @@ export default function DailyPracticeSummaryPage() {
       alert('Please select both from and to dates.');
       return;
     }
+    const todayStr = getTodayISTStr();
+    if (startDate < earliestExamDate) {
+      alert(`Start date cannot be prior to the first exam record (${formatDateDMY(earliestExamDate)}). Adjusting start date to ${formatDateDMY(earliestExamDate)}.`);
+      setStartDate(earliestExamDate);
+      loadData(earliestExamDate, endDate > todayStr ? todayStr : endDate);
+      return;
+    }
     if (startDate > endDate) {
       alert('Start date must be before or equal to end date.');
+      return;
+    }
+    if (endDate > todayStr) {
+      alert('End date cannot be in the future.');
+      setEndDate(todayStr);
+      loadData(startDate, todayStr);
       return;
     }
     loadData(startDate, endDate);
@@ -323,10 +354,11 @@ export default function DailyPracticeSummaryPage() {
     return `${formatDateDMY(startDate)} – ${formatDateDMY(endDate)}`;
   };
 
-  // Calculate duration in days
+  // Calculate duration in days (strictly clamped to earliest exam record to avoid false penalty days)
   const durationDays = useMemo(() => {
     try {
-      const d1 = new Date(startDate);
+      const effStart = startDate < earliestExamDate ? earliestExamDate : startDate;
+      const d1 = new Date(effStart);
       const d2 = new Date(endDate);
       const diffTime = Math.abs(d2.getTime() - d1.getTime());
       const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24)) + 1;
@@ -334,7 +366,7 @@ export default function DailyPracticeSummaryPage() {
     } catch (_) {
       return 1;
     }
-  }, [startDate, endDate]);
+  }, [startDate, endDate, earliestExamDate]);
 
   const selectedBatchName = selectedBatchId === 'all' 
     ? 'All Batches' 
@@ -868,7 +900,7 @@ export default function DailyPracticeSummaryPage() {
               <button type="button" onClick={() => handlePresetChange('thisMonth')} style={getPresetBtnStyle(durationPreset === 'thisMonth')}>
                 This Month
               </button>
-              <button type="button" onClick={() => setDurationPreset('custom')} style={getPresetBtnStyle(durationPreset === 'custom')}>
+              <button type="button" onClick={() => handlePresetChange('custom')} style={getPresetBtnStyle(durationPreset === 'custom')}>
                 Custom Range
               </button>
             </div>
@@ -912,32 +944,68 @@ export default function DailyPracticeSummaryPage() {
 
           {/* Row 2: Custom Date Inputs (when 'custom' preset is selected) */}
           {durationPreset === 'custom' && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', padding: '10px 12px', background: 'var(--bg-soft)', borderRadius: '6px', border: '1px solid var(--border-light)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)' }}>From:</span>
-                <DateInputDMY value={startDate} onChange={(val) => setStartDate(val)} style={{ width: '135px' }} inputStyle={{ padding: '6px 24px 6px 8px', background: 'var(--surface)', fontWeight: 700, fontSize: '12px' }} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '10px 12px', background: 'var(--bg-soft)', borderRadius: '6px', border: '1px solid var(--border-light)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)' }}>From:</span>
+                  <DateInputDMY 
+                    value={startDate} 
+                    min={earliestExamDate} 
+                    max={endDate || getTodayISTStr()} 
+                    onChange={(val) => {
+                      if (val && val < earliestExamDate) {
+                        setStartDate(earliestExamDate);
+                      } else {
+                        setStartDate(val);
+                      }
+                    }} 
+                    style={{ width: '135px' }} 
+                    inputStyle={{ padding: '6px 24px 6px 8px', background: 'var(--surface)', fontWeight: 700, fontSize: '12px' }} 
+                  />
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)' }}>To:</span>
+                  <DateInputDMY 
+                    value={endDate} 
+                    min={startDate || earliestExamDate} 
+                    max={getTodayISTStr()} 
+                    onChange={(val) => {
+                      if (val && val > getTodayISTStr()) {
+                        setEndDate(getTodayISTStr());
+                      } else if (val && val < earliestExamDate) {
+                        setEndDate(earliestExamDate);
+                      } else {
+                        setEndDate(val);
+                      }
+                    }} 
+                    style={{ width: '135px' }} 
+                    inputStyle={{ padding: '6px 24px 6px 8px', background: 'var(--surface)', fontWeight: 700, fontSize: '12px' }} 
+                  />
+                </div>
+                <button 
+                  type="button" 
+                  onClick={handleApplyCustomRange}
+                  disabled={loading}
+                  style={{
+                    padding: '6px 14px',
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    borderRadius: '6px',
+                    background: 'var(--primary)',
+                    color: '#ffffff',
+                    border: 'none',
+                    cursor: loading ? 'wait' : 'pointer'
+                  }}
+                >
+                  Apply Range ➔
+                </button>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)' }}>To:</span>
-                <DateInputDMY value={endDate} onChange={(val) => setEndDate(val)} style={{ width: '135px' }} inputStyle={{ padding: '6px 24px 6px 8px', background: 'var(--surface)', fontWeight: 700, fontSize: '12px' }} />
+
+              {/* Informative helper badge showing first exam bound */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: 'var(--text-muted)' }}>
+                <span>ℹ️</span>
+                <span>First exam conducted on <strong>{formatDateDMY(earliestExamDate)}</strong>. Custom range is constrained between <strong>{formatDateDMY(earliestExamDate)}</strong> and today.</span>
               </div>
-              <button 
-                type="button" 
-                onClick={handleApplyCustomRange}
-                disabled={loading}
-                style={{
-                  padding: '6px 14px',
-                  fontSize: '12px',
-                  fontWeight: 700,
-                  borderRadius: '6px',
-                  background: 'var(--primary)',
-                  color: '#ffffff',
-                  border: 'none',
-                  cursor: loading ? 'wait' : 'pointer'
-                }}
-              >
-                Apply Range ➔
-              </button>
             </div>
           )}
 

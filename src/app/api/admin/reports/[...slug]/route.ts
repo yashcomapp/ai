@@ -61,6 +61,11 @@ async function handleDailyPractice(req: NextRequest) {
     startDate = endDate;
   }
 
+  const earliestExamDate = await ReportService.getEarliestExamDate();
+  if (startDate && startDate < earliestExamDate) {
+    startDate = earliestExamDate;
+  }
+
   const cacheKey = `admin_report_daily_practice_${startDate}_${endDate}`;
   if (!refresh) {
     const cached = getFromCache<any>(cacheKey);

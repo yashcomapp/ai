@@ -69,7 +69,14 @@ export default function DateInputDMY({
       const year = parseInt(y, 10);
 
       if (month >= 1 && month <= 12 && day >= 1 && day <= 31 && year >= 1900 && year <= 2100) {
-        const iso = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        let iso = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        if (min && iso < min) {
+          iso = min;
+          setDisplayText(formatToDDMMYYYY(min));
+        } else if (max && iso > max) {
+          iso = max;
+          setDisplayText(formatToDDMMYYYY(max));
+        }
         onChange(iso);
       }
     } else if (raw === '') {
@@ -78,8 +85,10 @@ export default function DateInputDMY({
   };
 
   const handlePickerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const pickedIso = e.target.value; // YYYY-MM-DD
+    let pickedIso = e.target.value; // YYYY-MM-DD
     if (pickedIso) {
+      if (min && pickedIso < min) pickedIso = min;
+      if (max && pickedIso > max) pickedIso = max;
       onChange(pickedIso);
       setDisplayText(formatToDDMMYYYY(pickedIso));
     }

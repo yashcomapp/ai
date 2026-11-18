@@ -181,6 +181,32 @@ export class ReportService {
     return result;
   }
 
+  private static cachedEarliestExamDate: string | null = null;
+  static async getEarliestExamDate(): Promise<string> {
+    if (this.cachedEarliestExamDate) return this.cachedEarliestExamDate;
+    try {
+      const snap = await adminDb.collection('exams').orderBy('createdAt', 'asc').limit(1).get();
+      if (!snap.empty) {
+        const doc = snap.docs[0];
+        const data = doc.data();
+        const match = doc.id.match(/-(\d{2})(\d{2})(\d{2})$/);
+        if (match) {
+          this.cachedEarliestExamDate = `20${match[3]}-${match[2]}-${match[1]}`;
+        } else if (data.scheduledDate) {
+          this.cachedEarliestExamDate = data.scheduledDate;
+        } else if (data.createdAt?.toDate) {
+          this.cachedEarliestExamDate = data.createdAt.toDate().toISOString().slice(0, 10);
+        }
+      }
+    } catch (err) {
+      console.warn('[ReportService.getEarliestExamDate] Failed to fetch earliest exam:', err);
+    }
+    if (!this.cachedEarliestExamDate) {
+      this.cachedEarliestExamDate = '2026-09-12';
+    }
+    return this.cachedEarliestExamDate;
+  }
+
   /**
    * Daily Practice Report with IST day boundaries and caching.
    * Supports both single date and date range / duration queries.
@@ -201,6 +227,11 @@ export class ReportService {
       startDateStr = targetDateOrParams.startDate || targetDateOrParams.targetDateStr || getDateKeyIST();
       endDateStr = targetDateOrParams.endDate || startDateStr;
       forceRefresh = targetDateOrParams.forceRefresh || forceRefreshParam;
+    }
+
+    const earliestExamDate = await ReportService.getEarliestExamDate();
+    if (startDateStr < earliestExamDate) {
+      startDateStr = earliestExamDate;
     }
 
     const startOfRange = new Date(`${startDateStr}T00:00:00+05:30`);
@@ -422,6 +453,7 @@ export class ReportService {
       success: true,
       startDate: startDateStr,
       endDate: endDateStr,
+      earliestExamDate,
       date: startDateStr === endDateStr ? startDateStr : `${startDateStr} to ${endDateStr}`,
       isRange: startDateStr !== endDateStr,
       batches,
