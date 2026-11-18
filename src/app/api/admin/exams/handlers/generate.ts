@@ -139,9 +139,15 @@ export async function GET(req: NextRequest) {
                          usedInExamsSet.has(String(q.id || '').trim()) || 
                          usedInExamsSet.has(String(q.questionCode || '').trim());
           const unusedMatch = !isUsed;
+          // When generating standard/regular tests, all curriculum questions in the selected topics
+          // (standard, foundation, practice, school, objective) are eligible candidates.
+          // For foundation/olympiad mocks, questions tagged foundation, hard difficulty, or standard are eligible.
           const categoryMatch = !examCategory || 
                                 examCategory === 'mock' || 
-                                (examCategory === 'foundation' ? (q.examCategory === 'foundation' || q.difficulty === 'hard' || (q.examCategory || 'standard') === 'standard') : (q.examCategory || 'standard') === examCategory);
+                                examCategory === 'standard' ||
+                                (examCategory === 'foundation' 
+                                  ? (q.examCategory === 'foundation' || q.difficulty === 'hard' || (q.examCategory || 'standard') === 'standard') 
+                                  : true);
 
           // Chapter boundary check if chapterNumbers are provided
           if (chapterNumbers.length > 0) {
@@ -195,7 +201,9 @@ export async function GET(req: NextRequest) {
         });
 
       const poolResponse = { success: true, count: pool.length, questions: pool, pool };
-      POOL_CACHE.set(poolCacheKey, { data: poolResponse, timestamp: Date.now() });
+      if (pool.length > 0) {
+        POOL_CACHE.set(poolCacheKey, { data: poolResponse, timestamp: Date.now() });
+      }
       return NextResponse.json(poolResponse);
     }
 
