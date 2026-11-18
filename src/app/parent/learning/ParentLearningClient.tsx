@@ -78,7 +78,7 @@ export default function ParentLearningClient() {
     { revalidateOnFocus: false, dedupingInterval: 60000 }
   );
 
-  const [activeTab, setActiveTab] = useState<'needsAttention' | 'continuePractice' | 'mastered'>('needsAttention');
+  const [activeTab, setActiveTab] = useState<'all' | 'needsAttention' | 'continuePractice' | 'mastered'>('needsAttention');
   const [practiceSubFilter, setPracticeSubFilter] = useState<'all' | 'zero' | 'in_progress' | 'locked'>('all');
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -86,20 +86,37 @@ export default function ParentLearningClient() {
   const [expandedSubjects, toggleSubject, isSubjectExpanded, setExpandedSubjects] = useToggleSet();
   const [expandedChapters, toggleChapterSet, isChapterExpanded, setExpandedChapters] = useToggleSet();
 
-  // Auto-expand first subject on load
+  // Auto-expand all subjects & chapters on load + smart defaulting
   useEffect(() => {
-    if (data && expandedSubjects.size === 0) {
-      const firstSub = [
+    if (data) {
+      const allSubjs = new Set<string>();
+      const allChaps = new Set<string>();
+      [
         ...data.needsAttention,
         ...data.continuePractice,
-        ...data.revision,
+        ...(data.revision || []),
         ...data.mastered
-      ][0]?.subjectName;
-      if (firstSub) {
-        setExpandedSubjects(new Set([firstSub]));
+      ].forEach(t => {
+        if (t.subjectName) allSubjs.add(t.subjectName);
+        if (t.subjectName && t.chapterName) allChaps.add(`${t.subjectName}||${t.chapterName}`);
+      });
+      if (expandedSubjects.size === 0 && allSubjs.size > 0) {
+        setExpandedSubjects(allSubjs);
+      }
+      if (expandedChapters.size === 0 && allChaps.size > 0) {
+        setExpandedChapters(allChaps);
+      }
+
+      // Smart tab defaulting: If focus (needsAttention) has 0 topics, switch to practice or all
+      if ((data.needsAttention || []).length === 0) {
+        if ((data.continuePractice || []).length > 0) {
+          setActiveTab('continuePractice');
+        } else if ((data.mastered || []).length > 0) {
+          setActiveTab('all');
+        }
       }
     }
-  }, [data, expandedSubjects.size, setExpandedSubjects]);
+  }, [data]);
 
   const toggleChapter = (subjName: string, chapterName: string) => {
     toggleChapterSet(`${subjName}||${chapterName}`);
@@ -124,7 +141,8 @@ export default function ParentLearningClient() {
   const currentTabTopics = useMemo(() => {
     if (!data) return [];
     let list: LearningTopicItem[] = [];
-    if (activeTab === 'needsAttention') list = data.needsAttention || [];
+    if (activeTab === 'all') list = allTopicsList;
+    else if (activeTab === 'needsAttention') list = data.needsAttention || [];
     else if (activeTab === 'continuePractice') {
       list = (data.continuePractice || []).filter(t => {
         const pCount = t.practiceCount || 0;
@@ -286,6 +304,7 @@ export default function ParentLearningClient() {
               activeTab={activeTab}
               onSelectTab={setActiveTab}
               counts={{
+                all: totalConductedCount,
                 needsAttention: data.needsAttention?.length || 0,
                 continuePractice: data.continuePractice?.length || 0,
                 mastered: data.mastered?.length || 0

@@ -18,9 +18,10 @@ import { MASTERY_THRESHOLDS, getRequiredConfidence } from '@/lib/dashboardMetric
 import { LearningTopicItem, StudentLearningTopicItem, LearningPathData } from '@/types/learning.types';
 import { LearningStatusBar, LearningTabControls, LearningPracticeFilterBar } from '@/components/learning';
 
-const getMaxTopicPractices = (_topic?: any): number => {
-  // Single Source of Truth (SSOT): All topics have strictly 2 practice sets assigned (Target: 12 Qs)
-  return 2;
+const getMaxTopicPractices = (topic?: any): number => {
+  // SSOT Rule 2T: Dynamic practice sets reflecting topic scope (Minor: 2, Medium: 3, Major: 4)
+  const req = topic?.requiredConfidence || getRequiredConfidence(topic?.topicClassification, topic?.targetQuestions);
+  return Math.max(2, Math.round(req / 6));
 };
 
 export default function StudentLearning({ initialData }: { initialData?: LearningPathData }) {
@@ -84,24 +85,38 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
   const error = swrError?.message || '';
   const loading = isLoading && !data;
 
-  // Auto-expand first subject by default on data load
+  // Auto-expand all subjects and chapters by default so topics are never hidden
   const [expandedSubjects, toggleSubject, isSubjectExpanded, setExpandedSubjects] = useToggleSet();
   const [expandedChapters, toggleChapterSet, isChapterExpanded, setExpandedChapters] = useToggleSet();
 
+  const [activeTab, setActiveTab] = useState<'all' | 'needsAttention' | 'continuePractice' | 'mastered'>('needsAttention');
+
   useEffect(() => {
-    if (data && expandedSubjects.size === 0) {
-      const firstSub = [
-        ...data.needsAttention,
-        ...data.continuePractice,
-        ...data.mastered
-      ].map(t => t.subjectName).filter(Boolean)[0];
-      if (firstSub) {
-        setExpandedSubjects(new Set([firstSub]));
+    if (data) {
+      const allSubjs = new Set<string>();
+      const allChaps = new Set<string>();
+      [...data.needsAttention, ...data.continuePractice, ...data.mastered].forEach(t => {
+        const sName = t.subjectName || getCanonicalSubjectName(t.subjectCode, t.topicCode, t.chapterName);
+        if (sName) allSubjs.add(sName);
+        if (sName && t.chapterName) allChaps.add(`${sName}||${t.chapterName}`);
+      });
+      if (expandedSubjects.size === 0 && allSubjs.size > 0) {
+        setExpandedSubjects(allSubjs);
+      }
+      if (expandedChapters.size === 0 && allChaps.size > 0) {
+        setExpandedChapters(allChaps);
+      }
+
+      // Smart tab defaulting: If focus (needsAttention) has 0 topics, switch to practice or all
+      if ((data.needsAttention || []).length === 0) {
+        if ((data.continuePractice || []).length > 0) {
+          setActiveTab('continuePractice');
+        } else if ((data.mastered || []).length > 0) {
+          setActiveTab('all');
+        }
       }
     }
   }, [data]);
-
-  const [activeTab, setActiveTab] = useState<'needsAttention' | 'continuePractice' | 'mastered'>('needsAttention');
   const [practiceSubFilter, setPracticeSubFilter] = useState<'all' | 'zero' | 'in_progress' | 'locked'>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [alertMsg, setAlertMsg] = useState<{ text: string; isError: boolean } | null>(null);
@@ -213,7 +228,9 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
   const { grouped, sortedSubjects, topicsList } = useMemo(() => {
     let list: StudentLearningTopicItem[] = [];
     if (data) {
-      if (activeTab === 'needsAttention') {
+      if (activeTab === 'all') {
+        list = allTopicsList;
+      } else if (activeTab === 'needsAttention') {
         list = data.needsAttention || [];
       } else if (activeTab === 'continuePractice') {
         list = data.continuePractice || [];
@@ -420,6 +437,7 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
               activeTab={activeTab}
               onSelectTab={setActiveTab}
               counts={{
+                all: totalConductedCount,
                 needsAttention: data ? data.needsAttention.length : 0,
                 continuePractice: data ? data.continuePractice.length : 0,
                 mastered: data ? data.mastered.length : 0
@@ -508,13 +526,53 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
                     <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
                       No topics currently need urgent remediation. Everything tested is progressing solidly!
                     </div>
+                    <div style={{ marginTop: '14px', display: 'flex', justifyContent: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                      {(data?.continuePractice?.length || 0) > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setActiveTab('continuePractice')}
+                          className="btn btn-sm btn-primary"
+                          style={{ fontSize: '12px', padding: '6px 14px', borderRadius: '20px' }}
+                        >
+                          🔄 View {data?.continuePractice?.length} Practice Topics
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab('all')}
+                        className="btn btn-sm"
+                        style={{ fontSize: '12px', padding: '6px 14px', borderRadius: '20px', border: '1px solid var(--border-light)', background: 'var(--bg-soft)' }}
+                      >
+                        📋 View All {totalConductedCount} Conducted Topics
+                      </button>
+                    </div>
                   </div>
                 ) : activeTab === 'continuePractice' ? (
                   <div>
                     <div style={{ fontSize: '28px', marginBottom: '6px' }}>🎉</div>
                     <div style={{ fontWeight: 800, fontSize: '14px', color: 'var(--text)' }}>All Assigned Practice Completed!</div>
                     <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px', maxWidth: '460px', margin: '4px auto 0 auto', lineHeight: 1.4 }}>
-                      You have completed all practice sets and mastered all topics assigned from exams conducted to date. Next practice pools will automatically unlock when your teacher conducts upcoming exams.
+                      You have completed all regular practice sets from exams conducted to date. Practice Revision workout is always available on all mastered topics below!
+                    </div>
+                    <div style={{ marginTop: '14px', display: 'flex', justifyContent: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                      {(data?.mastered?.length || 0) > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setActiveTab('mastered')}
+                          className="btn btn-sm btn-primary"
+                          style={{ fontSize: '12px', padding: '6px 14px', borderRadius: '20px' }}
+                        >
+                          🏆 Practice Revision on {data?.mastered?.length} Mastered Topics
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab('all')}
+                        className="btn btn-sm"
+                        style={{ fontSize: '12px', padding: '6px 14px', borderRadius: '20px', border: '1px solid var(--border-light)', background: 'var(--bg-soft)' }}
+                      >
+                        📋 View All {totalConductedCount} Conducted Topics
+                      </button>
                     </div>
                   </div>
                 ) : (
@@ -672,11 +730,13 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
                                       const isAbsent = !!topic.isAbsentExam;
                                       const state = topic.state;
                                       const practiceCount = topic.practiceCount || 0;
-                                      const maxPractices = 2; // Unified SSOT: exactly 2 practice sets assigned
-                                      const reqMasteryQs = 12; // 2 sets * 6 questions = 12 Qs to Master
+                                      const maxPractices = getMaxTopicPractices(topic);
+                                      const reqMasteryQs = topic.requiredConfidence || getRequiredConfidence(topic.topicClassification, topic.targetQuestions);
                                       const isLimitReached = practiceCount >= maxPractices;
                                       const isMasteredState = state === 'mastered';
-                                      const targetUrl = `/student/topic?topicCode=${encodeURIComponent(topic.topicCode)}&category=${topic.state}`;
+                                      const targetUrl = isMasteredState 
+                                        ? `/student/topic?topicCode=${encodeURIComponent(topic.topicCode)}&category=revision`
+                                        : `/student/topic?topicCode=${encodeURIComponent(topic.topicCode)}&category=${topic.state}`;
 
                                       // Status styling
                                       let statusBadgeColor = 'var(--text-muted)';
@@ -709,7 +769,7 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
                                         if (isLimitReached) {
                                           expIcon = '🔒';
                                           expColor = 'var(--text-muted)';
-                                          expText = `${practiceCount}/2 practices done (${mastery}% accuracy). Quota reached. Consult teacher for re-teaching or unlock.`;
+                                          expText = `${practiceCount}/${maxPractices} practices done (${mastery}% accuracy). Quota reached. Switch to Revision workout or consult teacher.`;
                                         } else if (isAbsent) {
                                           expIcon = '⚠️';
                                           expColor = 'var(--danger)';
@@ -717,11 +777,11 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
                                         } else if (attempts === 0) {
                                           expIcon = '⚪';
                                           expColor = 'var(--text-muted)';
-                                          expText = 'Never practiced yet (0/2 sets). Start 1st practice to assess concept baseline.';
+                                          expText = `Never practiced yet (0/${maxPractices} sets). Start 1st practice to assess concept baseline.`;
                                         } else {
                                           expIcon = '🚨';
                                           expColor = 'var(--danger)';
-                                          expText = `${practiceCount}/2 practices done (${mastery}% accuracy). ${Math.max(0, 2 - practiceCount)} practice set(s) left — focus on weak areas.`;
+                                          expText = `${practiceCount}/${maxPractices} practices done (${mastery}% accuracy). ${Math.max(0, maxPractices - practiceCount)} practice set(s) left — focus on weak areas.`;
                                         }
                                       } else if (state === 'practicing' || state === 'continuePractice' || state === 'revision') {
                                         if (mastery >= MASTERY_THRESHOLDS.MASTERED_MIN && attempts < reqMasteryQs) {
@@ -732,16 +792,16 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
                                         } else if (isLimitReached) {
                                           expIcon = '🔒';
                                           expColor = 'var(--text-muted)';
-                                          expText = '2/2 practices done (${mastery}% accuracy). Practice quota completed.';
+                                          expText = `${practiceCount}/${maxPractices} practices done (${mastery}% accuracy). Practice quota completed. Revision mode available.`;
                                         } else {
                                           expIcon = '📈';
                                           expColor = 'var(--warning)';
-                                          expText = `${practiceCount}/2 practices done (${mastery}% accuracy). Complete Practice Set ${practiceCount + 1} (6 Qs) to aim for 90%+ Mastered.`;
+                                          expText = `${practiceCount}/${maxPractices} practices done (${mastery}% accuracy). Complete Practice Set ${practiceCount + 1} (6 Qs) to aim for 90%+ Mastered.`;
                                         }
                                       } else if (state === 'mastered') {
                                         expIcon = '⭐';
                                         expColor = 'var(--success)';
-                                        expText = `Mastered (${mastery}% accuracy across ${attempts} verified questions). Concept complete.`;
+                                        expText = `Mastered (${mastery}% accuracy across ${attempts} verified questions). Concept complete — Practice Revision workout anytime.`;
                                       } else {
                                         expIcon = '⚪';
                                         expColor = 'var(--text-muted)';
@@ -749,14 +809,14 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
                                       }
 
                                       let btnLabel = isLimitReached && !isMasteredState
-                                        ? `🔒 Quota Used (${practiceCount}/2)`
+                                        ? `🔒 Quota Used (${practiceCount}/${maxPractices})`
                                         : (practiceCount === 0 ? 'Start 1st Practice →' : `Practice Set ${practiceCount + 1} →`);
 
                                       return (
                                         <div
                                           key={topic.topicCode}
                                           onClick={() => {
-                                            if (!isMasteredState) router.push(targetUrl);
+                                            router.push(targetUrl);
                                           }}
                                           style={{
                                             background: 'var(--surface)',
@@ -766,9 +826,9 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
                                             display: 'flex',
                                             flexDirection: 'column',
                                             gap: '8px',
-                                            cursor: isMasteredState ? 'default' : 'pointer'
+                                            cursor: 'pointer'
                                           }}
-                                          className={isMasteredState ? '' : 'topic-card-hover'}
+                                          className="topic-card-hover"
                                         >
                                           {/* Row 1: Topic Name & Status Badge */}
                                           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px' }}>
@@ -797,10 +857,10 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
                                           {/* Row 3: Metrics (Practiced, Confidence, Last Activity) */}
                                           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', fontSize: '11.5px', color: 'var(--text-muted)' }}>
                                             <span style={{ fontWeight: 600, color: practiceCount === 0 ? '#ef4444' : 'var(--text)' }}>
-                                              🎯 {practiceCount === 0 ? '0/2 Sets (Never Practiced)' : `${practiceCount}/2 Practices Done`}
+                                              🎯 {practiceCount === 0 ? `0/${maxPractices} Sets (Never Practiced)` : `${practiceCount}/${maxPractices} Practices Done`}
                                             </span>
                                             <span>•</span>
-                                            <span>📊 {confidence}% Confidence ({attempts}/12 Qs)</span>
+                                            <span>📊 {confidence}% Confidence ({attempts}/{reqMasteryQs} Qs)</span>
                                             <span>•</span>
                                             <span>🕒 {formatDateOrFallback(topic.lastAttempt, 'Never')}</span>
                                           </div>

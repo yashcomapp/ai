@@ -113,9 +113,10 @@ LearningStatusBar.displayName = 'LearningStatusBar';
 // 2. Learning Tab Controls (SSOT Symmetric 2-Line Tab Layout)
 // ==============================================================================
 export interface LearningTabControlsProps {
-  activeTab: 'needsAttention' | 'continuePractice' | 'mastered';
-  onSelectTab: (tab: 'needsAttention' | 'continuePractice' | 'mastered') => void;
+  activeTab: 'all' | 'needsAttention' | 'continuePractice' | 'mastered';
+  onSelectTab: (tab: 'all' | 'needsAttention' | 'continuePractice' | 'mastered') => void;
   counts: {
+    all?: number;
     needsAttention: number;
     continuePractice: number;
     mastered: number;
@@ -129,6 +130,29 @@ export const LearningTabControls: React.FC<LearningTabControlsProps> = React.mem
 }) => {
   return (
     <div className="review-tabs" style={{ display: 'flex', gap: '6px', marginBottom: '10px', borderBottom: 'none' }}>
+      {counts.all !== undefined && (
+        <button 
+          className={`tab-btn ${activeTab === 'all' ? 'active' : ''}`} 
+          onClick={() => onSelectTab('all')}
+          style={{
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '8px 4px',
+            borderBottom: activeTab === 'all' ? '2px solid var(--accent)' : '2px solid transparent'
+          }}
+        >
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap', fontSize: '13px', fontWeight: 700 }}>
+            <span>📋</span><span>All</span>
+          </span>
+          <span className="tab-count" style={{ marginTop: '4px', marginInline: 'auto' }}>
+            {counts.all}
+          </span>
+        </button>
+      )}
+
       <button 
         className={`tab-btn ${activeTab === 'needsAttention' ? 'active' : ''}`} 
         onClick={() => onSelectTab('needsAttention')}
