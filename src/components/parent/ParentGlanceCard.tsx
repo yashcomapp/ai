@@ -47,7 +47,7 @@ export const ParentGlanceCard = React.memo(function ParentGlanceCard({
   const avgExamScore = snapshot ? Math.round(snapshot.avgScore || 0) : 0;
   const lqScore = snapshot ? Math.round(snapshot.lqScore ?? snapshot.overallMastery ?? 0) : 0;
   const retentionScore = snapshot?.averageRetention ?? data?.srsStats?.retentionScore ?? 0;
-  const effortsScore = snapshot ? Math.round(snapshot.effortsPercent ?? Math.min(100, Math.round(((snapshot as any)?.practicesCompletedCount || 0) / Math.max(1, (snapshot as any)?.totalTopicsCount || 24) * 100))) : 0;
+  const effortsScore = snapshot ? Math.round(snapshot.effortsPercent ?? 0) : 0;
 
   return (
     <div className="card card-blue" style={{

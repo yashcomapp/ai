@@ -978,7 +978,7 @@ export class ReportService {
         adminDb.collection('users')
           .where('role', '==', 'student')
           .where('studentCode', 'in', chunk)
-          .select('studentCode', 'name', 'status', 'autonomous', 'isAutonomous', 'mode')
+          .select('studentCode', 'name', 'status', 'autonomous', 'isAutonomous', 'mode', 'isDemo', 'demo', 'email', 'role')
           .get()
           .catch(() => null)
       )

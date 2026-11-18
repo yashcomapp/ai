@@ -772,7 +772,8 @@ export async function GET(req: NextRequest) {
         className: data.className || data.class || '',
         status: data.status || 'active',
         autonomous: !!data.autonomous,
-        studentMode: getStudentMode(data)
+        studentMode: getStudentMode(data),
+        isDemo: data.isDemo === true || data.demo === true
       };
     }).filter(s => !!s.studentCode && s.status !== 'inactive' && !isDemoUser(s));
 

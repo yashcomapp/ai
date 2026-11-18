@@ -17,7 +17,7 @@ export { getAssignmentsForBatches, isAssignmentApplicableToStudent };
  */
 export function isDemoUser(user: any): boolean {
   if (!user) return false;
-  if (user.isDemo === true) return true;
+  if (user.isDemo === true || user.demo === true) return true;
   if (user.role === 'demo') return true;
 
   const name = String(user.name || user.studentName || '').trim().toLowerCase();
@@ -31,7 +31,12 @@ export function isDemoUser(user: any): boolean {
     name === 'test parent' ||
     name === 'test student' ||
     name === 'demo student' ||
-    name === 'demo user'
+    name === 'demo user' ||
+    name.includes('student user') ||
+    name.includes('demo student') ||
+    name.includes('demo user') ||
+    name.includes('test student') ||
+    name.includes('test parent')
   ) {
     return true;
   }
@@ -41,14 +46,15 @@ export function isDemoUser(user: any): boolean {
     email === 's@c.com' ||
     email === 'p@c.com' ||
     email === 'parent@yashcom.test' ||
-    email.endsWith('@demo.com') ||
-    email.endsWith('.test')
+    email.includes('demo') ||
+    email.endsWith('.test') ||
+    email.endsWith('@yashcom.test')
   ) {
     return true;
   }
 
   // Known demo student code mapping
-  if (studentCode === 'ST-2026-000001' && (name === 'student user' || email === 's@c.com')) {
+  if (studentCode === 'ST-2026-000001' || studentCode.includes('DEMO')) {
     return true;
   }
 
@@ -540,12 +546,26 @@ export async function getDashboardData(uid: string, userData: any, rangeDays: nu
     // Enrolled classes for syllabus mapping
     const studentClassCode = `${userData.boardCode || 'MH'}-${userData.classNum || userData.class || '10'}`;
     const enrolledClasses = new Set<string>([studentClassCode]);
+    const rawClass = userData.class || userData.className || userData.classNum || '';
+    if (rawClass) {
+      const m = String(rawClass).match(/\d+/);
+      if (m) enrolledClasses.add(m[0]);
+      else enrolledClasses.add(String(rawClass));
+    }
     if (batchIds.length > 0) {
       const batchesSnap = await getCachedBatches();
       batchesSnap.docs.forEach((d: any) => {
         const bData = typeof d.data === 'function' ? d.data() : d;
-        if (batchIds.includes(d.id) && bData.board && bData.class) {
-          enrolledClasses.add(`${bData.board}-${bData.class}`);
+        if (batchIds.includes(d.id)) {
+          if (bData.board && bData.class) {
+            enrolledClasses.add(`${bData.board}-${bData.class}`);
+          }
+          const cls = bData.class || bData.classCode;
+          if (cls) {
+            const m = String(cls).match(/\d+/);
+            if (m) enrolledClasses.add(m[0]);
+            else enrolledClasses.add(String(cls));
+          }
         }
       });
     }

@@ -20,6 +20,7 @@ const { validateStudentCode, validateBoardCode, validateSubjectCode, validateTop
 const { isTopicPurelyQualitative, validateQuestionCurriculum } = require('../src/lib/curriculumGuard.ts');
 const { getStudentMode, getStudentModeSuffix, resolveRegistrationMode } = require('../src/types/user.types.ts');
 const { isStudentLimited } = require('../src/lib/auth.ts');
+const { isDemoUser } = require('../src/lib/studentDb.ts');
 
 
 console.log('================================================================');
@@ -1039,6 +1040,36 @@ test('Ungated/unknown state strictly defaults to neutral ⚪, NEVER false Master
   });
   assert.strictEqual(result.expIcon, '⚪');
   assert.strictEqual(result.expText.includes('Mastered'), false);
+});
+
+// -----------------------------------------------------------------------------
+// SUITE 17: Demo Account Exclusion & Filter Guard Invariants
+// -----------------------------------------------------------------------------
+console.log('\n--- Suite 17: Demo Account Exclusion & Filter Guard Invariants ---');
+
+test('Demo student named "Student User" is strictly identified as demo', () => {
+  assert.strictEqual(isDemoUser({ name: 'Student User' }), true);
+  assert.strictEqual(isDemoUser({ name: 'student user' }), true);
+  assert.strictEqual(isDemoUser({ name: 'Demo Student' }), true);
+});
+
+test('Demo accounts marked with isDemo or demo flag are strictly identified', () => {
+  assert.strictEqual(isDemoUser({ isDemo: true, name: 'Random Name' }), true);
+  assert.strictEqual(isDemoUser({ demo: true, name: 'Random Name' }), true);
+  assert.strictEqual(isDemoUser({ role: 'demo' }), true);
+});
+
+test('Demo emails (s@c.com, demo.com) and ST-2026-000001 are strictly identified', () => {
+  assert.strictEqual(isDemoUser({ email: 's@c.com' }), true);
+  assert.strictEqual(isDemoUser({ email: 'test@demo.com' }), true);
+  assert.strictEqual(isDemoUser({ studentCode: 'ST-2026-000001' }), true);
+  assert.strictEqual(isDemoUser({ studentCode: 'ST-DEMO-01' }), true);
+});
+
+test('Authentic enrolled students are NEVER falsely flagged as demo', () => {
+  assert.strictEqual(isDemoUser({ name: 'Aarya Bhende', email: 'aarya@gmail.com', studentCode: 'ST-2026-000045' }), false);
+  assert.strictEqual(isDemoUser({ name: 'Atharva Chandak', email: 'atharva@gmail.com', studentCode: 'ST-2026-000032' }), false);
+  assert.strictEqual(isDemoUser({ name: 'Adhira Sumit Warge', email: 'adhira@gmail.com', studentCode: 'ST-2026-000010' }), false);
 });
 
 console.log(`🎉 INVARIANT VERIFICATION SUMMARY: ${passedTests} / ${totalTests} TESTS PASSED`);

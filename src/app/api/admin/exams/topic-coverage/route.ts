@@ -59,7 +59,7 @@ export async function GET(req: NextRequest) {
     const studentsSnap = await adminDb.collection('users')
       .where('role', '==', 'student')
       .where('batchIds', 'array-contains', batchId)
-      .select('studentCode', 'name', 'status', 'batchIds', 'batchId', 'studentMode', 'autonomous')
+      .select('studentCode', 'name', 'status', 'batchIds', 'batchId', 'studentMode', 'autonomous', 'isDemo', 'demo', 'email', 'role')
       .get();
 
     let batchStudents = studentsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -69,7 +69,7 @@ export async function GET(req: NextRequest) {
       const legacySnap = await adminDb.collection('users')
         .where('role', '==', 'student')
         .where('batchId', '==', batchId)
-        .select('studentCode', 'name', 'status', 'batchIds', 'batchId', 'studentMode', 'autonomous')
+        .select('studentCode', 'name', 'status', 'batchIds', 'batchId', 'studentMode', 'autonomous', 'isDemo', 'demo', 'email', 'role')
         .get();
       batchStudents = legacySnap.docs.map(d => ({ id: d.id, ...d.data() }));
     }

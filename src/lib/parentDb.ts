@@ -5,7 +5,7 @@ import { chunkArray } from '@/lib/firestoreUtils';
 import { calculateUnifiedMetrics, extractConductedTopicCodes } from '@/lib/dashboardMetrics';
 import { getCachedSyllabusTopicsMap, fetchTopicIndexByCodes } from '@/lib/syllabusServerUtils';
 import { calculateProctoringIntegrityScore } from '@/lib/proctoring';
-import { getFromCache, setInCache } from '@/lib/firebase/cache';
+import { getFromCache, setInCache, getCachedBatches } from '@/lib/firebase/cache';
 import { deduplicateAssignments, resolveIntegrityScore, calculateTimeLogSummary, resolveParentStudentCodes } from '@/lib/dashboardDbUtils';
 import { getAssignmentsForBatches } from '@/services/exam.service';
 import { deriveScoreMetrics, deriveScorePercent } from '@/lib/scoreUtils';
@@ -492,7 +492,31 @@ export async function getParentDashboardData(
   const totalCoveredTopics = conductedTopicCodes.size > 0 ? conductedTopicCodes.size : (masterySnapshot.docs.length > 0 ? masterySnapshot.docs.length : 1);
 
   const childClassCode = `${childUser?.boardCode || 'MH'}-${childUser?.classNum || childUser?.class || '10'}`;
-  const syllabusTopicsMap = await getCachedSyllabusTopicsMap([childClassCode]);
+  const enrolledClasses = new Set<string>([childClassCode]);
+  const rawClass = childUser?.class || childUser?.className || childUser?.classNum || '';
+  if (rawClass) {
+    const m = String(rawClass).match(/\d+/);
+    if (m) enrolledClasses.add(m[0]);
+    else enrolledClasses.add(String(rawClass));
+  }
+  if (childBatchIds.length > 0) {
+    const batchesSnap = await getCachedBatches();
+    batchesSnap.docs.forEach((d: any) => {
+      const bData = typeof d.data === 'function' ? d.data() : d;
+      if (childBatchIds.includes(d.id)) {
+        if (bData.board && bData.class) {
+          enrolledClasses.add(`${bData.board}-${bData.class}`);
+        }
+        const cls = bData.class || bData.classCode;
+        if (cls) {
+          const m = String(cls).match(/\d+/);
+          if (m) enrolledClasses.add(m[0]);
+          else enrolledClasses.add(String(cls));
+        }
+      }
+    });
+  }
+  const syllabusTopicsMap = await getCachedSyllabusTopicsMap(Array.from(enrolledClasses));
 
   const unifiedMetrics = calculateUnifiedMetrics({
     objectiveReviews: examResults,
