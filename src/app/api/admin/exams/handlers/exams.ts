@@ -115,6 +115,24 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ message: 'Exam not found' }, { status: 404 });
       }
 
+      // Authoritative Duration SSOT: Check for active assignment duration override
+      try {
+        const assignSnap = await adminDb.collection(examType === 'subjective' ? 'subjectiveAssignments' : 'batchAssignments')
+          .where('examId', '==', examData.id)
+          .where('status', '==', 'active')
+          .limit(1)
+          .get();
+        if (!assignSnap.empty) {
+          const assignData = assignSnap.docs[0].data();
+          const assignedDur = Number(assignData.examDuration || assignData.classroomDuration);
+          if (assignedDur > 0) {
+            examData.duration = assignedDur;
+          }
+        }
+      } catch (err) {
+        console.warn('Failed to query assignment duration for exam paper:', err);
+      }
+
       const rawCodes: string[] = [];
       if (Array.isArray(examData.questionCodes)) {
         rawCodes.push(...examData.questionCodes);
@@ -987,9 +1005,31 @@ export async function GET(req: NextRequest) {
       });
     });
 
+    // Authoritative Duration sync: ensure exams reflect the duration configured in their active assignments
+    const examDurationMap = new Map<string, number>();
+    objAssignments.forEach(a => {
+      if (a.examId && a.examDuration && Number(a.examDuration) > 0) {
+        examDurationMap.set(a.examId, Number(a.examDuration));
+      }
+    });
+    subjAssignments.forEach(a => {
+      if (a.examId && a.classroomDuration && Number(a.classroomDuration) > 0) {
+        examDurationMap.set(a.examId, Number(a.classroomDuration));
+      }
+    });
+
+    const syncedExams = exams.map((e: any) => {
+      const assignedDur = examDurationMap.get(e.id);
+      return assignedDur ? { ...e, duration: assignedDur } : e;
+    });
+    const syncedSubjExams = subjectiveExams.map((e: any) => {
+      const assignedDur = examDurationMap.get(e.id);
+      return assignedDur ? { ...e, duration: assignedDur } : e;
+    });
+
     const fullResponse = {
-      exams,
-      subjectiveExams,
+      exams: syncedExams,
+      subjectiveExams: syncedSubjExams,
       batches,
       students,
       parents,
@@ -1190,11 +1230,18 @@ export async function POST(req: NextRequest) {
       const examDoc = await examRef.get();
       if (examDoc.exists) {
         origExamData = examDoc.data() || {};
+        const examUpdates: any = { updatedAt: admin.firestore.FieldValue.serverTimestamp() };
+        if (examDuration && Number(examDuration) > 0) {
+          examUpdates.duration = Number(examDuration);
+        } else if (classroomDuration && Number(classroomDuration) > 0) {
+          examUpdates.duration = Number(classroomDuration);
+        }
         const currentName = origExamData.name || origExamData.title || examId;
         const newName = updateExamNameWithAssignedDate(currentName, startAt);
         if (newName !== currentName) {
-          await examRef.update({ name: newName, updatedAt: admin.firestore.FieldValue.serverTimestamp() });
+          examUpdates.name = newName;
         }
+        await examRef.update(examUpdates);
       }
     } catch (err) {
       console.warn('Failed to update exam name with assigned date:', err);
@@ -1462,11 +1509,16 @@ export async function PUT(req: NextRequest) {
         const examRef = adminDb.collection(examType === 'objective' ? 'exams' : 'subjectiveExams').doc(assignData.examId);
         const examDoc = await examRef.get();
         if (examDoc.exists) {
+          const examUpdates: any = { updatedAt: admin.firestore.FieldValue.serverTimestamp() };
+          if (examDuration && Number(examDuration) > 0) {
+            examUpdates.duration = Number(examDuration);
+          }
           const currentName = examDoc.data()?.name || examDoc.data()?.title || assignData.examId;
           const newName = updateExamNameWithAssignedDate(currentName, updatedStart);
           if (newName !== currentName) {
-            await examRef.update({ name: newName });
+            examUpdates.name = newName;
           }
+          await examRef.update(examUpdates);
         }
       } catch (err) {
         console.warn('Failed to update exam name during assignment schedule update:', err);

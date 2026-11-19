@@ -156,10 +156,27 @@ export async function GET(req: NextRequest) {
       }
     }
 
+    const studentCode = caller.userData?.studentCode || '';
+    const isLimited = isStudentLimited(caller);
+    const isAutonomous = caller.userData?.autonomous === true;
+    const studentBatchIds = caller.userData?.batchIds || (caller.userData?.batchId ? [caller.userData.batchId] : []);
+
+    // Validate if student is assigned to this objective exam using canonical applicability check
+    const assignmentQuery = await adminDb.collection('batchAssignments')
+      .where('examId', '==', examId)
+      .where('status', '==', 'active')
+      .get();
+
+    // Authoritative Duration SSOT: Assignment modal is the supreme authority
+    const applicableAssignmentDoc = assignmentQuery.docs.find(doc => 
+      isAssignmentApplicableToStudent(doc.data(), studentCode, studentBatchIds, isLimited)
+    ) || assignmentQuery.docs[0];
+    const authoritativeDuration = Number(applicableAssignmentDoc?.data()?.examDuration) || Number(examData.duration) || 30;
+
     const secureExam = {
       id: examData.id || examId,
       name: examData.name || 'Untitled Exam',
-      duration: examData.duration || 30, // in minutes
+      duration: authoritativeDuration, // in minutes (Authoritative SSOT)
       negativeMarks: examData.negativeMarks || 0,
       totalMarks: examData.totalMarks || secureQuestions.reduce((acc: number, q: any) => acc + (q.marks || 1), 0),
       subject: examData.subject || null,
@@ -179,17 +196,6 @@ export async function GET(req: NextRequest) {
         }
       });
     }
-
-    const studentCode = caller.userData?.studentCode || '';
-    const isLimited = isStudentLimited(caller);
-    const isAutonomous = caller.userData?.autonomous === true;
-    const studentBatchIds = caller.userData?.batchIds || (caller.userData?.batchId ? [caller.userData.batchId] : []);
-
-    // Validate if student is assigned to this objective exam using canonical applicability check
-    const assignmentQuery = await adminDb.collection('batchAssignments')
-      .where('examId', '==', examId)
-      .where('status', '==', 'active')
-      .get();
 
     const isAssigned = assignmentQuery.docs.some(doc => 
       isAssignmentApplicableToStudent(doc.data(), studentCode, studentBatchIds, isLimited)
@@ -246,7 +252,7 @@ export async function GET(req: NextRequest) {
         if (startedAt) {
           const startedDate = startedAt.toDate ? startedAt.toDate() : new Date(startedAt);
           const elapsedMs = Date.now() - startedDate.getTime();
-          const durationMin = examData.duration || 30;
+          const durationMin = authoritativeDuration;
           const maxBufferMs = (durationMin + 5) * 60 * 1000;
           
           const refreshCount = attemptData.refreshCount || 0;

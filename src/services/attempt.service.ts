@@ -211,7 +211,16 @@ export class AttemptService {
         effectiveStartedAt = new Date(startedAt);
       }
 
-      const examDurationSeconds = (Number(examData.duration) || 30) * 60;
+      let authoritativeDurationMinutes = Number(examData.duration) || 30;
+      if (assignmentsSnap && !assignmentsSnap.empty) {
+        const aData = assignmentsSnap.docs[0].data();
+        if (aData?.examDuration && Number(aData.examDuration) > 0) {
+          authoritativeDurationMinutes = Number(aData.examDuration);
+        } else if (aData?.classroomDuration && Number(aData.classroomDuration) > 0) {
+          authoritativeDurationMinutes = Number(aData.classroomDuration);
+        }
+      }
+      const examDurationSeconds = authoritativeDurationMinutes * 60;
       let authoritativeDurationSpent = durationSpent || 0;
       let isOvertime = false;
 
