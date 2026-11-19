@@ -134,7 +134,91 @@ function evaluateStudentPracticeRemark(
   }
 
   // Case 3: Single Day duration (durationDays <= 1)
-  if (s.sessionsCount >= 3 && s.avgAccuracy >= 85) {
+  // Step 3A: Minimal Effort (Only 1 set practiced today, ~6 questions, ~3 mins)
+  if (s.sessionsCount <= 1) {
+    // If student has a substantial backlog of unpracticed topics (>= 10 pending topics)
+    if (pendingTopics >= 10) {
+      return {
+        text: '⚠️ Minimal Effort (1 set)',
+        badgeType: 'careless',
+        bg: '#fee2e2',
+        color: '#991b1b',
+        border: '1.5px solid #fca5a5'
+      };
+    }
+
+    // Moderate / low backlog (< 10 pending topics)
+    if (s.avgAccuracy >= 80) {
+      return {
+        text: '⚠️ Low Effort (1 set)',
+        badgeType: 'irregular',
+        bg: '#ffedd5',
+        color: '#c2410c',
+        border: '1.5px solid #fdba74'
+      };
+    }
+
+    return {
+      text: '⚠️ Low Effort & Accuracy (1 set)',
+      badgeType: 'needs_practice',
+      bg: '#fee2e2',
+      color: '#991b1b',
+      border: '1.5px solid #fca5a5'
+    };
+  }
+
+  // Step 3B: Moderate Practice (2 sets practiced today, ~12 questions)
+  if (s.sessionsCount === 2) {
+    if (pendingTopics >= 15) {
+      // Large backlog remaining, doing only 2 sets is moderate progress
+      if (s.avgAccuracy >= 80) {
+        return {
+          text: '🟡 Moderate Effort (2 sets)',
+          badgeType: 'sincere',
+          bg: '#fef9c3',
+          color: '#854d0e',
+          border: '1.5px solid #fde047'
+        };
+      }
+      return {
+        text: '⚠️ Needs Practice (2 sets)',
+        badgeType: 'needs_practice',
+        bg: '#fee2e2',
+        color: '#991b1b',
+        border: '1.5px solid #fca5a5'
+      };
+    }
+
+    // Normal backlog (< 15 pending topics)
+    if (s.avgAccuracy >= 80 && (s.avgHonesty ?? 100) >= 75) {
+      return {
+        text: '✅ Sincere Today (2 sets)',
+        badgeType: 'strong',
+        bg: '#e0f2fe',
+        color: '#0369a1',
+        border: '1.5px solid #7dd3fc'
+      };
+    }
+    if (s.avgAccuracy >= 50) {
+      return {
+        text: '🟡 Moderate Today (2 sets)',
+        badgeType: 'sincere',
+        bg: '#fef9c3',
+        color: '#854d0e',
+        border: '1.5px solid #fde047'
+      };
+    }
+    return {
+      text: '⚠️ Needs Practice (2 sets)',
+      badgeType: 'needs_practice',
+      bg: '#fee2e2',
+      color: '#991b1b',
+      border: '1.5px solid #fca5a5'
+    };
+  }
+
+  // Step 3C: Solid / High Practice Volume (>= 3 sets practiced today, >= 18 questions)
+  if (s.sessionsCount >= 3 && s.avgAccuracy >= 85 && (s.avgHonesty ?? 100) >= 70) {
     return {
       text: '🌟 Highly Active Today',
       badgeType: 'outstanding',
@@ -143,7 +227,7 @@ function evaluateStudentPracticeRemark(
       border: '1.5px solid #86efac'
     };
   }
-  if (s.avgAccuracy >= 80) {
+  if (s.avgAccuracy >= 75) {
     return {
       text: '✅ Sincere Today',
       badgeType: 'strong',
@@ -154,7 +238,7 @@ function evaluateStudentPracticeRemark(
   }
   if (s.avgAccuracy >= 50) {
     return {
-      text: '🟡 Moderate Today',
+      text: '🟡 Moderate Accuracy',
       badgeType: 'sincere',
       bg: '#fef9c3',
       color: '#854d0e',
@@ -162,7 +246,7 @@ function evaluateStudentPracticeRemark(
     };
   }
   return {
-    text: '⚠️ Needs Practice',
+    text: '⚠️ Low Accuracy',
     badgeType: 'needs_practice',
     bg: '#fee2e2',
     color: '#991b1b',
