@@ -436,7 +436,7 @@ function ExamReportContent() {
   Array.from(assignedCodes).forEach(code => {
     if (!startedCodes.has(code)) {
       const s = students.find(x => (x.studentCode || '').trim().toUpperCase() === code);
-      if (s && !isDemo(s)) {
+      if (s && !isDemo(s) && getStudentMode(s) !== 'limited') {
         notStartedStudents.push({ 
           code: s.studentCode || code, 
           name: s.name,

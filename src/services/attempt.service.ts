@@ -5,7 +5,7 @@ import { MasteryService } from './mastery.service';
 import { IntegrityService } from './integrity.service';
 import { AttemptRepository } from '@/repositories/attempt.repository';
 import { ProctoringViolations, QuestionDetail, ExamAttempt } from '@/types/attempt.types';
-import { deriveTopicCodeFromQuestionCode, isMultipleChoiceType, parseAnswerList, resolveOptionDisplayText, getOptionText } from '@/lib/questionTypes';
+import { deriveTopicCodeFromQuestionCode, isMultipleChoiceType, parseAnswerList, resolveOptionDisplayText, getOptionText, toCanonicalQuestionType, CANONICAL_OBJECTIVE_TYPES } from '@/lib/questionTypes';
 import { invalidateCache } from '@/lib/firebase/cache';
 import { getMidnightIST } from '@/lib/dateUtils';
 
@@ -102,7 +102,9 @@ export class AttemptService {
       }
 
       const timeSpentSeconds = submitted?.timeSpentSeconds || 0;
-      const qMarks = q.marks || Number(examData.positiveMarks) || 4;
+      const isObj = !q.type || CANONICAL_OBJECTIVE_TYPES.includes(toCanonicalQuestionType(q.type));
+      const examPos = Number(examData.positiveMarks);
+      const qMarks = (isObj && examPos > 0) ? examPos : (q.marks || examPos || 4);
 
       const userAnsText = isAttempted ? getOptionText(q, ans) : '';
       const correctAnsText = getOptionText(q, correctAnswer ?? '');

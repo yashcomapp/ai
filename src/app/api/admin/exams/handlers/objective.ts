@@ -218,7 +218,7 @@ export async function GET(req: NextRequest) {
       adminDb.collection('reviews').where('examId', '==', resolvedExamId).get(),
       adminDb.collection('examAttempts').where('examId', '==', resolvedExamId).select('studentCode', 'startedAt', 'completedAt', 'proctoringSnapshotsExpiresAt').get(),
       adminDb.collection('batchAssignments').where('examId', '==', resolvedExamId).get(),
-      adminDb.collection('users').where('role', '==', 'student').select('studentCode', 'name', 'batchId', 'batchIds', 'autonomous', 'status', 'lastLoginAt', 'lastActiveAt').get(),
+      adminDb.collection('users').where('role', '==', 'student').select('studentCode', 'name', 'batchId', 'batchIds', 'autonomous', 'studentMode', 'status', 'lastLoginAt', 'lastActiveAt').get(),
       getCachedBatches(),
       getCachedSyllabus(),
       adminDb.collection('evaluations').where('examId', '==', resolvedExamId).get()

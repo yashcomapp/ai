@@ -966,7 +966,11 @@ export async function POST(req: NextRequest) {
         examType: examType || (isAllSubjective ? 'subjective' : 'obj'),
         examCategory: body.examCategory || templateDetails?.examCategory || 'standard',
         isMasteryExempt: body.isMasteryExempt ?? (body.examCategory === 'mock' || body.examCategory === 'foundation' || templateDetails?.examCategory === 'mock' || templateDetails?.examCategory === 'foundation'),
-        totalMarks: Number(totalMarks) || 0,
+        totalMarks: isAllSubjective
+          ? (Number(totalMarks) || 0)
+          : (Array.isArray(questionCodes) && questionCodes.length > 0
+              ? (Number(positiveMarks) || 4) * questionCodes.length
+              : (Number(totalMarks) || 0)),
         questionCount: Array.isArray(questionCodes) ? questionCodes.length : 0,
         status: 'active',
         createdAt: admin.firestore.FieldValue.serverTimestamp(),

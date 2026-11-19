@@ -6,7 +6,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import Script from 'next/script';
 import { useMathRender } from '@/hooks/useMathRender';
-import { smartJsonParse, robustParseAIJson, cleanStringForMatch, toCanonicalQuestionType, isNumericalType, CanonicalQuestionType, highlightModelAnswerKeywords } from '@/lib/questionTypes';
+import { smartJsonParse, robustParseAIJson, cleanStringForMatch, toCanonicalQuestionType, isNumericalType, CanonicalQuestionType, highlightModelAnswerKeywords, CANONICAL_OBJECTIVE_TYPES } from '@/lib/questionTypes';
 import { SyllabusSelector } from '@/components/SyllabusSelector';
 import { useSyllabusSelector } from '@/hooks/useSyllabusSelector';
 import { QuestionDisplay, RichMathText } from '@/components/QuestionDisplay';
@@ -1321,7 +1321,11 @@ Return ONLY valid JSON. No markdown wrappers or extra commentary.`;
           chapterNumber: chapterNumbers,
           topicCodes,
           isMixed,
-          totalMarks: generatedQuestions.reduce((s, q) => s + (q.marks || effectivePositiveMarks), 0),
+          totalMarks: generatedQuestions.reduce((s, q) => {
+            const isObj = !q.type || CANONICAL_OBJECTIVE_TYPES.includes(toCanonicalQuestionType(q.type));
+            const qMark = (isObj && effectivePositiveMarks > 0) ? effectivePositiveMarks : (q.marks || effectivePositiveMarks || 4);
+            return s + qMark;
+          }, 0),
           questionCodes,
           templateId: selectedTemplateId,
           templateDetails: templateDetailsPayload,
@@ -2028,7 +2032,12 @@ Return ONLY valid JSON. No markdown wrappers or extra commentary.`;
                 )}
               </div>
               <div style={{ fontSize: '12px', fontWeight: 700 }}>
-                📊 Total Marks: <span style={{ color: 'var(--success)' }}>{generatedQuestions.reduce((s, q) => s + (q.marks || (selectedTemplateId === 'custom_blueprint' ? customPositiveMarks : currentTemplate?.positiveMarks || 4)), 0)} Marks</span>
+                📊 Total Marks: <span style={{ color: 'var(--success)' }}>{generatedQuestions.reduce((s, q) => {
+                  const isObj = !q.type || CANONICAL_OBJECTIVE_TYPES.includes(toCanonicalQuestionType(q.type));
+                  const posM = selectedTemplateId === 'custom_blueprint' ? customPositiveMarks : currentTemplate?.positiveMarks || 4;
+                  const qMark = (isObj && posM > 0) ? posM : (q.marks || posM || 4);
+                  return s + qMark;
+                }, 0)} Marks</span>
               </div>
             </div>
 
