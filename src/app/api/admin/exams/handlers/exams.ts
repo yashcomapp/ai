@@ -13,6 +13,7 @@ import { evaluateSessionSincerity } from '@/lib/practiceTimeUtils';
 import { getCanonicalSubjectName, parseTopicCode, normalizeTopicCode } from '@/lib/questionTypes';
 import { getObjectiveExamTopics, getSubjectiveExamTopics, getExamDateKey, isExamForStudent, QuotientService } from '@/services/quotient.service';
 import { ExamService, getAssignmentsForBatches } from '@/services/exam.service';
+import { ExamRepository } from '@/repositories/exam.repository';
 import { getCachedBatches, getFromCache, setInCache, invalidateCache } from '@/lib/firebase/cache';
 import { assertCanonicalStudentCode } from '@/lib/canonicalValidation';
 import { shouldBypassCache } from '@/lib/cacheBypassGuard';
@@ -85,6 +86,67 @@ export async function GET(req: NextRequest) {
 
     const action = req.nextUrl.searchParams.get('action');
     const studentCodeParam = req.nextUrl.searchParams.get('studentCode');
+
+    if (action === 'getExamPaper') {
+      const examId = req.nextUrl.searchParams.get('examId') || req.nextUrl.searchParams.get('id');
+      const examType = req.nextUrl.searchParams.get('type') || 'objective';
+      if (!examId) {
+        return NextResponse.json({ message: 'Missing examId parameter' }, { status: 400 });
+      }
+
+      const collectionName = examType === 'subjective' ? 'subjectiveExams' : 'exams';
+      let examDoc = await adminDb.collection(collectionName).doc(examId).get();
+      let examData: any = null;
+      if (examDoc.exists) {
+        examData = { id: examDoc.id, ...examDoc.data() };
+      } else {
+        const nameQuery = await adminDb.collection(collectionName).where('name', '==', examId).limit(1).get();
+        if (!nameQuery.empty) {
+          examData = { id: nameQuery.docs[0].id, ...nameQuery.docs[0].data() };
+        } else {
+          const titleQuery = await adminDb.collection(collectionName).where('title', '==', examId).limit(1).get();
+          if (!titleQuery.empty) {
+            examData = { id: titleQuery.docs[0].id, ...titleQuery.docs[0].data() };
+          }
+        }
+      }
+
+      if (!examData) {
+        return NextResponse.json({ message: 'Exam not found' }, { status: 404 });
+      }
+
+      const rawCodes: string[] = [];
+      if (Array.isArray(examData.questionCodes)) {
+        rawCodes.push(...examData.questionCodes);
+      }
+      if (Array.isArray(examData.questions)) {
+        examData.questions.forEach((q: any) => {
+          if (typeof q === 'string') rawCodes.push(q);
+          else if (q && (q.id || q.questionCode)) rawCodes.push(q.id || q.questionCode);
+        });
+      }
+
+      const uniqueCodes = Array.from(new Set(rawCodes.filter(Boolean)));
+      const questions = await ExamRepository.getQuestionsForExam(uniqueCodes);
+
+      // Preserve the order of questions as saved in the exam
+      const qMap = new Map<string, any>();
+      questions.forEach((q: any) => {
+        if (q.id) qMap.set(q.id, q);
+        if (q.questionCode) qMap.set(q.questionCode, q);
+      });
+
+      const orderedQuestions: any[] = [];
+      uniqueCodes.forEach(code => {
+        const found = qMap.get(code);
+        if (found) orderedQuestions.push(found);
+      });
+
+      return NextResponse.json({
+        exam: examData,
+        questions: orderedQuestions.length > 0 ? orderedQuestions : questions
+      });
+    }
 
     if (action === 'studentTopicStatus' && studentCodeParam) {
       // 1. Fetch student user document, mastery, and parent reviews
@@ -974,6 +1036,112 @@ export async function POST(req: NextRequest) {
       lateEntryRestriction,
       action
     } = body;
+
+    if (action === 'balanceExamOptions') {
+      const targetExamId = examId || body.id;
+      const targetType = type || body.examType || 'objective';
+      if (!targetExamId) {
+        return NextResponse.json({ message: 'Missing examId' }, { status: 400 });
+      }
+      const collectionName = targetType === 'subjective' ? 'subjectiveExams' : 'exams';
+      let examDoc = await adminDb.collection(collectionName).doc(targetExamId).get();
+      let examData: any = null;
+      if (examDoc.exists) {
+        examData = examDoc.data();
+      } else {
+        const nameQuery = await adminDb.collection(collectionName).where('name', '==', targetExamId).limit(1).get();
+        if (!nameQuery.empty) {
+          examData = nameQuery.docs[0].data();
+          examDoc = nameQuery.docs[0] as any;
+        }
+      }
+
+      if (!examData) {
+        return NextResponse.json({ message: 'Exam not found' }, { status: 404 });
+      }
+
+      const rawCodes: string[] = Array.isArray(examData.questionCodes) ? examData.questionCodes : [];
+      const questions = await ExamRepository.getQuestionsForExam(rawCodes);
+
+      const batch = adminDb.batch();
+      const updatedQuestions: any[] = [];
+      
+      questions.forEach((q: any) => {
+        const qType = String(q.type || '').toUpperCase();
+        if (qType === 'OAR' || qType === 'ASSERTION_REASON' || qType.startsWith('S') || !Array.isArray(q.options) || q.options.length < 2) {
+          updatedQuestions.push(q);
+          return;
+        }
+
+        const isObjectFormat = typeof q.options[0] === 'object' && q.options[0] !== null;
+        let correctText = '';
+        let otherOptions: string[] = [];
+
+        if (isObjectFormat) {
+          const correctObj = q.options.find((o: any) => o && o.isCorrect === true);
+          if (correctObj && correctObj.text) {
+            correctText = correctObj.text;
+            otherOptions = q.options.filter((o: any) => o !== correctObj).map((o: any) => o ? o.text : '');
+          } else {
+            let idx = 0;
+            const ansStr = String(q.correctAnswer || '').trim().toUpperCase();
+            if (/^[A-D]$/.test(ansStr)) idx = ansStr.charCodeAt(0) - 65;
+            if (idx < 0 || idx >= q.options.length) idx = 0;
+            correctText = q.options[idx]?.text || '';
+            otherOptions = q.options.filter((_: any, oi: number) => oi !== idx).map((o: any) => o ? o.text : '');
+          }
+        } else {
+          let idx = 0;
+          const ansStr = String(q.correctAnswer || '').trim().toUpperCase();
+          if (/^[A-D]$/.test(ansStr)) idx = ansStr.charCodeAt(0) - 65;
+          if (idx < 0 || idx >= q.options.length) idx = 0;
+          correctText = String(q.options[idx] || '');
+          otherOptions = q.options.filter((_: any, oi: number) => oi !== idx).map((o: any) => String(o || ''));
+        }
+
+        if (!correctText) {
+          updatedQuestions.push(q);
+          return;
+        }
+
+        // Shuffle distractors
+        const shuffledDistractors = [...otherOptions];
+        for (let i = shuffledDistractors.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [shuffledDistractors[i], shuffledDistractors[j]] = [shuffledDistractors[j], shuffledDistractors[i]];
+        }
+
+        const targetIdx = Math.floor(Math.random() * q.options.length);
+        const targetLetter = String.fromCharCode(65 + targetIdx);
+
+        const newOptions: any[] = [];
+        let distIdx = 0;
+        for (let pos = 0; pos < q.options.length; pos++) {
+          if (pos === targetIdx) {
+            newOptions.push(isObjectFormat ? { text: correctText, isCorrect: true } : correctText);
+          } else {
+            const dText = shuffledDistractors[distIdx++] || `Option ${String.fromCharCode(65 + pos)}`;
+            newOptions.push(isObjectFormat ? { text: dText, isCorrect: false } : dText);
+          }
+        }
+
+        const qRef = adminDb.collection('questions').doc(q.id || q.questionCode);
+        batch.update(qRef, {
+          options: newOptions,
+          correctAnswer: targetLetter,
+          updatedAt: admin.firestore.FieldValue.serverTimestamp()
+        });
+
+        updatedQuestions.push({
+          ...q,
+          options: newOptions,
+          correctAnswer: targetLetter
+        });
+      });
+
+      await batch.commit();
+      return NextResponse.json({ success: true, questions: updatedQuestions });
+    }
 
     if (action === 'resetAttempts') {
       if (!examId) {

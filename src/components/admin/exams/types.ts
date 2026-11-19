@@ -50,6 +50,7 @@ export interface ExamTabCommonProps {
   handleDeleteExam: (examId: string, examName: string, type: 'objective' | 'subjective') => void;
   toggleAssignmentStatus: (assignmentId: string, collection: string, newStatus: string) => void;
   handleOpenEdit: (examId: string, examName: string, collection: string) => void;
+  handleOpenExamPaper?: (exam: Exam, type: 'objective' | 'subjective') => void;
   router: any;
 }
 

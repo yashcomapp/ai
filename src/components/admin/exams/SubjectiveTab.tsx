@@ -25,6 +25,7 @@ export default function SubjectiveTab(props: SubjectiveTabProps) {
     handleOpenAssign,
     handleOpenEdit,
     handleDeleteExam,
+    handleOpenExamPaper,
     triggerPeerReviewLottery,
     openPeerReviewStatus,
     openTruthTestReport,
@@ -62,6 +63,7 @@ export default function SubjectiveTab(props: SubjectiveTabProps) {
         type="subjective"
         onAssign={handleOpenAssign}
         onDelete={handleDeleteExam}
+        onOpenExamPaper={handleOpenExamPaper}
       />
 
       {/* Section 1b: Today's & Tomorrow's Subjective Exams */}
@@ -76,6 +78,7 @@ export default function SubjectiveTab(props: SubjectiveTabProps) {
         handleOpenAssign={handleOpenAssign}
         handleOpenEdit={handleOpenEdit}
         handleDeleteExam={handleDeleteExam}
+        handleOpenExamPaper={handleOpenExamPaper}
         isAlreadyAssigned={isSubjectiveAlreadyAssigned}
         router={router}
       />

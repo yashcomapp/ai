@@ -9,6 +9,7 @@ interface UnassignedExamsTableProps {
   onAssign: (exam: Exam, type: 'objective' | 'subjective') => void;
   onDelete: (id: string, name: string, type: 'objective' | 'subjective') => void;
   onMockExam?: (examId: string) => void;
+  onOpenExamPaper?: (exam: Exam, type: 'objective' | 'subjective') => void;
 }
 
 export function UnassignedExamsTable({
@@ -17,6 +18,7 @@ export function UnassignedExamsTable({
   onAssign,
   onDelete,
   onMockExam,
+  onOpenExamPaper,
 }: UnassignedExamsTableProps) {
   const isSubjective = type === 'subjective';
   const sectionId = isSubjective ? 'subjective-templates-section' : 'objective-templates-section';
@@ -83,7 +85,28 @@ export function UnassignedExamsTable({
               ) : (
                 exams.map((exam) => (
                   <tr key={exam.id} style={{ borderBottom: '1px solid var(--border-light)' }}>
-                    <td style={{ padding: '4px 8px', fontWeight: 600 }}>{exam.name}</td>
+                    <td style={{ padding: '4px 8px', fontWeight: 600 }}>
+                      <button
+                        type="button"
+                        onClick={() => onOpenExamPaper?.(exam, type)}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          padding: 0,
+                          fontWeight: 600,
+                          color: 'var(--primary, #3b82f6)',
+                          cursor: 'pointer',
+                          textAlign: 'left',
+                          textDecoration: 'underline',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px'
+                        }}
+                        title="Click to view exam paper questions and answer keys"
+                      >
+                        📄 {exam.name}
+                      </button>
+                    </td>
                     <td style={{ padding: '4px 8px' }}>{exam.subjectName || exam.subjects?.[0] || '—'}</td>
                     <td style={{ padding: '4px 8px' }}>{(exam.topicCodes || []).join(', ') || '—'}</td>
                     <td style={{ padding: '4px 8px' }}>{exam.questionCount || exam.questions?.length || 0}</td>

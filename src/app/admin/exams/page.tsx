@@ -9,6 +9,7 @@ const AssignExamModal = dynamic(() => import('@/components/admin/exams/AssignExa
 const EditAssignmentModal = dynamic(() => import('@/components/admin/exams/EditAssignmentModal'), { ssr: false });
 const PeerReviewModal = dynamic(() => import('@/components/admin/exams/PeerReviewModal'), { ssr: false });
 const TruthTestModal = dynamic(() => import('@/components/admin/exams/TruthTestModal'), { ssr: false });
+const ExamPaperModal = dynamic(() => import('@/components/admin/exams/ExamPaperModal'), { ssr: false });
 import { useMathRender } from '@/hooks/useMathRender';
 import { useScorecard } from '@/hooks/useScorecard';
 import { toISTDateTimeLocalInput, formatDateDMY, parseDateInput, getDateKeyIST, formatDateTimeIST, getMorningTestTimes, getEveningTestTimes } from '@/lib/dateUtils';
@@ -332,6 +333,15 @@ export default function AdminExamsPage() {
   });
 
   const [truthSearchText, setTruthSearchText] = useState('');
+
+  // Exam Paper preview & edit modal state
+  const [selectedPaperExam, setSelectedPaperExam] = useState<Exam | null>(null);
+  const [selectedPaperType, setSelectedPaperType] = useState<'objective' | 'subjective'>('objective');
+
+  const handleOpenExamPaper = (exam: Exam, type: 'objective' | 'subjective' = 'objective') => {
+    setSelectedPaperExam(exam);
+    setSelectedPaperType(type);
+  };
 
   // Scorecard modal state
   const { scorecard: scorecardData, loading: scorecardLoading, loadScorecard: fetchScorecard, setScorecard: setScorecardData, selectedScorecardId, setSelectedScorecardId } = useScorecard();
@@ -996,6 +1006,7 @@ export default function AdminExamsPage() {
             handleDeleteExam={handleDeleteExam}
             toggleAssignmentStatus={toggleAssignmentStatus}
             handleOpenEdit={handleOpenEdit}
+            handleOpenExamPaper={handleOpenExamPaper}
             router={router}
           />
         )}
@@ -1039,6 +1050,7 @@ export default function AdminExamsPage() {
             handleDeleteExam={handleDeleteExam}
             toggleAssignmentStatus={toggleAssignmentStatus}
             handleOpenEdit={handleOpenEdit}
+            handleOpenExamPaper={handleOpenExamPaper}
             triggerPeerReviewLottery={triggerPeerReviewLottery}
             openPeerReviewStatus={openPeerReviewStatus}
             openTruthTestReport={openTruthTestReport}
@@ -1089,6 +1101,14 @@ export default function AdminExamsPage() {
           setSelectedScorecardId(null);
           setScorecardData(null);
         }}
+      />
+
+      <ExamPaperModal
+        show={!!selectedPaperExam}
+        exam={selectedPaperExam}
+        examType={selectedPaperType}
+        onClose={() => setSelectedPaperExam(null)}
+        onExamUpdated={loadData}
       />
     </div>
   );

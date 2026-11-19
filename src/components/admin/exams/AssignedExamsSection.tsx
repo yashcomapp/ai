@@ -36,6 +36,7 @@ export function AssignedExamsSection({
   handleOpenAssign,
   handleOpenEdit,
   handleDeleteExam,
+  handleOpenExamPaper,
   triggerPeerReviewLottery,
   openPeerReviewStatus,
   openTruthTestReport,
@@ -210,7 +211,28 @@ export function AssignedExamsSection({
 
                                                     return (
                                                       <tr key={exam.id} style={{ borderBottom: '1px solid var(--border-light)' }}>
-                                                        <td style={{ padding: '4px 8px', fontWeight: 600 }}>{exam.name}</td>
+                                                        <td style={{ padding: '4px 8px', fontWeight: 600 }}>
+                                                          <button
+                                                            type="button"
+                                                            onClick={() => handleOpenExamPaper?.(exam, type)}
+                                                            style={{
+                                                              background: 'none',
+                                                              border: 'none',
+                                                              padding: 0,
+                                                              fontWeight: 600,
+                                                              color: 'var(--primary, #3b82f6)',
+                                                              cursor: 'pointer',
+                                                              textAlign: 'left',
+                                                              textDecoration: 'underline',
+                                                              display: 'inline-flex',
+                                                              alignItems: 'center',
+                                                              gap: '6px'
+                                                            }}
+                                                            title="Click to view exam paper questions and answer keys"
+                                                          >
+                                                            📄 {exam.name}
+                                                          </button>
+                                                        </td>
                                                         {type === 'subjective' && (
                                                           <SubjectiveModeBadges mode={mode} peerStatus={peerStatus} />
                                                         )}

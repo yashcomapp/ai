@@ -21,6 +21,7 @@ export interface TodayTomorrowExamsTableProps {
   handleOpenAssign: (exam: Exam, type: 'objective' | 'subjective') => void;
   handleOpenEdit: (examId: string, examName: string, collection: string) => void;
   handleDeleteExam: (examId: string, examName: string, type: 'objective' | 'subjective') => void;
+  handleOpenExamPaper?: (exam: Exam, type: 'objective' | 'subjective') => void;
   isAlreadyAssigned: (exam: Exam) => boolean;
   router: any;
 }
@@ -36,6 +37,7 @@ export function TodayTomorrowExamsTable({
   handleOpenAssign,
   handleOpenEdit,
   handleDeleteExam,
+  handleOpenExamPaper,
   isAlreadyAssigned,
   router
 }: TodayTomorrowExamsTableProps) {
@@ -97,7 +99,28 @@ export function TodayTomorrowExamsTable({
 
                   return (
                     <tr key={exam.id} style={{ borderBottom: '1px solid var(--border-light)' }}>
-                      <td style={{ padding: '4px 8px', fontWeight: 600 }}>{exam.name}</td>
+                      <td style={{ padding: '4px 8px', fontWeight: 600 }}>
+                        <button
+                          type="button"
+                          onClick={() => handleOpenExamPaper?.(exam, type)}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            padding: 0,
+                            fontWeight: 600,
+                            color: 'var(--primary, #3b82f6)',
+                            cursor: 'pointer',
+                            textAlign: 'left',
+                            textDecoration: 'underline',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '6px'
+                          }}
+                          title="Click to view exam paper questions and answer keys"
+                        >
+                          📄 {exam.name}
+                        </button>
+                      </td>
                       {type === 'subjective' && (
                         <SubjectiveModeBadges mode={mode} peerStatus={peerStatus} />
                       )}

@@ -22,6 +22,7 @@ export default function ObjectiveTab(props: ObjectiveTabProps) {
     toggleAssignmentStatus,
     handleOpenAssign,
     handleOpenEdit,
+    handleOpenExamPaper,
     handleDeleteExam,
     router
   } = props;
@@ -58,6 +59,7 @@ export default function ObjectiveTab(props: ObjectiveTabProps) {
         onAssign={handleOpenAssign}
         onDelete={handleDeleteExam}
         onMockExam={(examId) => router.push(`/admin/mock-exam?examId=${encodeURIComponent(examId)}`)}
+        onOpenExamPaper={handleOpenExamPaper}
       />
 
       {/* Section 1b: Today's & Tomorrow's Exams */}
@@ -72,6 +74,7 @@ export default function ObjectiveTab(props: ObjectiveTabProps) {
         handleOpenAssign={handleOpenAssign}
         handleOpenEdit={handleOpenEdit}
         handleDeleteExam={handleDeleteExam}
+        handleOpenExamPaper={handleOpenExamPaper}
         isAlreadyAssigned={(exam) => isExamAssigned(exam, assignments, attemptCounts)}
         router={router}
       />
