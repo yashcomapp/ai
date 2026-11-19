@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
+import { useAuth } from '@/context/AuthContext';
 import { Exam } from '@/types/exam.types';
 import { RichMathText } from '@/components/QuestionDisplay';
 import { preprocessMathText } from '@/lib/questionTypes';
@@ -20,13 +21,42 @@ export default function ExamPaperModal({
   examType = 'objective',
   onExamUpdated
 }: ExamPaperModalProps) {
+  const { firebaseUser } = useAuth();
   const [loading, setLoading] = useState(false);
   const [questions, setQuestions] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [balancing, setBalancing] = useState(false);
   const [balanceMessage, setBalanceMessage] = useState<string | null>(null);
 
-  // Load questions whenever modal opens or exam changes
+  const fetchExamPaper = useCallback(async () => {
+    if (!exam) return;
+    setLoading(true);
+    setError(null);
+
+    try {
+      const idToken = firebaseUser ? await firebaseUser.getIdToken() : '';
+      const headers: Record<string, string> = {};
+      if (idToken) {
+        headers['Authorization'] = `Bearer ${idToken}`;
+      }
+
+      const res = await fetch(`/api/admin/exams?action=getExamPaper&id=${encodeURIComponent(exam.id)}&type=${examType}`, {
+        headers
+      });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.message || 'Failed to load exam paper details.');
+      }
+      const data = await res.json();
+      setQuestions(data.questions || []);
+    } catch (err: any) {
+      setError(err.message || 'Error fetching exam questions.');
+    } finally {
+      setLoading(false);
+    }
+  }, [exam, examType, firebaseUser]);
+
+  // Load questions whenever modal opens or exam/user changes
   useEffect(() => {
     if (!show || !exam) {
       setQuestions([]);
@@ -35,38 +65,8 @@ export default function ExamPaperModal({
       return;
     }
 
-    let isMounted = true;
-    setLoading(true);
-    setError(null);
-
-    const fetchExamPaper = async () => {
-      try {
-        const res = await fetch(`/api/admin/exams?action=getExamPaper&id=${encodeURIComponent(exam.id)}&type=${examType}`);
-        if (!res.ok) {
-          const errData = await res.json().catch(() => ({}));
-          throw new Error(errData.message || 'Failed to load exam paper details.');
-        }
-        const data = await res.json();
-        if (isMounted) {
-          setQuestions(data.questions || []);
-        }
-      } catch (err: any) {
-        if (isMounted) {
-          setError(err.message || 'Error fetching exam questions.');
-        }
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
-      }
-    };
-
     fetchExamPaper();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [show, exam, examType]);
+  }, [show, exam, fetchExamPaper]);
 
   // Calculate answer distribution across questions
   const distribution = useMemo(() => {
@@ -97,9 +97,15 @@ export default function ExamPaperModal({
     setBalancing(true);
     setBalanceMessage(null);
     try {
+      const idToken = firebaseUser ? await firebaseUser.getIdToken() : '';
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (idToken) {
+        headers['Authorization'] = `Bearer ${idToken}`;
+      }
+
       const res = await fetch('/api/admin/exams', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
           action: 'balanceExamOptions',
           examId: exam.id,
@@ -180,7 +186,7 @@ export default function ExamPaperModal({
               </span>
             </div>
             <div style={{ fontSize: '13px', color: '#94a3b8', marginTop: '4px' }}>
-              {exam.chapter ? `Chapter: ${exam.chapter}` : ''} • Duration: {exam.duration || 30} mins • Total Questions: {questions.length} • Total Marks: {exam.totalMarks || (questions.length * 4)}
+              {exam.chapter ? `Chapter: ${exam.chapter}` : ''} • Duration: {exam.duration || 30} mins • Total Questions: {questions.length || (Array.isArray(exam.questionCodes) ? exam.questionCodes.length : 0)} • Total Marks: {exam.totalMarks || ((questions.length || (Array.isArray(exam.questionCodes) ? exam.questionCodes.length : 0)) * 4)}
             </div>
           </div>
           <button 
@@ -270,7 +276,7 @@ export default function ExamPaperModal({
               <p>⚠️ {error}</p>
               <button 
                 className="btn btn-secondary" 
-                onClick={() => window.location.reload()} 
+                onClick={() => fetchExamPaper()} 
                 style={{ marginTop: '10px' }}
               >
                 Retry
