@@ -1,25 +1,22 @@
 const fs = require('fs');
-const report = JSON.parse(fs.readFileSync('scripts/chapter_by_chapter_audit_report.json', 'utf8'));
+const data = JSON.parse(fs.readFileSync('audit_results.json', 'utf-8'));
 
-console.log('--- Inspecting issues in MH_Class9_SCIT ---');
-const scit9 = report.filter(r => r.board === 'MH' && r.class === '9' && r.subject === 'SCIT' && r.status !== '🟢 PRISTINE');
-scit9.forEach(r => {
-  console.log(`\n${r.chapterKey}:`);
-  console.log('Issues:', JSON.stringify(r.issueDetails, null, 2));
+console.log('=== 78 PLACEHOLDER OPTIONS SAMPLES (first 10) ===');
+data.issues.placeholderOptions.slice(0, 10).forEach(p => {
+  console.log(`[${p.id}] (${p.topicCode}): options =`, p.optTexts);
 });
 
-console.log('\n--- Inspecting issues in MH_Class8_SCI ---');
-const sci8 = report.filter(r => r.board === 'MH' && r.class === '8' && r.subject === 'SCI');
-let totalSci8MissingSols = 0;
-let totalSci8Dups = 0;
-let totalSci8Used = 0;
-sci8.forEach(r => {
-  totalSci8MissingSols += r.issueDetails.missingSolution.length;
-  totalSci8Dups += r.issueDetails.duplicateOptions.length;
-  totalSci8Used += r.usedQuestions;
+console.log('\n=== 2 DUPLICATE OPTIONS ===');
+data.issues.duplicateOptions.forEach(p => {
+  console.log(`[${p.id}] (${p.topicCode}): options =`, p.optTexts);
 });
-console.log(`MH_Class8_SCI summary:`);
-console.log(`  Total Chapters: ${sci8.length}`);
-console.log(`  Used Questions: ${totalSci8Used}`);
-console.log(`  Missing Solutions: ${totalSci8MissingSols}`);
-console.log(`  Duplicate Options: ${totalSci8Dups}`);
+
+console.log('\n=== 12 TRIVIAL EXPLANATIONS ===');
+data.issues.trivialExplanation.forEach(p => {
+  console.log(`[${p.id}] (${p.topicCode}): explanation =`, p.explanation);
+});
+
+console.log('\n=== SAMPLES OF TOPICS WITH >40% OPTION A (first 15) ===');
+data.issues.dominantOptionATopics.slice(0, 15).forEach(t => {
+  console.log(`Topic: ${t.topicCode.padEnd(25)} | Subject: ${t.subject.padEnd(15)} | Total Obj: ${t.total} | A Count: ${t.aCount} (${t.aPct}%)`);
+});

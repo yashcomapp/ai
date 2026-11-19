@@ -1074,55 +1074,23 @@ export async function POST(req: NextRequest) {
         }
 
         const isObjectFormat = typeof q.options[0] === 'object' && q.options[0] !== null;
-        let correctText = '';
-        let otherOptions: string[] = [];
-
-        if (isObjectFormat) {
-          const correctObj = q.options.find((o: any) => o && o.isCorrect === true);
-          if (correctObj && correctObj.text) {
-            correctText = correctObj.text;
-            otherOptions = q.options.filter((o: any) => o !== correctObj).map((o: any) => o ? o.text : '');
-          } else {
-            let idx = 0;
-            const ansStr = String(q.correctAnswer || '').trim().toUpperCase();
-            if (/^[A-D]$/.test(ansStr)) idx = ansStr.charCodeAt(0) - 65;
-            if (idx < 0 || idx >= q.options.length) idx = 0;
-            correctText = q.options[idx]?.text || '';
-            otherOptions = q.options.filter((_: any, oi: number) => oi !== idx).map((o: any) => o ? o.text : '');
-          }
-        } else {
-          let idx = 0;
-          const ansStr = String(q.correctAnswer || '').trim().toUpperCase();
-          if (/^[A-D]$/.test(ansStr)) idx = ansStr.charCodeAt(0) - 65;
-          if (idx < 0 || idx >= q.options.length) idx = 0;
-          correctText = String(q.options[idx] || '');
-          otherOptions = q.options.filter((_: any, oi: number) => oi !== idx).map((o: any) => String(o || ''));
-        }
-
-        if (!correctText) {
-          updatedQuestions.push(q);
-          return;
-        }
-
-        // Shuffle distractors
-        const shuffledDistractors = [...otherOptions];
-        for (let i = shuffledDistractors.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
-          [shuffledDistractors[i], shuffledDistractors[j]] = [shuffledDistractors[j], shuffledDistractors[i]];
-        }
+        let currentIdx = 0;
+        const ansStr = String(q.correctAnswer || '').trim().toUpperCase();
+        if (/^[A-D]$/.test(ansStr)) currentIdx = ansStr.charCodeAt(0) - 65;
+        if (currentIdx < 0 || currentIdx >= q.options.length) currentIdx = 0;
 
         const targetIdx = Math.floor(Math.random() * q.options.length);
         const targetLetter = String.fromCharCode(65 + targetIdx);
 
-        const newOptions: any[] = [];
-        let distIdx = 0;
-        for (let pos = 0; pos < q.options.length; pos++) {
-          if (pos === targetIdx) {
-            newOptions.push(isObjectFormat ? { text: correctText, isCorrect: true } : correctText);
-          } else {
-            const dText = shuffledDistractors[distIdx++] || `Option ${String.fromCharCode(65 + pos)}`;
-            newOptions.push(isObjectFormat ? { text: dText, isCorrect: false } : dText);
-          }
+        const newOptions = [...q.options];
+        const temp = newOptions[currentIdx];
+        newOptions[currentIdx] = newOptions[targetIdx];
+        newOptions[targetIdx] = temp;
+
+        if (isObjectFormat) {
+          newOptions.forEach((opt: any, oi: number) => {
+            if (opt) opt.isCorrect = (oi === targetIdx);
+          });
         }
 
         const qRef = adminDb.collection('questions').doc(q.id || q.questionCode);

@@ -15,62 +15,11 @@ import { areQuestionsTooSimilar } from '@/lib/questionSimilarity';
 import { Template } from '@/types/exam.types';
 import { Question } from '@/types/question.types';
 
+// The Question Bank is the Single Source of Truth (SSOT).
+// Questions are maintained in Firestore with high-quality authored options and natural answer distributions.
+// No runtime option scrambling or placeholder insertion is performed during exam generation.
 function balanceExamQuestionOptions(questions: Question[]): Question[] {
-  if (!questions || questions.length === 0) return questions;
-  return questions.map(q => {
-    const canonicalType = toCanonicalQuestionType(q.type);
-    if (canonicalType === 'OAR' || !Array.isArray(q.options) || q.options.length < 2) {
-      return q;
-    }
-    const isObjectFormat = typeof q.options[0] === 'object' && q.options[0] !== null;
-    let correctText = '';
-    let otherOptions: any[] = [];
-
-    if (isObjectFormat) {
-      const correctObj = q.options.find((o: any) => o && o.isCorrect === true);
-      if (correctObj && correctObj.text) {
-        correctText = correctObj.text;
-        otherOptions = q.options.filter((o: any) => o !== correctObj).map((o: any) => o ? o.text : '');
-      } else {
-        let idx = 0;
-        const ansStr = String(q.correctAnswer || '').trim().toUpperCase();
-        if (/^[A-D]$/.test(ansStr)) idx = ansStr.charCodeAt(0) - 65;
-        if (idx < 0 || idx >= q.options.length) idx = 0;
-        correctText = q.options[idx]?.text || '';
-        otherOptions = q.options.filter((_: any, oi: number) => oi !== idx).map((o: any) => o ? o.text : '');
-      }
-    } else {
-      let idx = 0;
-      const ansStr = String(q.correctAnswer || '').trim().toUpperCase();
-      if (/^[A-D]$/.test(ansStr)) idx = ansStr.charCodeAt(0) - 65;
-      if (idx < 0 || idx >= q.options.length) idx = 0;
-      correctText = String(q.options[idx] || '');
-      otherOptions = q.options.filter((_: any, oi: number) => oi !== idx).map((o: any) => String(o || ''));
-    }
-
-    if (!correctText) return q;
-
-    const shuffledDistractors = shuffleArray(otherOptions);
-    const targetIdx = Math.floor(Math.random() * q.options.length);
-    const targetLetter = String.fromCharCode(65 + targetIdx);
-
-    const newOptions: any[] = [];
-    let distIdx = 0;
-    for (let pos = 0; pos < q.options.length; pos++) {
-      if (pos === targetIdx) {
-        newOptions.push(isObjectFormat ? { text: correctText, isCorrect: true } : correctText);
-      } else {
-        const dText = shuffledDistractors[distIdx++] || `Option ${String.fromCharCode(65 + pos)}`;
-        newOptions.push(isObjectFormat ? { text: dText, isCorrect: false } : dText);
-      }
-    }
-
-    return {
-      ...q,
-      options: newOptions,
-      correctAnswer: targetLetter
-    };
-  });
+  return questions || [];
 }
 
 function isQuestionNumerical(q: Question | any): boolean {
@@ -1273,49 +1222,6 @@ Return ONLY valid JSON. No markdown wrappers or extra commentary.`;
         let opts = q.options || [];
         let cAns = q.correctAnswer || '';
         const canType = toCanonicalQuestionType(q.type || q.qtype || 'OSC');
-        if (canType !== 'OAR' && Array.isArray(opts) && opts.length >= 2) {
-          const isObjFormat = typeof opts[0] === 'object' && opts[0] !== null;
-          let correctText = '';
-          let otherOptions: any[] = [];
-          if (isObjFormat) {
-            const correctObj = opts.find((o: any) => o && o.isCorrect === true);
-            if (correctObj && correctObj.text) {
-              correctText = correctObj.text;
-              otherOptions = opts.filter((o: any) => o !== correctObj).map((o: any) => o ? o.text : '');
-            } else {
-              let idx = 0;
-              const ansStr = String(cAns).trim().toUpperCase();
-              if (/^[A-D]$/.test(ansStr)) idx = ansStr.charCodeAt(0) - 65;
-              if (idx < 0 || idx >= opts.length) idx = 0;
-              correctText = opts[idx]?.text || '';
-              otherOptions = opts.filter((_: any, oi: number) => oi !== idx).map((o: any) => o ? o.text : '');
-            }
-          } else {
-            let idx = 0;
-            const ansStr = String(cAns).trim().toUpperCase();
-            if (/^[A-D]$/.test(ansStr)) idx = ansStr.charCodeAt(0) - 65;
-            if (idx < 0 || idx >= opts.length) idx = 0;
-            correctText = String(opts[idx] || '');
-            otherOptions = opts.filter((_: any, oi: number) => oi !== idx).map((o: any) => String(o || ''));
-          }
-
-          if (correctText) {
-            const shuffledDistractors = shuffleArray(otherOptions);
-            const targetIdx = Math.floor(Math.random() * opts.length);
-            cAns = String.fromCharCode(65 + targetIdx);
-            const newOptions: any[] = [];
-            let distIdx = 0;
-            for (let pos = 0; pos < opts.length; pos++) {
-              if (pos === targetIdx) {
-                newOptions.push(isObjFormat ? { text: correctText, isCorrect: true } : correctText);
-              } else {
-                const dText = shuffledDistractors[distIdx++] || `Option ${String.fromCharCode(65 + pos)}`;
-                newOptions.push(isObjFormat ? { text: dText, isCorrect: false } : dText);
-              }
-            }
-            opts = newOptions;
-          }
-        }
 
         return {
           qtype: canType,
