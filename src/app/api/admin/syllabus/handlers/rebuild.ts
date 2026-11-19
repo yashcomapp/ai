@@ -5,7 +5,7 @@ import { verifyRole } from '@/lib/auth';
 import { getCanonicalBoardCode, getCanonicalBoardName } from '@/lib/syllabusUtils';
 
 // Rebuild helper logic (adapted from syllabusIndexService.js)
-async function runIndexRebuild() {
+export async function runIndexRebuild() {
   const summary = { subjectsProcessed: 0, topicsIndexed: 0, staleRemoved: 0, errors: [] as string[] };
   const validCodes = new Set<string>();
   const syllabusSubjectsTree: any = {};
