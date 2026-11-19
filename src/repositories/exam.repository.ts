@@ -126,6 +126,19 @@ export class ExamRepository {
       }
     }
 
-    return rawQuestions;
+    // Strictly preserve and order returned questions matching questionIds input array
+    const questionMap = new Map<string, QuestionItem>();
+    rawQuestions.forEach((q: any) => {
+      if (q.id) questionMap.set(q.id, q);
+      if (q.questionCode) questionMap.set(q.questionCode, q);
+    });
+
+    const orderedQuestions: QuestionItem[] = [];
+    questionIds.forEach((id: string) => {
+      const q = questionMap.get(id);
+      if (q) orderedQuestions.push(q);
+    });
+
+    return orderedQuestions.length > 0 ? orderedQuestions : rawQuestions;
   }
 }
