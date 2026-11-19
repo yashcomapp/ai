@@ -846,13 +846,17 @@ function ExamReportContent() {
 
   // Sorting attempts roster
   const getSortVal = (a: Attempt, col: string) => {
-    if (col === 'name') return a.studentName.toLowerCase();
+    if (col === 'name') {
+      const s = students.find(x => x.studentCode === a.studentCode);
+      return (s?.name || a.studentName || '').toLowerCase();
+    }
     if (col === 'batch') return getStudentBatchName(a.studentCode).toLowerCase();
     if (col === 'time') return getReviewTimeTaken(a);
     if (col === 'status') return a.status;
     if (col === 'date') return a.startedAt ? new Date(a.startedAt).getTime() : (a.completedAt ? new Date(a.completedAt).getTime() : 0);
     if (col === 'accuracy') return getAttemptStats(a).accuracy;
     if (col === 'pace') return getAttemptStats(a).avgPaceSec;
+    if (col === 'score') return a.score ?? 0;
     return a.percentage;
   };
 
@@ -958,7 +962,11 @@ function ExamReportContent() {
         const stats = getAttemptStats(a);
         const rank = idx + 1;
         const rankBadge = rank === 1 ? '🥇 1' : rank === 2 ? '🥈 2' : rank === 3 ? '🥉 3' : `<span style="display:inline-block; min-width: 24px; padding: 2px 6px; border-radius: 4px; background: #e2e8f0; color: #1e293b; font-weight: 800; font-size: 12px;">${rank}</span>`;
-        const displayName = formatReportStudentName(a.studentName);
+        const studentObj = students.find(s => s.studentCode === a.studentCode);
+        const rawName = (studentObj?.name && !studentObj.name.startsWith('ST-'))
+          ? studentObj.name
+          : ((a.studentName && !a.studentName.startsWith('ST-')) ? a.studentName : (studentObj?.name || 'Student'));
+        const displayName = formatReportStudentName(rawName);
         const isGamble = stats.isHighGamble;
         const rowBg = idx % 2 === 0 ? '#ffffff' : '#f8fafc';
         const blunderStyle = isGamble ? 'background-color: #fef2f2; border-left: 4px solid #ef4444;' : `background-color: ${rowBg};`;
@@ -986,7 +994,7 @@ function ExamReportContent() {
               ${a.isLate ? '<span style="margin-left: 6px; font-size: 10px; padding: 2px 6px; background: #fee2e2; color: #991b1b; border: 1.5px solid #fca5a5; border-radius: 4px; font-weight: 900;">LATE</span>' : ''}
             </td>
             <td style="padding: 8px 12px; text-align: center; white-space: nowrap;">
-              <strong style="font-size: 14.5px; color: #0f172a; font-weight: 900;">${a.score || 0}</strong> <span style="font-size: 12px; color: #64748b; font-weight: 700;">/ ${a.totalMarks}</span>
+              <strong style="font-size: 14.5px; color: ${(a.score ?? 0) < 0 ? '#991b1b' : '#0f172a'}; font-weight: 900;">${a.score ?? 0}</strong> <span style="font-size: 12px; color: #64748b; font-weight: 700;">/ ${a.totalMarks}</span>
               <span style="margin-left: 6px;">${getScoreChip(a.percentage)}</span>
             </td>
             <td style="padding: 8px 12px; text-align: center; font-size: 13px; white-space: nowrap;">
@@ -1446,7 +1454,7 @@ function ExamReportContent() {
                                 ⏰ LATE
                               </span>
                             )}
-                            {a.studentName}{getStudentModeSuffix(students.find(s => s.studentCode === a.studentCode))}
+                            {students.find(s => s.studentCode === a.studentCode)?.name || (a.studentName && !a.studentName.startsWith('ST-') ? a.studentName : 'Student')}{getStudentModeSuffix(students.find(s => s.studentCode === a.studentCode))}
                             {a.micAvailable === false && (
                               <span style={{ marginLeft: '6px', color: 'var(--warning)', background: 'var(--warning-bg, rgba(217, 119, 6, 0.1))', padding: '1px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: 700 }} title="Microphone Bypassed / Offline">
                                 🎙️
@@ -1458,8 +1466,8 @@ function ExamReportContent() {
                               </span>
                             )}
                           </td>
-                          <td style={{ padding: '5px 8px', fontWeight: 700, color: scoreColor(a.percentage), whiteSpace: 'nowrap' }}>
-                            {scoreVal} / {a.totalMarks} ({a.percentage}%)
+                          <td style={{ padding: '5px 8px', fontWeight: 700, color: (a.score ?? 0) < 0 ? '#ef4444' : scoreColor(a.percentage), whiteSpace: 'nowrap' }}>
+                            {a.score ?? 0} / {a.totalMarks} ({a.percentage}%)
                           </td>
                           <td style={{ padding: '5px 8px', whiteSpace: 'nowrap', fontSize: '11.5px' }}>
                             <span style={{ color: '#10b981', fontWeight: 700 }}>{stats.correctCount}✅</span>

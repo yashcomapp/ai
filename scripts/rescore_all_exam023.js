@@ -161,7 +161,8 @@ async function run() {
 
     const earnedMarks = correctCount * 4;
     const penaltyLost = wrongCount * 1;
-    const newScore = Math.max(0, earnedMarks - penaltyLost);
+    // Allow negative score per grading policy (no clamping to 0)
+    const newScore = earnedMarks - penaltyLost;
     const newPercentage = parseFloat(((newScore / 120) * 100).toFixed(1));
 
     console.log(`\n======================================================`);

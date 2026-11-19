@@ -248,9 +248,19 @@ export async function GET(req: NextRequest) {
     const examData = examSnap.data() || {};
     const topicNames = resolveTopicNames(syllabusList, examData);
 
+    const studentNameMap = new Map<string, string>();
+    studentsSnap.docs.forEach(sDoc => {
+      const sData = sDoc.data();
+      if (sData.studentCode && sData.name) {
+        studentNameMap.set(sData.studentCode, sData.name);
+      }
+    });
+
     const nowMs = Date.now();
     const attempts = reviewsSnap.docs.map(doc => {
       const data = doc.data();
+      const trueStudentName = (data.studentCode ? studentNameMap.get(data.studentCode) : null) || 
+        (data.studentName && !data.studentName.startsWith('ST-') ? data.studentName : 'Student');
       const rawAttempt = attemptsMap.get(doc.id) || attemptsMap.get(`${resolvedExamId}_${data.studentCode}`) || attemptsMap.get(data.studentCode) || {};
       const rawStarted = data.startedAt || rawAttempt.startedAt || data.createdAt;
       const startedAt = rawStarted ? (rawStarted.toDate ? rawStarted.toDate() : new Date(rawStarted)) : null;
@@ -283,6 +293,7 @@ export async function GET(req: NextRequest) {
       return {
         id: doc.id,
         ...data,
+        studentName: trueStudentName,
         violations: sanitizedViolations,
         questionDetails: qDetails,
         totalMarks: data.totalMarks || examData.totalMarks || 0,

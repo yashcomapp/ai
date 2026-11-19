@@ -8,7 +8,10 @@ import { getScoreColor } from '@/lib/dashboardMetrics';
  */
 export function formatReportStudentName(fullName: string): string {
   if (!fullName) return '';
-  const parts = fullName.trim().split(/\s+/).filter(Boolean);
+  const trimmed = fullName.trim();
+  // Per Rule 2B: NEVER display raw internal student codes (e.g. ST-2026-000066) in user-facing UI
+  if (/^ST-\d+/i.test(trimmed)) return 'Student';
+  const parts = trimmed.split(/\s+/).filter(Boolean);
   if (parts.length <= 2) return parts.join(' ');
   return `${parts[0]} ${parts[parts.length - 1]}`;
 }

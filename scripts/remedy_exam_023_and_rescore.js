@@ -54,7 +54,8 @@ async function runRemedy() {
 
     const earnedMarks = correctCount * 4;
     const penaltyLost = wrongCount * 1;
-    const newScore = Math.max(0, earnedMarks - penaltyLost);
+    // Allow negative score per grading policy (no clamping to 0)
+    const newScore = earnedMarks - penaltyLost;
     const newPercentage = parseFloat(((newScore / 120) * 100).toFixed(1));
 
     console.log(`Student ${r.studentName}: ${correctCount} correct (+${earnedMarks}), ${wrongCount} wrong (-${penaltyLost}) -> Score: ${newScore}/120 (${newPercentage}%)`);
