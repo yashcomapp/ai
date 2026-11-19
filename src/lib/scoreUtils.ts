@@ -35,15 +35,15 @@ export function deriveScoreMetrics(data: any): {
         ? Number(data.percentage)
         : (totalQuestions > 0 ? Math.round((score / totalQuestions) * 100) : 0));
 
-  // Self-healing guard: If score > 0 but stored percentage is 0 or NaN, auto-derive true percentage
-  if (isNaN(scorePercent) || (score > 0 && scorePercent === 0 && totalQuestions > 0)) {
-    scorePercent = Math.min(100, Math.max(0, Math.round((score / totalQuestions) * 100)));
+  // Self-healing guard: If score !== 0 but stored percentage is 0 or NaN, auto-derive true percentage
+  if (isNaN(scorePercent) || (score !== 0 && scorePercent === 0 && totalQuestions > 0)) {
+    scorePercent = Math.min(100, Math.round((score / totalQuestions) * 100));
   }
 
   return {
     score,
     totalQuestions,
-    scorePercent: Math.min(100, Math.max(0, scorePercent))
+    scorePercent: Math.min(100, scorePercent)
   };
 }
 

@@ -154,9 +154,7 @@ export class AttemptService {
       }
     }
 
-    if (examData.examType !== 'entrance') {
-      score = Math.max(0, score);
-    }
+    // Negative marks awarded across all classes per grading policy
     const finalTotalMarks = totalMarks > 0 ? totalMarks : (examData.totalMarks || 1);
     const percentage = parseFloat(((score / finalTotalMarks) * 100).toFixed(1));
 

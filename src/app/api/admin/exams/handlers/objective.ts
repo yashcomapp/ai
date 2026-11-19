@@ -520,7 +520,7 @@ export async function POST(req: NextRequest) {
           newScore += marks;
           if (wasAttempted) newScore += negativePerWrong;
         }
-        newScore = Math.max(0, newScore);
+        // Negative marks awarded across all classes per grading policy
         const newPct = r.totalMarks ? parseFloat(((newScore / r.totalMarks) * 100).toFixed(1)) : r.percentage;
 
         batch.update(doc.ref, {
