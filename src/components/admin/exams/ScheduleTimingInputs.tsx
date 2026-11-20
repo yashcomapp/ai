@@ -32,10 +32,10 @@ export function ScheduleTimingInputs<T extends ScheduleTimingModalState>({
   const radioName = `${radioNamePrefix}lateEntryRestriction`;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
       <div style={{ display: 'flex', gap: '10px' }}>
         <div style={{ flex: 1 }}>
-          <label style={{ display: 'block', fontSize: '10px', color: 'var(--text-muted)' }}>Start Datetime</label>
+          <label style={{ display: 'block', fontSize: '10px', color: 'var(--text-muted)', marginBottom: '2px' }}>Start Datetime</label>
           <DateTimeInputDMY 
             value={state.startAtStr}
             disabled={state.isMorningTest || state.isEveningTest}
@@ -46,9 +46,9 @@ export function ScheduleTimingInputs<T extends ScheduleTimingModalState>({
                   startAtStr: val, 
                   lateEntryRestriction: is6or9 ? true : prev.lateEntryRestriction
                 };
-                if (!prev.endAtStr) {
-                  const dur = getDuration(prev);
-                  updates.endAtStr = calculateEndDatetime(val, dur || 60);
+                const dur = getDuration(prev);
+                if (dur && dur > 0) {
+                  updates.endAtStr = calculateEndDatetime(val, dur);
                 }
                 return { ...prev, ...updates };
               });
@@ -56,7 +56,7 @@ export function ScheduleTimingInputs<T extends ScheduleTimingModalState>({
           />
         </div>
         <div style={{ flex: 1 }}>
-          <label style={{ display: 'block', fontSize: '10px', color: 'var(--text-muted)' }}>End Datetime</label>
+          <label style={{ display: 'block', fontSize: '10px', color: 'var(--text-muted)', marginBottom: '2px' }}>End Datetime</label>
           <DateTimeInputDMY 
             value={state.endAtStr}
             disabled={state.isMorningTest || state.isEveningTest}
@@ -65,28 +65,26 @@ export function ScheduleTimingInputs<T extends ScheduleTimingModalState>({
         </div>
       </div>
       {/* Late Entry Restriction Options */}
-      <div style={{ marginTop: '2px' }}>
-        <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '3px' }}>Late Entry Restriction</label>
-        <div style={{ display: 'flex', gap: '15px' }}>
-          <label style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
-            <input 
-              type="radio" 
-              name={radioName} 
-              checked={state.lateEntryRestriction === true} 
-              onChange={() => setState(prev => ({ ...prev, lateEntryRestriction: true }))} 
-              style={{ cursor: 'pointer' }}
-            /> Enforce 5-minute limit
-          </label>
-          <label style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
-            <input 
-              type="radio" 
-              name={radioName} 
-              checked={state.lateEntryRestriction === false} 
-              onChange={() => setState(prev => ({ ...prev, lateEntryRestriction: false }))} 
-              style={{ cursor: 'pointer' }}
-            /> Allow late entry
-          </label>
-        </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginTop: '1px' }}>
+        <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>Late Entry:</span>
+        <label style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}>
+          <input 
+            type="radio" 
+            name={radioName} 
+            checked={state.lateEntryRestriction === true} 
+            onChange={() => setState(prev => ({ ...prev, lateEntryRestriction: true }))} 
+            style={{ cursor: 'pointer' }}
+          /> Enforce 5-minute limit
+        </label>
+        <label style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}>
+          <input 
+            type="radio" 
+            name={radioName} 
+            checked={state.lateEntryRestriction === false} 
+            onChange={() => setState(prev => ({ ...prev, lateEntryRestriction: false }))} 
+            style={{ cursor: 'pointer' }}
+          /> Allow late entry
+        </label>
       </div>
     </div>
   );

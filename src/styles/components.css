@@ -2320,3 +2320,15 @@ button, a, .brand, .tab, .btn, [role="button"], .settings-toggle, .theme-toggle,
     height: 13px !important;
   }
 }
+
+
+/* SSOT No-Scrollbar Utility */
+.no-scrollbar {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}

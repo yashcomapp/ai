@@ -528,31 +528,61 @@ export default function AdminExamsPage() {
   };
 
   const handleToggleBatchAssign = (batchId: string) => {
-    const next = new Set(assignModal.selectedBatches);
-    if (next.has(batchId)) next.delete(batchId);
-    else next.add(batchId);
-    setAssignModal(prev => ({ ...prev, selectedBatches: next }));
+    setAssignModal(prev => {
+      const next = new Set(prev.selectedBatches);
+      if (next.has(batchId)) next.delete(batchId);
+      else next.add(batchId);
+      return { ...prev, selectedBatches: next };
+    });
   };
 
   const handleToggleStudentAssign = (code: string) => {
-    const next = new Set(assignModal.selectedStudents);
-    if (next.has(code)) next.delete(code);
-    else next.add(code);
-    setAssignModal(prev => ({ ...prev, selectedStudents: next }));
+    setAssignModal(prev => {
+      const next = new Set(prev.selectedStudents);
+      if (next.has(code)) next.delete(code);
+      else next.add(code);
+      return { ...prev, selectedStudents: next };
+    });
+  };
+
+  const handleSelectStudentsAssign = (codes: string[], select: boolean) => {
+    setAssignModal(prev => {
+      const next = new Set(prev.selectedStudents);
+      codes.forEach(c => {
+        if (select) next.add(c);
+        else next.delete(c);
+      });
+      return { ...prev, selectedStudents: next };
+    });
   };
 
   const handleToggleBatchEdit = (batchId: string) => {
-    const next = new Set(editModal.selectedBatches);
-    if (next.has(batchId)) next.delete(batchId);
-    else next.add(batchId);
-    setEditModal(prev => ({ ...prev, selectedBatches: next }));
+    setEditModal(prev => {
+      const next = new Set(prev.selectedBatches);
+      if (next.has(batchId)) next.delete(batchId);
+      else next.add(batchId);
+      return { ...prev, selectedBatches: next };
+    });
   };
 
   const handleToggleStudentEdit = (code: string) => {
-    const next = new Set(editModal.selectedStudents);
-    if (next.has(code)) next.delete(code);
-    else next.add(code);
-    setEditModal(prev => ({ ...prev, selectedStudents: next }));
+    setEditModal(prev => {
+      const next = new Set(prev.selectedStudents);
+      if (next.has(code)) next.delete(code);
+      else next.add(code);
+      return { ...prev, selectedStudents: next };
+    });
+  };
+
+  const handleSelectStudentsEdit = (codes: string[], select: boolean) => {
+    setEditModal(prev => {
+      const next = new Set(prev.selectedStudents);
+      codes.forEach(c => {
+        if (select) next.add(c);
+        else next.delete(c);
+      });
+      return { ...prev, selectedStudents: next };
+    });
   };
 
   // Edit Assignment Action
@@ -1066,6 +1096,7 @@ export default function AdminExamsPage() {
         getStudentsGroupedByBatch={getStudentsGroupedByBatch}
         handleToggleBatchAssign={handleToggleBatchAssign}
         handleToggleStudentAssign={handleToggleStudentAssign}
+        handleSelectStudentsAssign={handleSelectStudentsAssign}
         getMorningTestTimes={getMorningTestTimes}
         getEveningTestTimes={getEveningTestTimes}
         handleSaveAssignment={handleSaveAssignment}
@@ -1079,6 +1110,7 @@ export default function AdminExamsPage() {
         getStudentsGroupedByBatch={getStudentsGroupedByBatch}
         handleToggleBatchEdit={handleToggleBatchEdit}
         handleToggleStudentEdit={handleToggleStudentEdit}
+        handleSelectStudentsEdit={handleSelectStudentsEdit}
         getMorningTestTimes={getMorningTestTimes}
         getEveningTestTimes={getEveningTestTimes}
         handleSaveEditedAssignment={handleSaveEditedAssignment}

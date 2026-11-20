@@ -136,11 +136,12 @@ export const ASSIGNMENT_MODAL_CARD_STYLE: React.CSSProperties = {
   background: 'var(--surface-popover)',
   borderRadius: 'var(--radius-lg)',
   border: '1px solid var(--border-popover)',
-  width: '94%',
-  maxHeight: '90vh',
+  width: '96%',
+  maxHeight: '96vh',
   overflowY: 'auto',
-  padding: '20px 24px',
+  scrollbarWidth: 'none',
+  padding: '16px 20px',
   display: 'flex',
   flexDirection: 'column',
-  gap: '16px'
+  gap: '10px'
 };

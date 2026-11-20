@@ -33,6 +33,7 @@ export function ModalShell({
 
   return (
     <div
+      className="no-scrollbar"
       style={{
         position: 'fixed',
         inset: 0,
@@ -45,6 +46,8 @@ export function ModalShell({
         zIndex,
         padding,
         overflowY: 'auto',
+        scrollbarWidth: 'none',
+        msOverflowStyle: 'none',
       }}
       onClick={(e) => {
         if (e.target === e.currentTarget && onClose) {
@@ -53,7 +56,7 @@ export function ModalShell({
       }}
     >
       <div
-        className={className}
+        className={`no-scrollbar ${className}`}
         style={{
           background: 'var(--surface-popover)',
           border: '1px solid var(--border)',
@@ -63,6 +66,8 @@ export function ModalShell({
           width,
           boxShadow: 'var(--shadow-lg)',
           margin: align === 'flex-start' ? '0 auto' : undefined,
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none',
           ...cardStyle,
         }}
         onClick={(e) => e.stopPropagation()}

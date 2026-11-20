@@ -1,9 +1,7 @@
 'use client';
 
 import React from 'react';
-import DateTimeInputDMY from '@/components/DateTimeInputDMY';
-import { calculateEndDatetime, toLocalISOString, getDateKeyIST } from '@/lib/dateUtils';
-import { Batch } from '@/types/batch.types';
+import { calculateEndDatetime, toLocalISOString } from '@/lib/dateUtils';
 import TargetPicker from './TargetPicker';
 import ScheduleTimingInputs from './ScheduleTimingInputs';
 import { AttemptDurationControls } from './AttemptDurationControls';
@@ -22,13 +20,14 @@ interface AssignExamModalProps extends AssignmentModalCommonProps {
   setAssignModal: React.Dispatch<React.SetStateAction<AssignModalState>>;
   handleToggleBatchAssign: (id: string) => void;
   handleToggleStudentAssign: (code: string) => void;
+  handleSelectStudentsAssign?: (codes: string[], select: boolean) => void;
   handleSaveAssignment: () => void;
   assigning: boolean;
 }
 
 function getModalDuration(modal: AssignModalState): number {
   if (modal.type === 'objective') {
-    return Number(modal.overrideDuration ? modal.examDuration : modal.normDuration) || 30;
+    return Number(modal.overrideDuration && modal.examDuration ? modal.examDuration : modal.normDuration) || 30;
   }
   if (modal.examMode === 'classroom') {
     return Number(modal.classroomDuration) || 45;
@@ -43,6 +42,7 @@ export function AssignExamModal({
   getStudentsGroupedByBatch,
   handleToggleBatchAssign,
   handleToggleStudentAssign,
+  handleSelectStudentsAssign,
   getMorningTestTimes,
   getEveningTestTimes,
   handleSaveAssignment,
@@ -54,144 +54,144 @@ export function AssignExamModal({
     <ModalShell
       isOpen={assignModal.show}
       onClose={() => setAssignModal(prev => ({ ...prev, show: false }))}
-      maxWidth="620px"
+      maxWidth="660px"
       zIndex={20000}
       cardStyle={ASSIGNMENT_MODAL_CARD_STYLE}
     >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
-          <div>
-            <h3 style={{ fontSize: '15px', fontWeight: 800, margin: 0, color: 'var(--text)' }}>
-              📋 Assign {assignModal.type === 'objective' ? 'Objective' : 'Subjective'} Exam
-            </h3>
-            <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px', wordBreak: 'break-word', lineHeight: '1.4' }}>
-              {assignModal.examName}
-            </div>
-          </div>
-          <button 
-            onClick={() => setAssignModal(prev => ({ ...prev, show: false }))} 
-            disabled={assigning}
-            style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '18px', padding: '2px 6px', borderRadius: '4px' }}
-          >
-            ✕
-          </button>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+          <h3 style={{ fontSize: '14px', fontWeight: 800, margin: 0, color: 'var(--text)' }}>
+            📋 Assign {assignModal.type === 'objective' ? 'Objective' : 'Subjective'} Exam
+          </h3>
+          <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 500, wordBreak: 'break-all' }}>
+            ({assignModal.examName})
+          </span>
         </div>
+        <button 
+          onClick={() => setAssignModal(prev => ({ ...prev, show: false }))} 
+          disabled={assigning}
+          style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '16px', padding: '1px 4px', borderRadius: '4px' }}
+        >
+          ✕
+        </button>
+      </div>
 
-        {assignModal.type === 'subjective' && (
-          <div>
-            <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px' }}>Subjective Exam Mode</label>
-            <div style={{ display: 'flex', gap: '15px' }}>
-              <label style={{ fontSize: '12px', cursor: 'pointer' }}>
-                <input 
-                  type="radio" 
-                  name="examMode" 
-                  checked={assignModal.examMode === 'home'} 
-                  onChange={() => setAssignModal(prev => {
-                    const dur = Number(prev.normDuration) || 60;
-                    return {
-                      ...prev,
-                      examMode: 'home',
-                      endAtStr: prev.startAtStr ? calculateEndDatetime(prev.startAtStr, dur) : prev.endAtStr
-                    };
-                  })} 
-                /> 🏠 Home Mode (Parent review)
-              </label>
-              <label style={{ fontSize: '12px', cursor: 'pointer' }}>
-                <input 
-                  type="radio" 
-                  name="examMode" 
-                  checked={assignModal.examMode === 'classroom'} 
-                  onChange={() => setAssignModal(prev => {
-                    const dur = Number(prev.classroomDuration) || 45;
-                    return {
-                      ...prev,
-                      examMode: 'classroom',
-                      endAtStr: prev.startAtStr ? calculateEndDatetime(prev.startAtStr, dur) : prev.endAtStr
-                    };
-                  })} 
-                /> 🏫 Classroom Mode (Peer Lottery)
-              </label>
-            </div>
-          </div>
-        )}
-
-        {assignModal.type === 'subjective' && assignModal.examMode === 'classroom' && (
-          <div style={{ background: 'var(--bg-soft)', padding: '8px 12px', borderRadius: 'var(--radius-sm)', borderLeft: '3px solid var(--warning)', fontSize: '11px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <strong>Classroom Peer Lottery Settings:</strong>
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '10px', color: 'var(--text-muted)' }}>Duration (mins)</label>
-                <input 
-                  type="number" 
-                  value={assignModal.classroomDuration === undefined || assignModal.classroomDuration === null ? '' : assignModal.classroomDuration} 
-                  onChange={(e) => {
-                    const raw = e.target.value;
-                    if (raw === '') {
-                      setAssignModal(prev => ({ ...prev, classroomDuration: '' as any }));
-                      return;
-                    }
-                    const dur = Number(raw);
-                    setAssignModal(prev => {
-                      let updates: any = { classroomDuration: isNaN(dur) ? '' : dur };
-                      if (prev.startAtStr && !isNaN(dur) && dur > 0) {
-                        updates.endAtStr = calculateEndDatetime(prev.startAtStr, dur);
-                      }
-                      return { ...prev, ...updates };
-                    });
-                  }}
-                  onBlur={() => {
-                    setAssignModal(prev => {
-                      if (!prev.classroomDuration || isNaN(Number(prev.classroomDuration))) {
-                        const fallback = 45;
-                        return {
-                          ...prev,
-                          classroomDuration: fallback,
-                          endAtStr: prev.startAtStr ? calculateEndDatetime(prev.startAtStr, fallback) : prev.endAtStr
-                        };
-                      }
-                      return prev;
-                    });
-                  }}
-                  style={{ width: '80px', padding: '4px', background: 'var(--surface)', color: 'var(--text)', border: '1px solid var(--border-light)' }}
-                />
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: '10px', color: 'var(--text-muted)' }}>Mins per Q</label>
-                <input 
-                  type="number" 
-                  value={assignModal.classroomTimePerQ === undefined || assignModal.classroomTimePerQ === null ? '' : assignModal.classroomTimePerQ} 
-                  onChange={(e) => {
-                    const raw = e.target.value;
-                    setAssignModal(prev => ({ ...prev, classroomTimePerQ: raw === '' ? ('' as any) : Number(raw) }));
-                  }}
-                  onBlur={() => {
-                    if (!assignModal.classroomTimePerQ || isNaN(Number(assignModal.classroomTimePerQ))) {
-                      setAssignModal(prev => ({ ...prev, classroomTimePerQ: 3 }));
-                    }
-                  }}
-                  style={{ width: '80px', padding: '4px', background: 'var(--surface)', color: 'var(--text)', border: '1px solid var(--border-light)' }}
-                />
-              </div>
-            </div>
-          </div>
-        )}
-
-        <div style={{ background: 'var(--surface-sunken)', padding: '10px 12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-light)' }}>
-          <TargetPicker
-            targetType={assignModal.targetType}
-            onChangeTargetType={(type) => setAssignModal(prev => ({ ...prev, targetType: type }))}
-            batches={batches}
-            selectedBatches={assignModal.selectedBatches}
-            onToggleBatch={handleToggleBatchAssign}
-            selectedStudents={assignModal.selectedStudents}
-            onToggleStudent={handleToggleStudentAssign}
-            getStudentsGroupedByBatch={getStudentsGroupedByBatch}
-          />
-        </div>
-
+      {assignModal.type === 'subjective' && (
         <div>
-          <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '5px' }}>Availability Slot</label>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '8px', flexWrap: 'wrap' }}>
-            <label style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+          <label style={{ display: 'block', fontSize: '10px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '2px' }}>Subjective Exam Mode</label>
+          <div style={{ display: 'flex', gap: '15px' }}>
+            <label style={{ fontSize: '11px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+              <input 
+                type="radio" 
+                name="examMode" 
+                checked={assignModal.examMode === 'home'} 
+                onChange={() => setAssignModal(prev => {
+                  const dur = Number(prev.normDuration) || 60;
+                  return {
+                    ...prev,
+                    examMode: 'home',
+                    endAtStr: prev.startAtStr ? calculateEndDatetime(prev.startAtStr, dur) : prev.endAtStr
+                  };
+                })} 
+              /> 🏠 Home Mode (Parent review)
+            </label>
+            <label style={{ fontSize: '11px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+              <input 
+                type="radio" 
+                name="examMode" 
+                checked={assignModal.examMode === 'classroom'} 
+                onChange={() => setAssignModal(prev => {
+                  const dur = Number(prev.classroomDuration) || 45;
+                  return {
+                    ...prev,
+                    examMode: 'classroom',
+                    endAtStr: prev.startAtStr ? calculateEndDatetime(prev.startAtStr, dur) : prev.endAtStr
+                  };
+                })} 
+              /> 🏫 Classroom Mode (Peer Lottery)
+            </label>
+          </div>
+        </div>
+      )}
+
+      {assignModal.type === 'subjective' && assignModal.examMode === 'classroom' && (
+        <div style={{ background: 'var(--bg-soft)', padding: '6px 10px', borderRadius: 'var(--radius-sm)', borderLeft: '3px solid var(--warning)', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+          <strong>Peer Lottery Settings:</strong>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <label style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Duration (mins):</label>
+            <input 
+              type="number" 
+              value={assignModal.classroomDuration === undefined || assignModal.classroomDuration === null ? '' : assignModal.classroomDuration} 
+              onChange={(e) => {
+                const raw = e.target.value;
+                if (raw === '') {
+                  setAssignModal(prev => ({ ...prev, classroomDuration: '' as any }));
+                  return;
+                }
+                const dur = Number(raw);
+                setAssignModal(prev => {
+                  let updates: any = { classroomDuration: isNaN(dur) ? '' : dur };
+                  if (prev.startAtStr && !isNaN(dur) && dur > 0) {
+                    updates.endAtStr = calculateEndDatetime(prev.startAtStr, dur);
+                  }
+                  return { ...prev, ...updates };
+                });
+              }}
+              onBlur={() => {
+                setAssignModal(prev => {
+                  if (!prev.classroomDuration || isNaN(Number(prev.classroomDuration))) {
+                    const fallback = 45;
+                    return {
+                      ...prev,
+                      classroomDuration: fallback,
+                      endAtStr: prev.startAtStr ? calculateEndDatetime(prev.startAtStr, fallback) : prev.endAtStr
+                    };
+                  }
+                  return prev;
+                });
+              }}
+              style={{ width: '60px', padding: '2px 4px', background: 'var(--surface)', color: 'var(--text)', border: '1px solid var(--border-light)', borderRadius: '4px' }}
+            />
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <label style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Mins per Q:</label>
+            <input 
+              type="number" 
+              value={assignModal.classroomTimePerQ === undefined || assignModal.classroomTimePerQ === null ? '' : assignModal.classroomTimePerQ} 
+              onChange={(e) => {
+                const raw = e.target.value;
+                setAssignModal(prev => ({ ...prev, classroomTimePerQ: raw === '' ? ('' as any) : Number(raw) }));
+              }}
+              onBlur={() => {
+                if (!assignModal.classroomTimePerQ || isNaN(Number(assignModal.classroomTimePerQ))) {
+                  setAssignModal(prev => ({ ...prev, classroomTimePerQ: 3 }));
+                }
+              }}
+              style={{ width: '60px', padding: '2px 4px', background: 'var(--surface)', color: 'var(--text)', border: '1px solid var(--border-light)', borderRadius: '4px' }}
+            />
+          </div>
+        </div>
+      )}
+
+      <div style={{ background: 'var(--surface-sunken)', padding: '6px 10px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-light)' }}>
+        <TargetPicker
+          targetType={assignModal.targetType}
+          onChangeTargetType={(type) => setAssignModal(prev => ({ ...prev, targetType: type }))}
+          batches={batches}
+          selectedBatches={assignModal.selectedBatches}
+          onToggleBatch={handleToggleBatchAssign}
+          selectedStudents={assignModal.selectedStudents}
+          onToggleStudent={handleToggleStudentAssign}
+          onSelectStudents={handleSelectStudentsAssign}
+          getStudentsGroupedByBatch={getStudentsGroupedByBatch}
+        />
+      </div>
+
+      <div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px', flexWrap: 'wrap', gap: '6px' }}>
+          <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>Availability Slot</label>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+            <label style={{ fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
               <input 
                 type="radio" 
                 name="openMode" 
@@ -199,7 +199,7 @@ export function AssignExamModal({
                 onChange={() => setAssignModal(prev => ({ ...prev, openMode: 'immediate', isMorningTest: false, isEveningTest: false }))} 
               /> Immediate
             </label>
-            <label style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+            <label style={{ fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
               <input 
                 type="radio" 
                 name="openMode" 
@@ -219,7 +219,7 @@ export function AssignExamModal({
                 })} 
               /> Scheduled
             </label>
-            <label style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', whiteSpace: 'nowrap', background: assignModal.isMorningTest ? 'rgba(52, 152, 219, 0.2)' : 'rgba(52, 152, 219, 0.08)', padding: '2px 8px', borderRadius: '4px', border: '1px solid rgba(52, 152, 219, 0.25)' }}>
+            <label style={{ fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', whiteSpace: 'nowrap', background: assignModal.isMorningTest ? 'rgba(52, 152, 219, 0.2)' : 'rgba(52, 152, 219, 0.08)', padding: '2px 8px', borderRadius: '4px', border: '1px solid rgba(52, 152, 219, 0.25)' }}>
               <input 
                 type="checkbox" 
                 checked={!!assignModal.isMorningTest} 
@@ -230,7 +230,7 @@ export function AssignExamModal({
                     if (checked) {
                       updates.openMode = 'scheduled';
                       updates.lateEntryRestriction = true;
-                      const duration = (prev.type === 'objective' ? prev.examDuration : (prev.examMode === 'classroom' ? prev.classroomDuration : 60)) || 30;
+                      const duration = getModalDuration(prev);
                       const times = getMorningTestTimes(duration);
                       updates.startAtStr = times.startStr;
                       updates.endAtStr = times.endStr;
@@ -240,7 +240,7 @@ export function AssignExamModal({
                 }} 
               /> ☀️ 6 AM Test
             </label>
-            <label style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', whiteSpace: 'nowrap', background: assignModal.isEveningTest ? 'rgba(168, 85, 247, 0.2)' : 'rgba(168, 85, 247, 0.08)', padding: '2px 8px', borderRadius: '4px', border: '1px solid rgba(168, 85, 247, 0.25)' }}>
+            <label style={{ fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', whiteSpace: 'nowrap', background: assignModal.isEveningTest ? 'rgba(168, 85, 247, 0.2)' : 'rgba(168, 85, 247, 0.08)', padding: '2px 8px', borderRadius: '4px', border: '1px solid rgba(168, 85, 247, 0.25)' }}>
               <input 
                 type="checkbox" 
                 checked={!!assignModal.isEveningTest} 
@@ -251,7 +251,7 @@ export function AssignExamModal({
                     if (checked) {
                       updates.openMode = 'scheduled';
                       updates.lateEntryRestriction = true;
-                      const duration = (prev.type === 'objective' ? prev.examDuration : (prev.examMode === 'classroom' ? prev.classroomDuration : 60)) || 30;
+                      const duration = getModalDuration(prev);
                       const times = getEveningTestTimes(duration);
                       updates.startAtStr = times.startStr;
                       updates.endAtStr = times.endStr;
@@ -262,55 +262,68 @@ export function AssignExamModal({
               /> 🌙 9 PM Test
             </label>
           </div>
-
-          <ScheduleTimingInputs
-            state={assignModal}
-            setState={setAssignModal}
-            getDuration={getModalDuration}
-            radioNamePrefix="assign"
-          />
         </div>
 
-        <AttemptDurationControls
-          maxAttempts={assignModal.attemptLimit}
-          onChangeMaxAttempts={(val) => setAssignModal(prev => ({ ...prev, attemptLimit: val }))}
-          showDuration={assignModal.type === 'objective'}
-          overrideDuration={assignModal.overrideDuration}
-          examDuration={assignModal.examDuration}
-          onChangeOverrideDuration={(checked) => {
-            setAssignModal(prev => {
-              const dur = checked ? (Number(prev.examDuration) || prev.normDuration || 30) : (prev.normDuration || 30);
-              return { ...prev, overrideDuration: checked, examDuration: dur };
-            });
-          }}
-          onChangeExamDuration={(dur) => {
-            setAssignModal(prev => ({ ...prev, examDuration: dur === '' ? ('' as any) : Number(dur) }));
-          }}
-          onBlurExamDuration={() => {
-            setAssignModal(prev => {
-              if (!prev.examDuration || Number(prev.examDuration) < 1) {
-                const fallback = prev.normDuration || 30;
-                return {
-                  ...prev,
-                  examDuration: fallback
-                };
-              }
-              return prev;
-            });
-          }}
-          durationHelperText={!assignModal.overrideDuration && (
-            <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px' }}>
-              Auto-calculated from questions ({assignModal.normDuration} mins standard norm).
-            </div>
-          )}
+        <ScheduleTimingInputs
+          state={assignModal}
+          setState={setAssignModal}
+          getDuration={getModalDuration}
+          radioNamePrefix="assign"
         />
+      </div>
 
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '6px' }}>
-          <button className="btn btn-secondary" onClick={() => setAssignModal(prev => ({ ...prev, show: false }))} disabled={assigning}>Cancel</button>
-          <button className="btn btn-primary" onClick={handleSaveAssignment} disabled={assigning}>
-            {assigning ? '⏳ Assigning Exam...' : 'Assign Exam'}
-          </button>
-        </div>
+      <AttemptDurationControls
+        maxAttempts={assignModal.attemptLimit}
+        onChangeMaxAttempts={(val) => setAssignModal(prev => ({ ...prev, attemptLimit: val }))}
+        showDuration={assignModal.type === 'objective'}
+        overrideDuration={assignModal.overrideDuration}
+        examDuration={assignModal.examDuration}
+        onChangeOverrideDuration={(checked) => {
+          setAssignModal(prev => {
+            const dur = checked ? (Number(prev.examDuration) || prev.normDuration || 30) : (prev.normDuration || 30);
+            let updates: any = { overrideDuration: checked, examDuration: dur };
+            if (prev.startAtStr && dur > 0) {
+              updates.endAtStr = calculateEndDatetime(prev.startAtStr, dur);
+            }
+            return { ...prev, ...updates };
+          });
+        }}
+        onChangeExamDuration={(dur) => {
+          setAssignModal(prev => {
+            const numDur = dur === '' ? ('' as any) : Number(dur);
+            let updates: any = { examDuration: numDur, overrideDuration: true };
+            if (prev.startAtStr && typeof numDur === 'number' && !isNaN(numDur) && numDur > 0) {
+              updates.endAtStr = calculateEndDatetime(prev.startAtStr, numDur);
+            }
+            return { ...prev, ...updates };
+          });
+        }}
+        onBlurExamDuration={() => {
+          setAssignModal(prev => {
+            if (!prev.examDuration || Number(prev.examDuration) < 1) {
+              const fallback = prev.normDuration || 30;
+              return {
+                ...prev,
+                examDuration: fallback,
+                endAtStr: prev.startAtStr ? calculateEndDatetime(prev.startAtStr, fallback) : prev.endAtStr
+              };
+            }
+            return prev;
+          });
+        }}
+        durationHelperText={!assignModal.overrideDuration && (
+          <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px' }}>
+            Auto-calculated from questions ({assignModal.normDuration} mins standard norm).
+          </div>
+        )}
+      />
+
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '4px' }}>
+        <button className="btn btn-secondary" onClick={() => setAssignModal(prev => ({ ...prev, show: false }))} disabled={assigning}>Cancel</button>
+        <button className="btn btn-primary" onClick={handleSaveAssignment} disabled={assigning}>
+          {assigning ? '⏳ Assigning Exam...' : 'Assign Exam'}
+        </button>
+      </div>
     </ModalShell>
   );
 }

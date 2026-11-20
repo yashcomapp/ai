@@ -10,6 +10,7 @@ export interface TargetPickerProps {
   onToggleBatch: (batchId: string) => void;
   selectedStudents: Set<string>;
   onToggleStudent: (studentCode: string) => void;
+  onSelectStudents?: (studentCodes: string[], select: boolean) => void;
   getStudentsGroupedByBatch: () => {
     grouped: { [batchId: string]: { batchName: string; list: any[] } };
     unassigned: any[];
@@ -24,6 +25,7 @@ export default function TargetPicker({
   onToggleBatch,
   selectedStudents,
   onToggleStudent,
+  onSelectStudents,
   getStudentsGroupedByBatch
 }: TargetPickerProps) {
   const [onlyMode3, setOnlyMode3] = useState(true);
@@ -37,18 +39,16 @@ export default function TargetPicker({
   const candidateStudents = relevantBatches.flatMap(([_, g]) => g.list);
   const limitedStudents = candidateStudents.filter(s => getStudentMode(s) === 'limited');
   const allLimitedSelected = limitedStudents.length > 0 && limitedStudents.every(s => selectedStudents.has(s.studentCode));
-  const anyLimitedSelected = limitedStudents.some(s => selectedStudents.has(s.studentCode));
-  const selectedLimitedCount = limitedStudents.filter(s => selectedStudents.has(s.studentCode)).length;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
-        <div>
-          <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px' }}>
-            Assign Target
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+          <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>
+            Assign Target:
           </label>
-          <div style={{ display: 'flex', gap: '15px' }}>
-            <label style={{ fontSize: '12px', cursor: 'pointer' }}>
+          <div style={{ display: 'flex', gap: '12px' }}>
+            <label style={{ fontSize: '12px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
               <input 
                 type="radio" 
                 name="targetTypePicker" 
@@ -56,7 +56,7 @@ export default function TargetPicker({
                 onChange={() => onChangeTargetType('batch')} 
               /> 📦 Entire Batches
             </label>
-            <label style={{ fontSize: '12px', cursor: 'pointer' }}>
+            <label style={{ fontSize: '12px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
               <input 
                 type="radio" 
                 name="targetTypePicker" 
@@ -64,7 +64,7 @@ export default function TargetPicker({
                 onChange={() => onChangeTargetType('student')} 
               /> 👤 Individual Students
             </label>
-            <label style={{ fontSize: '12px', cursor: 'pointer' }}>
+            <label style={{ fontSize: '12px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
               <input 
                 type="radio" 
                 name="targetTypePicker" 
@@ -85,16 +85,21 @@ export default function TargetPicker({
                 onChangeTargetType('student');
               }
               const shouldSelect = !allLimitedSelected;
-              limitedStudents.forEach(s => {
-                if (shouldSelect) {
-                  if (!selectedStudents.has(s.studentCode)) onToggleStudent(s.studentCode);
-                } else {
-                  if (selectedStudents.has(s.studentCode)) onToggleStudent(s.studentCode);
-                }
-              });
+              const codes = limitedStudents.map(s => s.studentCode);
+              if (onSelectStudents) {
+                onSelectStudents(codes, shouldSelect);
+              } else {
+                codes.forEach(c => {
+                  if (shouldSelect) {
+                    if (!selectedStudents.has(c)) onToggleStudent(c);
+                  } else {
+                    if (selectedStudents.has(c)) onToggleStudent(c);
+                  }
+                });
+              }
             }}
             style={{
-              padding: '4px 10px',
+              padding: '3px 8px',
               fontSize: '11px',
               fontWeight: 800,
               borderRadius: '6px',
@@ -116,12 +121,26 @@ export default function TargetPicker({
 
       {/* Batches selections */}
       <div>
-        <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px' }}>
+        <label style={{ display: 'block', fontSize: '10px', color: 'var(--text-muted)', marginBottom: '3px' }}>
           {targetType === 'student' ? 'Select Target Batch (to filter students):' : 'Select Target Batches:'}
         </label>
-        <div style={{ maxHeight: '110px', overflowY: 'auto', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', padding: '6px 8px', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '4px' }}>
+        <div 
+          className="no-scrollbar"
+          style={{ 
+            maxHeight: '68px', 
+            overflowY: 'auto', 
+            border: '1px solid var(--border-light)', 
+            borderRadius: 'var(--radius-sm)', 
+            padding: '4px 6px', 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', 
+            gap: '2px',
+            scrollbarWidth: 'none',
+            msOverflowStyle: 'none'
+          }}
+        >
           {batches.map(b => (
-            <label key={b.id} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', padding: '2px 0', cursor: 'pointer' }}>
+            <label key={b.id} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', padding: '1px 0', cursor: 'pointer' }}>
               <input 
                 type="checkbox" 
                 checked={selectedBatches.has(b.id)} 
@@ -132,76 +151,14 @@ export default function TargetPicker({
         </div>
       </div>
 
-      {/* Batch Mode: Dedicated Mode 3 (Limited Mode) Exclusion & Inclusion Control */}
-      {targetType === 'batch' && selectedBatches.size > 0 && (
-        <div style={{
-          marginTop: '6px',
-          padding: '8px 12px',
-          background: 'rgba(245, 158, 11, 0.08)',
-          border: '1px solid rgba(245, 158, 11, 0.35)',
-          borderRadius: 'var(--radius-sm)'
-        }}>
-          {limitedStudents.length > 0 ? (
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '12px', fontWeight: 700, color: 'var(--warning, #d97706)' }}>
-                  <input 
-                    type="checkbox"
-                    checked={allLimitedSelected}
-                    onChange={(e) => {
-                      const shouldSelect = e.target.checked;
-                      limitedStudents.forEach(s => {
-                        if (shouldSelect) {
-                          if (!selectedStudents.has(s.studentCode)) onToggleStudent(s.studentCode);
-                        } else {
-                          if (selectedStudents.has(s.studentCode)) onToggleStudent(s.studentCode);
-                        }
-                      });
-                    }}
-                  />
-                  <span>◇ Include Mode 3 (Limited) Students ({limitedStudents.length}) from Selected Batch{selectedBatches.size > 1 ? 'es' : ''}</span>
-                </label>
-                <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 600 }}>
-                  {allLimitedSelected ? 'All Included' : anyLimitedSelected ? `${selectedLimitedCount}/${limitedStudents.length} Included` : 'Excluded by default'}
-                </span>
-              </div>
-              <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px', marginLeft: '24px', lineHeight: '1.4' }}>
-                🔒 <strong>Perimeter Guard:</strong> Limited Mode students are automatically excluded from entire batch exams. Check this box to also assign this exam to them.
-              </div>
-
-              {/* Show individual student pills if included */}
-              {(allLimitedSelected || anyLimitedSelected) && (
-                <div style={{ marginTop: '8px', marginLeft: '24px', display: 'flex', flexWrap: 'wrap', gap: '8px', paddingTop: '6px', borderTop: '1px dashed rgba(245, 158, 11, 0.3)' }}>
-                  {limitedStudents.map(s => (
-                    <label key={s.studentCode} style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '11px', background: 'var(--surface)', padding: '2px 8px', borderRadius: '4px', border: '1px solid var(--border-light)', cursor: 'pointer' }}>
-                      <input 
-                        type="checkbox"
-                        checked={selectedStudents.has(s.studentCode)}
-                        onChange={() => onToggleStudent(s.studentCode)}
-                      />
-                      <span>◇ {s.name}</span>
-                    </label>
-                  ))}
-                </div>
-              )}
-            </div>
-          ) : (
-            <div style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '5px' }}>
-              <span>🔒</span>
-              <span><strong>Perimeter Guard:</strong> Limited Mode (Mode 3) students are automatically excluded from entire batch exams. (0 Limited students in selected batch{selectedBatches.size > 1 ? 'es' : ''})</span>
-            </div>
-          )}
-        </div>
-      )}
-
       {/* Student selections grouped by selected batch */}
       {(targetType === 'student' || targetType === 'mixed') && (
-        <div style={{ marginTop: '6px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-            <label style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600 }}>
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3px' }}>
+            <label style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 600 }}>
               Select Target Students {selectedBatches.size > 0 ? '(Selected Batches Only)' : '(Grouped by Batch)'}:
             </label>
-            <label style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '11px', color: 'var(--warning, #d97706)', cursor: 'pointer', fontWeight: 700 }}>
+            <label style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: 'var(--warning, #d97706)', cursor: 'pointer', fontWeight: 700 }}>
               <input 
                 type="checkbox" 
                 checked={onlyMode3} 
@@ -211,11 +168,22 @@ export default function TargetPicker({
             </label>
           </div>
 
-          <div style={{ maxHeight: '150px', overflowY: 'auto', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', padding: '5px' }}>
+          <div 
+            className="no-scrollbar"
+            style={{ 
+              maxHeight: '110px', 
+              overflowY: 'auto', 
+              border: '1px solid var(--border-light)', 
+              borderRadius: 'var(--radius-sm)', 
+              padding: '4px 6px',
+              scrollbarWidth: 'none',
+              msOverflowStyle: 'none'
+            }}
+          >
             {(() => {
               if (selectedBatches.size === 0 && batches.length > 0) {
                 return (
-                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', padding: '12px', textAlign: 'center', fontStyle: 'italic' }}>
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', padding: '8px', textAlign: 'center', fontStyle: 'italic' }}>
                     👈 Select a target batch above to view its Mode 3 students.
                   </div>
                 );
@@ -225,15 +193,45 @@ export default function TargetPicker({
 
               relevantBatches.forEach(([bid, group]) => {
                 const list = onlyMode3 ? group.list.filter(s => getStudentMode(s) === 'limited') : group.list;
+                const listCodes = list.map((st: any) => st.studentCode);
+                const allInListSelected = listCodes.length > 0 && listCodes.every((c: string) => selectedStudents.has(c));
+
                 elements.push(
-                  <div key={`group-hdr-${bid}`} style={{ fontWeight: 'bold', fontSize: '11px', color: 'var(--accent)', marginTop: '6px', paddingBottom: '2px', borderBottom: '1px dashed var(--border-light)' }}>
-                    📦 {group.batchName} ({list.length} student{list.length !== 1 ? 's' : ''})
+                  <div key={`group-hdr-${bid}`} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: 'bold', fontSize: '11px', color: 'var(--accent)', marginTop: '4px', paddingBottom: '2px', borderBottom: '1px dashed var(--border-light)' }}>
+                    <span>📦 {group.batchName} ({list.length} student{list.length !== 1 ? 's' : ''})</span>
+                    {list.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (onSelectStudents) {
+                            onSelectStudents(listCodes, !allInListSelected);
+                          } else {
+                            listCodes.forEach((c: string) => {
+                              if (!allInListSelected && !selectedStudents.has(c)) onToggleStudent(c);
+                              else if (allInListSelected && selectedStudents.has(c)) onToggleStudent(c);
+                            });
+                          }
+                        }}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: 'var(--primary)',
+                          fontSize: '10px',
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                          padding: '0 4px',
+                          textDecoration: 'underline'
+                        }}
+                      >
+                        {allInListSelected ? 'Deselect All' : 'Select All'}
+                      </button>
+                    )}
                   </div>
                 );
 
                 if (list.length === 0) {
                   elements.push(
-                    <div key={`empty-${bid}`} style={{ fontSize: '11px', color: 'var(--text-muted)', marginLeft: '12px', padding: '3px 0', fontStyle: 'italic' }}>
+                    <div key={`empty-${bid}`} style={{ fontSize: '11px', color: 'var(--text-muted)', marginLeft: '12px', padding: '2px 0', fontStyle: 'italic' }}>
                       No {onlyMode3 ? 'Mode 3 (Limited)' : ''} students in this batch.
                     </div>
                   );
@@ -242,7 +240,7 @@ export default function TargetPicker({
                     const sMode = getStudentMode(s);
                     const modePrefix = sMode === 'autonomous' ? '* ' : (sMode === 'limited' ? '◇ ' : '');
                     elements.push(
-                      <label key={`${bid}-${s.studentCode}`} style={{ display: 'block', fontSize: '12px', padding: '2px 0', marginLeft: '12px', cursor: 'pointer' }}>
+                      <label key={`${bid}-${s.studentCode}`} style={{ display: 'block', fontSize: '11px', padding: '1px 0', marginLeft: '12px', cursor: 'pointer' }}>
                         <input 
                           type="checkbox" 
                           checked={selectedStudents.has(s.studentCode)} 
@@ -258,7 +256,7 @@ export default function TargetPicker({
                 const unassignedList = onlyMode3 ? unassigned.filter(s => getStudentMode(s) === 'limited') : unassigned;
                 if (unassignedList.length > 0) {
                   elements.push(
-                    <div key="group-hdr-unassigned" style={{ fontWeight: 'bold', fontSize: '11px', color: 'var(--text-muted)', marginTop: '6px', paddingBottom: '2px', borderBottom: '1px dashed var(--border-light)' }}>
+                    <div key="group-hdr-unassigned" style={{ fontWeight: 'bold', fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px', paddingBottom: '2px', borderBottom: '1px dashed var(--border-light)' }}>
                       👤 Unassigned / No Batch ({unassignedList.length})
                     </div>
                   );
@@ -266,7 +264,7 @@ export default function TargetPicker({
                     const sMode = getStudentMode(s);
                     const modePrefix = sMode === 'autonomous' ? '* ' : (sMode === 'limited' ? '◇ ' : '');
                     elements.push(
-                      <label key={`unassigned-${s.studentCode}`} style={{ display: 'block', fontSize: '12px', padding: '2px 0', marginLeft: '12px', cursor: 'pointer' }}>
+                      <label key={`unassigned-${s.studentCode}`} style={{ display: 'block', fontSize: '11px', padding: '1px 0', marginLeft: '12px', cursor: 'pointer' }}>
                         <input 
                           type="checkbox" 
                           checked={selectedStudents.has(s.studentCode)} 
@@ -278,7 +276,7 @@ export default function TargetPicker({
                 }
               }
 
-              return elements.length > 0 ? elements : <div style={{ fontSize: '11px', color: 'var(--text-muted)', padding: '8px 0' }}>No students found.</div>;
+              return elements.length > 0 ? elements : <div style={{ fontSize: '11px', color: 'var(--text-muted)', padding: '6px 0' }}>No students found.</div>;
             })()}
           </div>
         </div>
