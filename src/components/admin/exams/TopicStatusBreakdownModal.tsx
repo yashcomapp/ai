@@ -55,6 +55,7 @@ export default function TopicStatusBreakdownModal({
                 try {
                   await exportStudentPracticeCardImage({
                     student: {
+                      ...topicStatusModal.student,
                       name: topicStatusModal.student.name,
                       studentCode: topicStatusModal.student.studentCode,
                       batchName: topicStatusModal.student.batchName || topicStatusModal.student.className

@@ -9,7 +9,7 @@ import { preprocessMathText, formatRichText, parseAnswerList, isOptionSelectedBy
 import QuestionDisplay, { RichMathText } from '@/components/QuestionDisplay';
 import { playNotificationSound } from '@/lib/audioUtils';
 import { getDateKeyIST, formatDateDMY, formatTimeIST, calculateEndDatetime, toLocalISOString, getMorningTestTimes, getEveningTestTimes, formatDateTimeShort as formatDate } from '@/lib/dateUtils';
-import { formatReportStudentName, getScoreChip, getDeepScoreColor, loadHtml2Canvas } from '@/lib/lqCardExport';
+import { formatReportStudentName, getScoreChip, getDeepScoreColor, loadHtml2Canvas, getReportStudentModeBadge } from '@/lib/lqCardExport';
 import { Batch } from '@/types/batch.types';
 import { Student } from '@/types/user.types';
 import { Exam } from '@/types/exam.types';
@@ -966,6 +966,7 @@ function ExamReportContent() {
           ? studentObj.name
           : ((a.studentName && !a.studentName.startsWith('ST-')) ? a.studentName : (studentObj?.name || 'Student'));
         const displayName = formatReportStudentName(rawName);
+        const modeBadge = getReportStudentModeBadge(studentObj || a);
         const isGamble = stats.isHighGamble;
         const isRedRemark = isGamble || stats.accuracy < 50;
         const rowBg = idx % 2 === 0 ? '#ffffff' : '#f8fafc';
@@ -996,7 +997,7 @@ function ExamReportContent() {
           <tr style="border-bottom: 1px solid #e2e8f0; height: 42px; ${blunderStyle}">
             <td style="padding: 8px 10px; text-align: center; font-weight: 900; font-size: 13.5px; color: #0f172a;">${rankBadge}</td>
             <td style="padding: 8px 14px; font-weight: 800; font-size: 14.5px; color: #0f172a; white-space: nowrap;">
-              ${displayName}
+              ${displayName}${modeBadge}
               ${a.isLate ? '<span style="margin-left: 6px; font-size: 10px; padding: 2px 6px; background: #fee2e2; color: #991b1b; border: 1.5px solid #fca5a5; border-radius: 4px; font-weight: 900;">LATE</span>' : ''}
             </td>
             <td style="padding: 8px 12px; text-align: center; white-space: nowrap;">
@@ -1031,7 +1032,7 @@ function ExamReportContent() {
             🔴 Absent Students (${notStartedStudents.length})
           </div>
           <div style="font-size: 13px; color: #7f1d1d; font-weight: 700; line-height: 1.6;">
-            ${notStartedStudents.map(s => formatReportStudentName(s.name)).join(' • ')}
+            ${notStartedStudents.map(s => `${formatReportStudentName(s.name)}${getReportStudentModeBadge(s)}`).join(' • ')}
           </div>
         </div>
       ` : '';

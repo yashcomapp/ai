@@ -5,7 +5,7 @@ export type StudentMode = 'regular' | 'autonomous' | 'limited';
 export function getStudentMode(user: any): StudentMode {
   if (!user) return 'regular';
   if (user.studentMode === 'limited' || user.studentMode === 'restricted') return 'limited';
-  if (user.studentMode === 'autonomous' || user.autonomous === true) return 'autonomous';
+  if (user.studentMode === 'autonomous' || user.autonomous === true || user.isAutonomous === true) return 'autonomous';
   return 'regular';
 }
 

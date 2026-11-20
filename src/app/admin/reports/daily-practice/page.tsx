@@ -5,7 +5,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { formatDateDMY, getDateKeyIST } from '@/lib/dateUtils';
-import { loadHtml2Canvas, formatReportStudentName, getScoreChip } from '@/lib/lqCardExport';
+import { loadHtml2Canvas, formatReportStudentName, getScoreChip, getReportStudentModeBadge } from '@/lib/lqCardExport';
 import { playNotificationSound } from '@/lib/audioUtils';
 import { getStudentMode } from '@/types/user.types';
 
@@ -640,7 +640,7 @@ export default function DailyPracticeSummaryPage() {
         return `
           <tr style="background-color: ${rowBg}; border-bottom: ${rowBorder}; ${borderLeft}">
             <td style="padding: 10px 12px; font-weight: 800; text-align: center;">${rankBadge}</td>
-            <td style="padding: 10px 12px; font-weight: 800; font-size: 13.5px; color: ${isRedRemark ? '#991b1b' : '#0f172a'};">${displayName}</td>
+            <td style="padding: 10px 12px; font-weight: 800; font-size: 13.5px; color: ${isRedRemark ? '#991b1b' : '#0f172a'}; white-space: nowrap;">${displayName}${getReportStudentModeBadge(s)}</td>
             <td style="padding: 10px 12px; text-align: center;">${topicCoverageChip}</td>
             <td style="padding: 10px 12px; font-weight: 800; text-align: center; color: #3b82f6;">${s.sessionsCount}</td>
             <td style="padding: 10px 12px; font-weight: 800; text-align: center; color: #6366f1;">${s.totalQuestions}</td>
@@ -662,7 +662,7 @@ export default function DailyPracticeSummaryPage() {
           </div>
           <div style="font-size: 11.5px; color: #047857; margin-bottom: 8px;">These students have practiced on every topic currently assigned in this curriculum. They had no pending topics to practice in this duration.</div>
           <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px 12px; font-size: 12px; font-weight: 700; color: #065f46;">
-            ${[...fullyCoveredInactiveList].sort((a, b) => a.name.localeCompare(b.name)).map(s => `<div>🟢 ${formatReportStudentName(s.name)}</div>`).join('')}
+            ${[...fullyCoveredInactiveList].sort((a, b) => a.name.localeCompare(b.name)).map(s => `<div>🟢 ${formatReportStudentName(s.name)}${getReportStudentModeBadge(s)}</div>`).join('')}
           </div>
         </div>
       ` : '';
@@ -676,7 +676,7 @@ export default function DailyPracticeSummaryPage() {
           </div>
           <div style="font-size: 11.5px; color: #991b1b; margin-bottom: 8px;">These students have unattempted assigned topics remaining and require encouragement to complete daily practice workouts.</div>
           <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px 12px; font-size: 12px; font-weight: 700; color: #7f1d1d;">
-            ${[...pendingPracticeInactiveList].sort((a, b) => a.name.localeCompare(b.name)).map(s => `<div>• ${formatReportStudentName(s.name)}${s.unattemptedTopicsCount ? ` <span style="font-size: 10px; font-weight: 600; color: #b91c1c;">(${s.unattemptedTopicsCount} pending)</span>` : ''}</div>`).join('')}
+            ${[...pendingPracticeInactiveList].sort((a, b) => a.name.localeCompare(b.name)).map(s => `<div>• ${formatReportStudentName(s.name)}${getReportStudentModeBadge(s)}${s.unattemptedTopicsCount ? ` <span style="font-size: 10px; font-weight: 600; color: #b91c1c;">(${s.unattemptedTopicsCount} pending)</span>` : ''}</div>`).join('')}
           </div>
         </div>
       ` : '';

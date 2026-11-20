@@ -1,6 +1,7 @@
 import { formatDateDMY, formatDurationHM } from '@/lib/dateUtils';
 import { playNotificationSound } from '@/lib/audioUtils';
 import { getScoreColor } from '@/lib/dashboardMetrics';
+import { getStudentMode } from '@/types/user.types';
 
 /**
  * Strips middle names and formats student name as "First Last" for clean display in reports & WhatsApp cards.
@@ -14,6 +15,22 @@ export function formatReportStudentName(fullName: string): string {
   const parts = trimmed.split(/\s+/).filter(Boolean);
   if (parts.length <= 2) return parts.join(' ');
   return `${parts[0]} ${parts[parts.length - 1]}`;
+}
+
+/**
+ * Renders a crisp mode badge (A for Autonomous, L for Limited) for WhatsApp image cards.
+ * Returns empty string for regular/standard students.
+ */
+export function getReportStudentModeBadge(student: any): string {
+  if (!student) return '';
+  const mode = getStudentMode(student);
+  if (mode === 'autonomous') {
+    return `<span style="display:inline-flex; align-items:center; justify-content:center; min-width:15px; height:15px; padding:0 3px; border-radius:3px; background:rgba(245, 158, 11, 0.18); color:#b45309; border:1px solid rgba(245, 158, 11, 0.4); font-size:10px; font-weight:800; line-height:1; vertical-align:middle; margin-left:5px;" title="Autonomous">A</span>`;
+  }
+  if (mode === 'limited') {
+    return `<span style="display:inline-flex; align-items:center; justify-content:center; min-width:15px; height:15px; padding:0 3px; border-radius:3px; background:rgba(100, 116, 139, 0.18); color:#475569; border:1px solid rgba(100, 116, 139, 0.4); font-size:10px; font-weight:800; line-height:1; vertical-align:middle; margin-left:5px;" title="Limited">L</span>`;
+  }
+  return '';
 }
 
 /**
@@ -213,7 +230,7 @@ export async function exportStudentLqCardImage(params: StudentLqCardExportParams
             📊 Learning Quotient (LQ) Academic Dossier
           </div>
           <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-            <span style="color: #0369a1; font-size: 20px; font-weight: 900;">${studentName}</span>
+            <span style="color: #0369a1; font-size: 20px; font-weight: 900; display: inline-flex; align-items: center;">${studentName}${getReportStudentModeBadge(student)}</span>
             <span style="color: #94a3b8; font-size: 16px;">•</span>
             <span style="background: #f1f5f9; border: 1.5px solid #cbd5e1; color: #1e293b; font-size: 13px; font-weight: 800; padding: 4px 14px; border-radius: 6px;">
               ${batchName}
@@ -676,7 +693,7 @@ export async function exportBatchLqCardImage(params: BatchLqCardExportParams): P
       <tr style="${borderStyle} height: 42px; background-color: ${effectiveRowBg};">
         <td style="padding: 8px 10px; text-align: center; font-weight: 900; font-size: 13.5px; color: #0f172a;">${effectiveRankBadge}</td>
         <td style="padding: 8px 14px; font-weight: 800; font-size: 14.5px; color: ${isRedRemark ? '#991b1b' : '#0f172a'}; white-space: nowrap;">
-          ${displayName}
+          ${displayName}${getReportStudentModeBadge(s)}
         </td>
         <td style="padding: 8px 10px; text-align: center; white-space: nowrap;">
           ${getScoreChip(s.overallQuotient, true)}
@@ -1083,7 +1100,7 @@ export async function exportBatchPracticeTracksImage(params: BatchPracticeTracks
           <td style="padding: 5px 10px; vertical-align: middle;">
             <div style="display: flex; align-items: center; gap: 5px; line-height: 1.2;">
               <span style="font-size: 13px; line-height: 1;">${rankBadge}</span>
-              <span style="font-weight: 800; font-size: 13px; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: ${studentColWidth - 45}px;">${displayName}</span>
+              <span style="font-weight: 800; font-size: 13px; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: ${studentColWidth - 45}px; display: inline-flex; align-items: center;">${displayName}${getReportStudentModeBadge(s)}</span>
             </div>
             <div style="font-size: 10px; font-weight: 600; color: #64748b; margin-left: 20px; line-height: 1.2; margin-top: 2px;">
               ${s.className || s.class || 'Batch'} • ⏱️ ${formatDurationHM(w.totalDurationSeconds || 0)}
@@ -1209,7 +1226,7 @@ export async function exportBatchPracticeTracksImage(params: BatchPracticeTracks
         <tr style="border-bottom: 1px solid #e2e8f0; height: 44px; background-color: ${rowBg};">
           <td style="padding: 8px 10px; text-align: center; font-weight: 900; font-size: 13.5px; color: #0f172a;">${rankBadge}</td>
           <td style="padding: 6px 14px; white-space: nowrap;">
-            <div style="font-weight: 800; font-size: 14px; color: #0f172a; line-height: 1.2;">${displayName}</div>
+            <div style="font-weight: 800; font-size: 14px; color: #0f172a; line-height: 1.2; display: inline-flex; align-items: center;">${displayName}${getReportStudentModeBadge(s)}</div>
             <div style="font-size: 10px; font-weight: 600; color: #64748b; line-height: 1.2; margin-top: 2px;">
               ${s.className || s.class || 'Batch'} • ⏱️ ${formatDurationHM(pStat.totalDurationSeconds || 0)}
             </div>
@@ -1607,8 +1624,8 @@ export async function exportStudentPracticeCardImage(params: StudentPracticeCard
           <div style="color: #0f172a; font-size: 24px; font-weight: 900; margin: 3px 0 5px; letter-spacing: -0.3px;">
             🏋️ Student Topic Mastery & Practice Dossier
           </div>
-          <div style="color: #0369a1; font-size: 17px; font-weight: 800;">
-            ${displayName} • <span style="color:#475569; font-weight:700;">${batchName}</span>
+          <div style="color: #0369a1; font-size: 17px; font-weight: 800; display: inline-flex; align-items: center;">
+            ${displayName}${getReportStudentModeBadge(student)} • <span style="color:#475569; font-weight:700; margin-left: 6px;">${batchName}</span>
           </div>
         </div>
         <div style="text-align: right;">
