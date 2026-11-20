@@ -661,11 +661,21 @@ export async function exportBatchLqCardImage(params: BatchLqCardExportParams): P
     const displayName = formatReportStudentName(s.name);
     const rowBg = idx % 2 === 0 ? '#ffffff' : '#f8fafc';
     const insight = getBatchStudentLqInsight(s);
+    const isRedRemark = insight.color === '#991b1b' || insight.bg === '#fee2e2';
+    const effectiveRowBg = isRedRemark 
+      ? (idx % 2 === 0 ? '#fff1f2' : '#fee2e2') 
+      : rowBg;
+    const borderStyle = isRedRemark 
+      ? 'border-bottom: 1px solid #fca5a5; border-left: 5px solid #ef4444;' 
+      : 'border-bottom: 1px solid #e2e8f0;';
+    const effectiveRankBadge = isRedRemark
+      ? `<span style="display:inline-block; min-width: 24px; padding: 2px 6px; border-radius: 4px; background: #fee2e2; color: #991b1b; font-weight: 800; font-size: 12px; border: 1px solid #fca5a5;">${rank}</span>`
+      : rankBadge;
 
     return `
-      <tr style="border-bottom: 1px solid #e2e8f0; height: 42px; background-color: ${rowBg};">
-        <td style="padding: 8px 10px; text-align: center; font-weight: 900; font-size: 13.5px; color: #0f172a;">${rankBadge}</td>
-        <td style="padding: 8px 14px; font-weight: 800; font-size: 14.5px; color: #0f172a; white-space: nowrap;">
+      <tr style="${borderStyle} height: 42px; background-color: ${effectiveRowBg};">
+        <td style="padding: 8px 10px; text-align: center; font-weight: 900; font-size: 13.5px; color: #0f172a;">${effectiveRankBadge}</td>
+        <td style="padding: 8px 14px; font-weight: 800; font-size: 14.5px; color: ${isRedRemark ? '#991b1b' : '#0f172a'}; white-space: nowrap;">
           ${displayName}
         </td>
         <td style="padding: 8px 10px; text-align: center; white-space: nowrap;">
@@ -1543,11 +1553,14 @@ export async function exportStudentPracticeCardImage(params: StudentPracticeCard
 
       const chapterStr = t.chapterName ? `${t.chapterName}` : (t.subjectName || '');
       const guidance = t.expText || (t.statusGroup === 'mastered' ? 'Concept thoroughly mastered' : t.statusGroup === 'practicing' ? 'Needs 1-2 more practice sets for mastery' : 'High priority revision & practice needed');
+      const isRed = t.statusGroup !== 'mastered' && t.statusGroup !== 'practicing';
+      const effectiveRowBg = isRed ? (idx % 2 === 0 ? '#fff1f2' : '#fee2e2') : rowBg;
+      const borderStyle = isRed ? 'border-bottom: 1px solid #fca5a5; border-left: 5px solid #ef4444;' : 'border-bottom: 1px solid #e2e8f0;';
 
       return `
-        <tr style="border-bottom: 1px solid #e2e8f0; height: 38px; background-color: ${rowBg}; font-size: 12.5px;">
+        <tr style="${borderStyle} height: 38px; background-color: ${effectiveRowBg}; font-size: 12.5px;">
           <td style="padding: 6px 10px; font-weight: 700; color: #475569;">${chapterStr}</td>
-          <td style="padding: 6px 12px; font-weight: 800; color: #0f172a;">${t.topicName || t.topicCode}</td>
+          <td style="padding: 6px 12px; font-weight: 800; color: ${isRed ? '#991b1b' : '#0f172a'};">${t.topicName || t.topicCode}</td>
           <td style="padding: 6px 8px; text-align: center; white-space: nowrap;">
             ${getScoreChip(t.mastery !== undefined ? t.mastery : 0)}
           </td>

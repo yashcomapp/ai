@@ -961,15 +961,21 @@ function ExamReportContent() {
       const rowsHtml = sortedRoster.map((a, idx) => {
         const stats = getAttemptStats(a);
         const rank = idx + 1;
-        const rankBadge = rank === 1 ? '🥇 1' : rank === 2 ? '🥈 2' : rank === 3 ? '🥉 3' : `<span style="display:inline-block; min-width: 24px; padding: 2px 6px; border-radius: 4px; background: #e2e8f0; color: #1e293b; font-weight: 800; font-size: 12px;">${rank}</span>`;
         const studentObj = students.find(s => s.studentCode === a.studentCode);
         const rawName = (studentObj?.name && !studentObj.name.startsWith('ST-'))
           ? studentObj.name
           : ((a.studentName && !a.studentName.startsWith('ST-')) ? a.studentName : (studentObj?.name || 'Student'));
         const displayName = formatReportStudentName(rawName);
         const isGamble = stats.isHighGamble;
+        const isRedRemark = isGamble || stats.accuracy < 50;
         const rowBg = idx % 2 === 0 ? '#ffffff' : '#f8fafc';
-        const blunderStyle = isGamble ? 'background-color: #fef2f2; border-left: 4px solid #ef4444;' : `background-color: ${rowBg};`;
+        const blunderStyle = isRedRemark 
+          ? (idx % 2 === 0 ? 'background-color: #fff1f2; border-left: 5px solid #ef4444; border-bottom: 1px solid #fca5a5;' : 'background-color: #fee2e2; border-left: 5px solid #ef4444; border-bottom: 1px solid #fca5a5;')
+          : `background-color: ${rowBg}; border-bottom: 1px solid #e2e8f0;`;
+
+        const rankBadge = isRedRemark
+          ? `<span style="display:inline-block; min-width: 24px; padding: 2px 6px; border-radius: 4px; background: #fee2e2; color: #991b1b; font-weight: 800; font-size: 12px; border: 1px solid #fca5a5;">${rank}</span>`
+          : (rank === 1 ? '🥇 1' : rank === 2 ? '🥈 2' : rank === 3 ? '🥉 3' : `<span style="display:inline-block; min-width: 24px; padding: 2px 6px; border-radius: 4px; background: #e2e8f0; color: #1e293b; font-weight: 800; font-size: 12px;">${rank}</span>`);
 
         let remarkHtml = '';
         if (isGamble) {
@@ -1427,12 +1433,13 @@ function ExamReportContent() {
                       <td colSpan={8} style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)' }}>📭 No attempts matching the criteria.</td>
                     </tr>
                   ) : (
-                    filteredAttempts.map(a => {
+                    filteredAttempts.map((a, idx) => {
                       const vCount = totalViolations(a);
                       const isPending = a.status === 'pending';
                       const scoreVal = a.score || 0;
                       const statusDate = a.reviewedAt || a.completedAt;
                       const stats = getAttemptStats(a);
+                      const isRedRemark = stats.isHighGamble || stats.accuracy < 50;
 
                       return (
                         <tr 
@@ -1446,7 +1453,15 @@ function ExamReportContent() {
                             setQuestionFilterTab(hasMistakes ? 'incorrect' : 'all');
                             setStudentModalOpen(true); 
                           }}
-                          style={{ borderBottom: '1px solid var(--border-light)', cursor: 'pointer', height: '34px' }}
+                          style={{ 
+                            borderBottom: isRedRemark ? '1px solid rgba(239, 68, 68, 0.4)' : '1px solid var(--border-light)', 
+                            borderLeft: isRedRemark ? '4px solid #ef4444' : 'none',
+                            background: isRedRemark 
+                              ? (idx % 2 === 1 ? 'rgba(239, 68, 68, 0.18)' : 'rgba(239, 68, 68, 0.10)') 
+                              : 'transparent',
+                            cursor: 'pointer', 
+                            height: '34px' 
+                          }}
                         >
                           <td style={{ padding: '5px 8px', fontWeight: 600, whiteSpace: 'nowrap' }}>
                             {a.isLate && (

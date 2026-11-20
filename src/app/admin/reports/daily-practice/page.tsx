@@ -593,24 +593,31 @@ export default function DailyPracticeSummaryPage() {
 
       const activeRowsHtml = sortedActiveStudents.map((s, idx) => {
         const rank = idx + 1;
-        const rankBadge = isPerformanceRanked
-          ? (rank === 1 ? '🥇 1' : rank === 2 ? '🥈 2' : rank === 3 ? '🥉 3' : `<span style="display:inline-block; min-width: 24px; padding: 2px 6px; border-radius: 4px; background: #e2e8f0; color: #1e293b; font-weight: 800; font-size: 12px;">${rank}</span>`)
-          : `<span style="display:inline-block; min-width: 24px; padding: 2px 6px; border-radius: 4px; background: #f1f5f9; color: #475569; font-weight: 800; font-size: 12px;">${rank}</span>`;
         const displayName = formatReportStudentName(s.name);
-        const rowBg = idx % 2 === 0 ? '#ffffff' : '#f8fafc';
-
         const evalResult = evaluateStudentPracticeRemark(s, durationDays);
+        const isRedRemark = evalResult.badgeType === 'careless' || evalResult.badgeType === 'needs_practice' || evalResult.color === '#991b1b' || evalResult.bg === '#fee2e2';
+
+        const rankBadge = isPerformanceRanked
+          ? (rank === 1 ? '🥇 1' : rank === 2 ? '🥈 2' : rank === 3 ? '🥉 3' : `<span style="display:inline-block; min-width: 24px; padding: 2px 6px; border-radius: 4px; background: ${isRedRemark ? '#fee2e2' : '#e2e8f0'}; color: ${isRedRemark ? '#991b1b' : '#1e293b'}; font-weight: 800; font-size: 12px; ${isRedRemark ? 'border: 1px solid #fca5a5;' : ''}">${rank}</span>`)
+          : `<span style="display:inline-block; min-width: 24px; padding: 2px 6px; border-radius: 4px; background: ${isRedRemark ? '#fee2e2' : '#f1f5f9'}; color: ${isRedRemark ? '#991b1b' : '#475569'}; font-weight: 800; font-size: 12px; ${isRedRemark ? 'border: 1px solid #fca5a5;' : ''}">${rank}</span>`;
+
+        const rowBg = isRedRemark 
+          ? (idx % 2 === 0 ? '#fff1f2' : '#fee2e2') 
+          : (idx % 2 === 0 ? '#ffffff' : '#f8fafc');
+        const rowBorder = isRedRemark ? '1px solid #fca5a5' : '1px solid #e2e8f0';
+        const borderLeft = isRedRemark ? 'border-left: 5px solid #ef4444;' : '';
+
         const remarkHtml = `<span style="display:inline-block; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 800; background: ${evalResult.bg}; color: ${evalResult.color}; border: ${evalResult.border || 'none'}; white-space: nowrap;">${evalResult.text}</span>`;
 
         const pendingTopics = s.totalAssignedTopics ? Math.max(0, s.totalAssignedTopics - (s.topicsAttemptedCount || 0)) : 0;
         const topicCoverageChip = s.totalAssignedTopics 
-          ? `<div style="display:inline-flex; flex-direction:column; align-items:center; gap:2px;"><div style="font-size: 11px; font-weight: 800; color: #0f172a; white-space: nowrap;"><span>${s.topicsAttemptedCount || 0} practiced</span>, <span style="color: #16a34a;">${s.masteredTopicsCount || 0} mastered</span></div><div style="font-size: 10px; font-weight: 700; color: #64748b; white-space: nowrap;"><span style="color: ${pendingTopics > 0 ? '#dc2626' : '#16a34a'};">${pendingTopics} unpracticed</span> out of ${s.totalAssignedTopics} topics</div></div>`
+          ? `<div style="display:inline-flex; flex-direction:column; align-items:center; gap:2px;"><div style="font-size: 11px; font-weight: 800; color: ${isRedRemark ? '#991b1b' : '#0f172a'}; white-space: nowrap;"><span>${s.topicsAttemptedCount || 0} practiced</span>, <span style="color: #16a34a;">${s.masteredTopicsCount || 0} mastered</span></div><div style="font-size: 10px; font-weight: 700; color: #64748b; white-space: nowrap;"><span style="color: ${pendingTopics > 0 ? '#dc2626' : '#16a34a'};">${pendingTopics} unpracticed</span> out of ${s.totalAssignedTopics} topics</div></div>`
           : '—';
 
         return `
-          <tr style="background-color: ${rowBg}; border-bottom: 1px solid #e2e8f0;">
+          <tr style="background-color: ${rowBg}; border-bottom: ${rowBorder}; ${borderLeft}">
             <td style="padding: 10px 12px; font-weight: 800; text-align: center;">${rankBadge}</td>
-            <td style="padding: 10px 12px; font-weight: 800; font-size: 13.5px; color: #0f172a;">${displayName}</td>
+            <td style="padding: 10px 12px; font-weight: 800; font-size: 13.5px; color: ${isRedRemark ? '#991b1b' : '#0f172a'};">${displayName}</td>
             <td style="padding: 10px 12px; text-align: center;">${topicCoverageChip}</td>
             <td style="padding: 10px 12px; font-weight: 800; text-align: center; color: #3b82f6;">${s.sessionsCount}</td>
             <td style="padding: 10px 12px; font-weight: 800; text-align: center; color: #6366f1;">${s.totalQuestions}</td>
@@ -1360,13 +1367,19 @@ export default function DailyPracticeSummaryPage() {
                     sortedActiveStudents.map((row, idx) => {
                       const evalResult = evaluateStudentPracticeRemark(row, durationDays);
                       const pendingTopics = row.totalAssignedTopics ? Math.max(0, row.totalAssignedTopics - (row.topicsAttemptedCount || 0)) : 0;
+                      const isRedRemark = evalResult.badgeType === 'careless' || evalResult.badgeType === 'needs_practice' || evalResult.color === '#991b1b' || evalResult.bg === '#fee2e2';
 
                       return (
                         <tr 
                           key={row.studentCode} 
                           style={{ 
-                            borderBottom: idx === sortedActiveStudents.length - 1 ? 'none' : '1px solid var(--border-light)',
-                            background: idx % 2 === 1 ? 'var(--bg-soft-even)' : 'transparent'
+                            borderBottom: idx === sortedActiveStudents.length - 1 
+                              ? (isRedRemark ? '1px solid rgba(239, 68, 68, 0.4)' : 'none') 
+                              : (isRedRemark ? '1px solid rgba(239, 68, 68, 0.4)' : '1px solid var(--border-light)'),
+                            borderLeft: isRedRemark ? '4px solid #ef4444' : 'none',
+                            background: isRedRemark
+                              ? (idx % 2 === 1 ? 'rgba(239, 68, 68, 0.18)' : 'rgba(239, 68, 68, 0.10)')
+                              : (idx % 2 === 1 ? 'var(--bg-soft-even)' : 'transparent')
                           }}
                         >
                           <td style={{ padding: '10px 14px', fontWeight: 600 }}>
