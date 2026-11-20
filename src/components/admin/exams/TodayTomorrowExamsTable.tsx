@@ -67,21 +67,21 @@ export function TodayTomorrowExamsTable({
         📅 Today's & Tomorrow's {type === 'subjective' ? 'Subjective ' : ''}Exams
       </h3>
       <div className="card" style={{ background: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', overflow: 'hidden' }}>
-        <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
-          <table className="reviews-table" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: type === 'subjective' ? '13px' : '12.5px', whiteSpace: 'nowrap' }}>
+        <div className="no-scrollbar" style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+          <table className="reviews-table" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: type === 'subjective' ? '12.5px' : '12px', whiteSpace: 'nowrap' }}>
             <thead>
-              <tr style={{ background: 'var(--bg-soft)', borderBottom: '1px solid var(--border-light)', color: 'var(--text-muted)', fontSize: type === 'subjective' ? '12px' : '11.5px', whiteSpace: 'nowrap' }}>
-                <th style={{ padding: '6px 8px', whiteSpace: 'nowrap' }}>Exam Name</th>
+              <tr style={{ background: 'var(--bg-soft)', borderBottom: '1px solid var(--border-light)', color: 'var(--text-muted)', fontSize: type === 'subjective' ? '11.5px' : '11px', whiteSpace: 'nowrap' }}>
+                <th style={{ padding: '5px 6px', whiteSpace: 'nowrap' }}>Exam Name</th>
                 {type === 'subjective' && (
                   <>
-                    <th style={{ padding: '6px 8px', whiteSpace: 'nowrap' }}>Mode</th>
-                    <th style={{ padding: '6px 8px', whiteSpace: 'nowrap' }}>Peer Review</th>
+                    <th style={{ padding: '5px 6px', whiteSpace: 'nowrap' }}>Mode</th>
+                    <th style={{ padding: '5px 6px', whiteSpace: 'nowrap' }}>Peer Review</th>
                   </>
                 )}
-                <th style={{ padding: '6px 8px', whiteSpace: 'nowrap' }}>Assigned To</th>
-                <th style={{ padding: '6px 8px', whiteSpace: 'nowrap' }}>Assigned Date</th>
-                <th style={{ padding: '6px 8px', whiteSpace: 'nowrap' }}>Status / Starts</th>
-                <th style={{ padding: '6px 8px', textAlign: 'right', whiteSpace: 'nowrap' }}>Actions</th>
+                <th style={{ padding: '5px 6px', whiteSpace: 'nowrap' }}>Assigned To</th>
+                <th style={{ padding: '5px 6px', whiteSpace: 'nowrap' }}>Assigned Date</th>
+                <th style={{ padding: '5px 6px', whiteSpace: 'nowrap' }}>Status / Starts</th>
+                <th style={{ padding: '5px 6px', textAlign: 'right', whiteSpace: 'nowrap' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -104,7 +104,7 @@ export function TodayTomorrowExamsTable({
 
                   return (
                     <tr key={exam.id} style={{ borderBottom: '1px solid var(--border-light)', whiteSpace: 'nowrap', verticalAlign: 'middle' }}>
-                      <td style={{ padding: '6px 8px', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                      <td style={{ padding: '4px 6px', fontWeight: 600, whiteSpace: 'nowrap' }}>
                         <button
                           type="button"
                           onClick={() => handleOpenExamPaper?.(exam, type)}
@@ -119,7 +119,7 @@ export function TodayTomorrowExamsTable({
                             textDecoration: 'none',
                             display: 'inline-flex',
                             alignItems: 'center',
-                            gap: '8px',
+                            gap: '6px',
                             whiteSpace: 'nowrap'
                           }}
                           title="Click to view exam paper questions and answer keys"
@@ -129,15 +129,15 @@ export function TodayTomorrowExamsTable({
                               display: 'inline-flex',
                               alignItems: 'center',
                               justifyContent: 'center',
-                              width: '24px',
-                              height: '24px',
-                              minWidth: '24px',
-                              borderRadius: '6px',
+                              width: '22px',
+                              height: '22px',
+                              minWidth: '22px',
+                              borderRadius: '5px',
                               background: badgeStyle.bg,
                               color: badgeStyle.color,
                               border: `1px solid ${badgeStyle.border}`,
                               fontWeight: 900,
-                              fontSize: examClass.length > 2 ? '11px' : '13px',
+                              fontSize: examClass.length > 2 ? '10.5px' : '12px',
                               lineHeight: 1,
                               flexShrink: 0,
                               userSelect: 'none'
@@ -152,31 +152,31 @@ export function TodayTomorrowExamsTable({
                       {type === 'subjective' && (
                         <SubjectiveModeBadges mode={mode} peerStatus={peerStatus} />
                       )}
-                      <td style={{ padding: '6px 8px', fontSize: '11px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+                      <td style={{ padding: '4px 6px', fontSize: '11px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
                         {getAssignedNames(exam.id, exam.batchId)}
                       </td>
-                      <td style={{ padding: '6px 8px', fontSize: '11px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+                      <td style={{ padding: '4px 6px', fontSize: '11px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
                         {getLatestAssignmentDate(exam.id, exam.assignedAt, exam)}
                       </td>
-                      <td style={{ padding: '6px 8px', whiteSpace: 'nowrap' }}>
-                        <div style={{ display: 'flex', gap: '6px', flexDirection: 'row', alignItems: 'center', whiteSpace: 'nowrap' }}>
-                          <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', background: scheduleStatus.badgeBg, color: scheduleStatus.badgeColor, fontWeight: 700, whiteSpace: 'nowrap' }}>
+                      <td style={{ padding: '4px 6px', whiteSpace: 'nowrap' }}>
+                        <div style={{ display: 'flex', gap: '5px', flexDirection: 'row', alignItems: 'center', whiteSpace: 'nowrap' }}>
+                          <span style={{ fontSize: '10px', padding: '1px 6px', borderRadius: '10px', background: scheduleStatus.badgeBg, color: scheduleStatus.badgeColor, fontWeight: 700, whiteSpace: 'nowrap' }}>
                             {scheduleStatus.badgeText}
                           </span>
                           {count > 0 && (
-                            <span style={{ fontSize: '11px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+                            <span style={{ fontSize: '10.5px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
                               ({count} starts)
                             </span>
                           )}
                         </div>
                       </td>
-                      <td style={{ padding: '6px 8px', textAlign: 'right', whiteSpace: 'nowrap' }}>
-                        <div style={{ display: 'flex', gap: '4px', justifyContent: 'flex-end', flexWrap: 'nowrap', whiteSpace: 'nowrap' }}>
+                      <td style={{ padding: '4px 6px', textAlign: 'right', whiteSpace: 'nowrap' }}>
+                        <div style={{ display: 'flex', gap: '3px', justifyContent: 'flex-end', flexWrap: 'nowrap', whiteSpace: 'nowrap' }}>
                           {activeAssign && activeAssign.openMode !== 'scheduled' && (
                             <button
                               type="button"
                               className={`btn ${rawStatus === 'active' ? 'btn-secondary' : 'btn-primary'}`}
-                              style={{ padding: '2px 6px', fontSize: '10.5px', background: rawStatus === 'active' ? 'var(--danger)' : 'var(--success)', color: 'white', border: 'none', whiteSpace: 'nowrap' }}
+                              style={{ padding: '2px 5px', fontSize: '10.5px', background: rawStatus === 'active' ? 'var(--danger)' : 'var(--success)', color: 'white', border: 'none', whiteSpace: 'nowrap' }}
                               onClick={() => toggleAssignmentStatus(activeAssign.id, collectionName, rawStatus === 'active' ? 'disabled' : 'active')}
                             >
                               {rawStatus === 'active' ? '🛑 Stop' : '🟢 Start'}
@@ -185,7 +185,7 @@ export function TodayTomorrowExamsTable({
                           <button
                             type="button"
                             className="btn btn-secondary"
-                            style={{ padding: '2px 6px', fontSize: '10.5px', background: 'var(--accent-tint)', color: 'var(--accent)', fontWeight: 600, whiteSpace: 'nowrap' }}
+                            style={{ padding: '2px 5px', fontSize: '10.5px', background: 'var(--accent-tint)', color: 'var(--accent)', fontWeight: 600, whiteSpace: 'nowrap' }}
                             onClick={() => router.push(`/admin/mock-exam?examId=${encodeURIComponent(exam.id)}${type === 'subjective' ? '&type=subjective' : ''}`)}
                           >
                             🧪 Mock Test
@@ -193,16 +193,16 @@ export function TodayTomorrowExamsTable({
                           <button
                             type="button"
                             className="btn btn-primary"
-                            style={{ padding: '2px 6px', fontSize: '10.5px', whiteSpace: 'nowrap' }}
+                            style={{ padding: '2px 5px', fontSize: '10.5px', whiteSpace: 'nowrap' }}
                             onClick={() => handleOpenAssign(exam, type)}
                           >
-                            📋 Assign Again
+                            📋 Re-Assign
                           </button>
                           {type === 'objective' ? (
                             <button
                               type="button"
                               className="btn btn-secondary"
-                              style={{ padding: '2px 6px', fontSize: '10.5px', whiteSpace: 'nowrap' }}
+                              style={{ padding: '2px 5px', fontSize: '10.5px', whiteSpace: 'nowrap' }}
                               onClick={() => router.push(`/admin/exam-report?examId=${exam.id}`)}
                             >
                               📊 Report
@@ -211,7 +211,7 @@ export function TodayTomorrowExamsTable({
                             <button
                               type="button"
                               className="btn btn-secondary"
-                              style={{ padding: '2px 6px', fontSize: '10.5px', whiteSpace: 'nowrap' }}
+                              style={{ padding: '2px 5px', fontSize: '10.5px', whiteSpace: 'nowrap' }}
                               onClick={() => router.push(`/admin/teacher-final-review?examId=${exam.id}`)}
                             >
                               Grade
@@ -221,7 +221,7 @@ export function TodayTomorrowExamsTable({
                             type="button"
                             className="btn btn-secondary"
                             style={{
-                              padding: '2px 6px',
+                              padding: '2px 5px',
                               fontSize: '10.5px',
                               opacity: count > 0 ? 0.5 : 1,
                               cursor: count > 0 ? 'not-allowed' : 'pointer',
@@ -235,7 +235,7 @@ export function TodayTomorrowExamsTable({
                           <button
                             type="button"
                             className="btn btn-secondary"
-                            style={{ padding: '2px 6px', fontSize: '10.5px', color: 'var(--danger)', whiteSpace: 'nowrap' }}
+                            style={{ padding: '2px 5px', fontSize: '10.5px', color: 'var(--danger)', whiteSpace: 'nowrap' }}
                             onClick={() => handleDeleteExam(exam.id, exam.name, type)}
                           >
                             🗑️ Delete

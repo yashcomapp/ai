@@ -54,10 +54,10 @@ export function UnassignedExamsTable({
           overflow: 'hidden',
         }}
       >
-        <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+        <div className="no-scrollbar" style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
           <table
             className="reviews-table"
-            style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '12.5px', whiteSpace: 'nowrap' }}
+            style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '12px', whiteSpace: 'nowrap' }}
           >
             <thead>
               <tr
@@ -69,12 +69,12 @@ export function UnassignedExamsTable({
                   whiteSpace: 'nowrap'
                 }}
               >
-                <th style={{ padding: '6px 8px', whiteSpace: 'nowrap' }}>Exam Name</th>
-                <th style={{ padding: '6px 8px', whiteSpace: 'nowrap' }}>Subject</th>
-                <th style={{ padding: '6px 8px', whiteSpace: 'nowrap' }}>Topics</th>
-                <th style={{ padding: '6px 8px', whiteSpace: 'nowrap' }}>Questions</th>
-                <th style={{ padding: '6px 8px', whiteSpace: 'nowrap' }}>Marks</th>
-                <th style={{ padding: '6px 8px', textAlign: 'right', whiteSpace: 'nowrap' }}>Actions</th>
+                <th style={{ padding: '5px 6px', whiteSpace: 'nowrap' }}>Exam Name</th>
+                <th style={{ padding: '5px 6px', whiteSpace: 'nowrap' }}>Subject</th>
+                <th style={{ padding: '5px 6px', whiteSpace: 'nowrap' }}>Topics</th>
+                <th style={{ padding: '5px 6px', whiteSpace: 'nowrap' }}>Questions</th>
+                <th style={{ padding: '5px 6px', whiteSpace: 'nowrap' }}>Marks</th>
+                <th style={{ padding: '5px 6px', textAlign: 'right', whiteSpace: 'nowrap' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -91,7 +91,7 @@ export function UnassignedExamsTable({
 
                   return (
                     <tr key={exam.id} style={{ borderBottom: '1px solid var(--border-light)', whiteSpace: 'nowrap', verticalAlign: 'middle' }}>
-                      <td style={{ padding: '6px 8px', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                      <td style={{ padding: '4px 6px', fontWeight: 600, whiteSpace: 'nowrap' }}>
                         <button
                           type="button"
                           onClick={() => onOpenExamPaper?.(exam, type)}
@@ -106,7 +106,7 @@ export function UnassignedExamsTable({
                             textDecoration: 'none',
                             display: 'inline-flex',
                             alignItems: 'center',
-                            gap: '8px',
+                            gap: '6px',
                             whiteSpace: 'nowrap'
                           }}
                           title="Click to view exam paper questions and answer keys"
@@ -116,15 +116,15 @@ export function UnassignedExamsTable({
                               display: 'inline-flex',
                               alignItems: 'center',
                               justifyContent: 'center',
-                              width: '24px',
-                              height: '24px',
-                              minWidth: '24px',
-                              borderRadius: '6px',
+                              width: '22px',
+                              height: '22px',
+                              minWidth: '22px',
+                              borderRadius: '5px',
                               background: badgeStyle.bg,
                               color: badgeStyle.color,
                               border: `1px solid ${badgeStyle.border}`,
                               fontWeight: 900,
-                              fontSize: examClass.length > 2 ? '11px' : '13px',
+                              fontSize: examClass.length > 2 ? '10.5px' : '12px',
                               lineHeight: 1,
                               flexShrink: 0,
                               userSelect: 'none'
@@ -136,11 +136,11 @@ export function UnassignedExamsTable({
                           <span style={{ whiteSpace: 'nowrap' }}>{exam.name}</span>
                         </button>
                       </td>
-                      <td style={{ padding: '6px 8px', whiteSpace: 'nowrap' }}>{exam.subjectName || exam.subjects?.[0] || '—'}</td>
-                      <td style={{ padding: '6px 8px', whiteSpace: 'nowrap' }}>{(exam.topicCodes || []).join(', ') || '—'}</td>
-                      <td style={{ padding: '6px 8px', whiteSpace: 'nowrap' }}>{exam.questionCount || exam.questions?.length || 0}</td>
-                      <td style={{ padding: '6px 8px', whiteSpace: 'nowrap' }}>{exam.totalMarks || 0}</td>
-                      <td style={{ padding: '6px 8px', textAlign: 'right', whiteSpace: 'nowrap' }}>
+                      <td style={{ padding: '4px 6px', whiteSpace: 'nowrap' }}>{exam.subjectName || exam.subjects?.[0] || '—'}</td>
+                      <td style={{ padding: '4px 6px', whiteSpace: 'nowrap' }}>{(exam.topicCodes || []).join(', ') || '—'}</td>
+                      <td style={{ padding: '4px 6px', whiteSpace: 'nowrap' }}>{exam.questionCount || exam.questions?.length || 0}</td>
+                      <td style={{ padding: '4px 6px', whiteSpace: 'nowrap' }}>{exam.totalMarks || 0}</td>
+                      <td style={{ padding: '4px 6px', textAlign: 'right', whiteSpace: 'nowrap' }}>
                         <div style={{ display: 'flex', gap: '4px', justifyContent: 'flex-end', flexWrap: 'nowrap', whiteSpace: 'nowrap' }}>
                         {onMockExam && (
                           <button

@@ -62,7 +62,7 @@ export function AssignedExamsSection({
           userSelect: 'none',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           <h3 style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text)', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
             📚 Exams Already Assigned
           </h3>
@@ -76,7 +76,7 @@ export function AssignedExamsSection({
               <button
                 type="button"
                 className="btn btn-secondary"
-                style={{ padding: '3px 8px', fontSize: '11px', fontWeight: 600 }}
+                style={{ padding: '2px 5px', fontSize: '11px', fontWeight: 600 }}
                 onClick={() => expandAllAssigned?.(type, assignedExamsList)}
                 title="Expand all classes, subjects, and chapters"
               >
@@ -85,7 +85,7 @@ export function AssignedExamsSection({
               <button
                 type="button"
                 className="btn btn-secondary"
-                style={{ padding: '3px 8px', fontSize: '11px', fontWeight: 600 }}
+                style={{ padding: '2px 5px', fontSize: '11px', fontWeight: 600 }}
                 onClick={() => collapseAllAssigned?.(type)}
                 title="Collapse all classes, subjects, and chapters"
               >
@@ -119,7 +119,7 @@ export function AssignedExamsSection({
                       onClick={() => toggleClassExpanded(`${type}||${cls}`)}
                       style={{ padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-soft)', cursor: 'pointer', borderBottom: isExpanded ? '1px solid var(--border-light)' : 'none' }}
                     >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                         <span style={{ fontWeight: 'bold', fontSize: '13px', color: 'var(--accent)' }}>🏫 Class {cls}</span>
                         <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>({examsInClass.length} exams)</span>
                       </div>
@@ -153,7 +153,7 @@ export function AssignedExamsSection({
                                   onClick={() => toggleSubjectExpanded(subjKey)}
                                   style={{ padding: '6px 10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-soft)', cursor: 'pointer', borderBottom: isSubjExpanded ? '1px solid var(--border-light)' : 'none' }}
                                 >
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                     <span style={{ fontWeight: 700, fontSize: '12px', color: 'var(--text)' }}>📚 {subjName}</span>
                                     <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>({subjExams.length} {subjExams.length === 1 ? 'exam' : 'exams'})</span>
                                   </div>
@@ -172,7 +172,7 @@ export function AssignedExamsSection({
                                             onClick={() => toggleChapterExpanded(chapKey)}
                                             style={{ padding: '4px 8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-soft)', cursor: 'pointer', borderBottom: isChapExpanded ? '1px solid var(--border-light)' : 'none' }}
                                           >
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                               <span style={{ fontWeight: 700, fontSize: '11.5px', color: 'var(--accent)' }}>📘 {chapName}</span>
                                               <span style={{ fontSize: '10.5px', color: 'var(--text-muted)' }}>({chapExams.length} {chapExams.length === 1 ? 'exam' : 'exams'})</span>
                                             </div>
@@ -180,25 +180,25 @@ export function AssignedExamsSection({
                                           </div>
 
                                           {isChapExpanded && (
-                                            <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
-                                              <table className="reviews-table" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: type === 'subjective' ? '13px' : '12.5px', whiteSpace: 'nowrap' }}>
+                                            <div className="no-scrollbar" style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                                              <table className="reviews-table" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: type === 'subjective' ? '12.5px' : '12px', whiteSpace: 'nowrap' }}>
                                                 <thead>
                                                   <tr style={{ background: 'var(--bg-soft)', borderBottom: '1px solid var(--border-light)', color: 'var(--text-muted)', fontSize: type === 'subjective' ? '12px' : '11.5px', whiteSpace: 'nowrap' }}>
-                                                    <th style={{ padding: '6px 8px', cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap' }} onClick={() => handleAssignedSort('name')}>
+                                                    <th style={{ padding: '5px 6px', cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap' }} onClick={() => handleAssignedSort('name')}>
                                                       Exam Name {assignedSortField === 'name' ? (assignedSortDir === 'asc' ? '🔼' : '🔽') : ''}
                                                     </th>
                                                     {type === 'subjective' && (
                                                       <>
-                                                        <th style={{ padding: '6px 8px', whiteSpace: 'nowrap' }}>Mode</th>
-                                                        <th style={{ padding: '6px 8px', whiteSpace: 'nowrap' }}>Peer Review</th>
+                                                        <th style={{ padding: '5px 6px', whiteSpace: 'nowrap' }}>Mode</th>
+                                                        <th style={{ padding: '5px 6px', whiteSpace: 'nowrap' }}>Peer Review</th>
                                                       </>
                                                     )}
-                                                    <th style={{ padding: '6px 8px', whiteSpace: 'nowrap' }}>Assigned To</th>
-                                                    <th style={{ padding: '6px 8px', cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap' }} onClick={() => handleAssignedSort('date')}>
+                                                    <th style={{ padding: '5px 6px', whiteSpace: 'nowrap' }}>Assigned To</th>
+                                                    <th style={{ padding: '5px 6px', cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap' }} onClick={() => handleAssignedSort('date')}>
                                                       {type === 'subjective' ? 'Status / Starts' : 'Assigned Date'} {assignedSortField === 'date' ? (assignedSortDir === 'asc' ? '🔼' : '🔽') : ''}
                                                     </th>
-                                                    {type === 'objective' && <th style={{ padding: '6px 8px', whiteSpace: 'nowrap' }}>Status / Starts</th>}
-                                                    <th style={{ padding: '6px 8px', textAlign: 'right', whiteSpace: 'nowrap' }}>Actions</th>
+                                                    {type === 'objective' && <th style={{ padding: '5px 6px', whiteSpace: 'nowrap' }}>Status / Starts</th>}
+                                                    <th style={{ padding: '5px 6px', textAlign: 'right', whiteSpace: 'nowrap' }}>Actions</th>
                                                   </tr>
                                                 </thead>
                                                 <tbody>
@@ -214,7 +214,7 @@ export function AssignedExamsSection({
 
                                                     return (
                                                       <tr key={exam.id} style={{ borderBottom: '1px solid var(--border-light)', whiteSpace: 'nowrap', verticalAlign: 'middle' }}>
-                                                        <td style={{ padding: '6px 8px', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                                                        <td style={{ padding: '4px 6px', fontWeight: 600, whiteSpace: 'nowrap' }}>
                                                           <button
                                                             type="button"
                                                             onClick={() => handleOpenExamPaper?.(exam, type)}
@@ -229,7 +229,7 @@ export function AssignedExamsSection({
                                                               textDecoration: 'none',
                                                               display: 'inline-flex',
                                                               alignItems: 'center',
-                                                              gap: '8px',
+                                                              gap: '6px',
                                                               whiteSpace: 'nowrap'
                                                             }}
                                                             title="Click to view exam paper questions and answer keys"
@@ -239,9 +239,9 @@ export function AssignedExamsSection({
                                                                 display: 'inline-flex',
                                                                 alignItems: 'center',
                                                                 justifyContent: 'center',
-                                                                width: '24px',
-                                                                height: '24px',
-                                                                minWidth: '24px',
+                                                                width: '22px',
+                                                                height: '22px',
+                                                                minWidth: '22px',
                                                                 borderRadius: '6px',
                                                                 background: badgeStyle.bg,
                                                                 color: badgeStyle.color,
@@ -262,10 +262,10 @@ export function AssignedExamsSection({
                                                         {type === 'subjective' && (
                                                           <SubjectiveModeBadges mode={mode} peerStatus={peerStatus} />
                                                         )}
-                                                        <td style={{ padding: '6px 8px', fontSize: '11px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+                                                        <td style={{ padding: '4px 6px', fontSize: '11px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
                                                           {getAssignedNames(exam.id, exam.batchId)}
                                                         </td>
-                                                        <td style={{ padding: '6px 8px', fontSize: '11px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+                                                        <td style={{ padding: '4px 6px', fontSize: '11px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
                                                           {type === 'subjective' ? (
                                                             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                                                               <div style={{ display: 'flex', gap: '6px', flexDirection: 'row', alignItems: 'center' }}>
@@ -287,7 +287,7 @@ export function AssignedExamsSection({
                                                           )}
                                                         </td>
                                                         {type === 'objective' && (
-                                                          <td style={{ padding: '6px 8px', whiteSpace: 'nowrap' }}>
+                                                          <td style={{ padding: '4px 6px', whiteSpace: 'nowrap' }}>
                                                             <div style={{ display: 'flex', gap: '6px', flexDirection: 'row', alignItems: 'center', whiteSpace: 'nowrap' }}>
                                                               <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', background: scheduleStatus.badgeBg, color: scheduleStatus.badgeColor, fontWeight: 700, whiteSpace: 'nowrap' }}>
                                                                 {scheduleStatus.badgeText}
@@ -300,13 +300,13 @@ export function AssignedExamsSection({
                                                             </div>
                                                           </td>
                                                         )}
-                                                        <td style={{ padding: '6px 8px', textAlign: 'right', whiteSpace: 'nowrap' }}>
-                                                          <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end', flexWrap: 'nowrap', whiteSpace: 'nowrap' }}>
+                                                        <td style={{ padding: '4px 6px', textAlign: 'right', whiteSpace: 'nowrap' }}>
+                                                          <div style={{ display: 'flex', gap: '3px', justifyContent: 'flex-end', flexWrap: 'nowrap', whiteSpace: 'nowrap' }}>
                                                             {activeAssign && activeAssign.openMode !== 'scheduled' && (
                                                               <button 
                                                                 type="button"
                                                                 className={`btn ${rawStatus === 'active' ? 'btn-secondary' : 'btn-primary'}`} 
-                                                                style={{ padding: '3px 8px', fontSize: '10.5px', background: rawStatus === 'active' ? 'var(--danger)' : 'var(--success)', color: 'white', border: 'none' }} 
+                                                                style={{ padding: '2px 5px', fontSize: '10.5px', background: rawStatus === 'active' ? 'var(--danger)' : 'var(--success)', color: 'white', border: 'none' }} 
                                                                 onClick={() => toggleAssignmentStatus(activeAssign.id, collectionName, rawStatus === 'active' ? 'disabled' : 'active')}
                                                               >
                                                                 {rawStatus === 'active' ? '🛑 Stop' : '🟢 Start'}
@@ -315,7 +315,7 @@ export function AssignedExamsSection({
                                                             <button 
                                                               type="button"
                                                               className="btn btn-secondary" 
-                                                              style={{ padding: '3px 8px', fontSize: '10.5px', background: 'var(--accent-tint)', color: 'var(--accent)', fontWeight: 600 }} 
+                                                              style={{ padding: '2px 5px', fontSize: '10.5px', background: 'var(--accent-tint)', color: 'var(--accent)', fontWeight: 600 }} 
                                                               onClick={() => router.push(`/admin/mock-exam?examId=${encodeURIComponent(exam.id)}${type === 'subjective' ? '&type=subjective' : ''}`)}
                                                             >
                                                               🧪 Mock Test
@@ -323,16 +323,16 @@ export function AssignedExamsSection({
                                                             <button 
                                                               type="button"
                                                               className="btn btn-primary" 
-                                                              style={{ padding: '3px 8px', fontSize: '10.5px' }} 
+                                                              style={{ padding: '2px 5px', fontSize: '10.5px' }} 
                                                               onClick={() => handleOpenAssign(exam, type)}
                                                             >
-                                                              📋 Assign Again
+                                                              📋 Re-Assign
                                                             </button>
                                                             {type === 'objective' ? (
                                                               <button 
                                                                 type="button"
                                                                 className="btn btn-secondary" 
-                                                                style={{ padding: '3px 8px', fontSize: '11px' }} 
+                                                                style={{ padding: '2px 5px', fontSize: '11px' }} 
                                                                 onClick={() => router.push(`/admin/exam-report?examId=${encodeURIComponent(exam.id)}`)}
                                                               >
                                                                 📊 Report
@@ -341,7 +341,7 @@ export function AssignedExamsSection({
                                                               <button 
                                                                 type="button"
                                                                 className="btn btn-secondary" 
-                                                                style={{ padding: '3px 8px', fontSize: '10.5px' }} 
+                                                                style={{ padding: '2px 5px', fontSize: '10.5px' }} 
                                                                 onClick={() => router.push(`/admin/teacher-final-review?examId=${exam.id}`)}
                                                               >
                                                                 Grade
@@ -353,7 +353,7 @@ export function AssignedExamsSection({
                                                                   <button 
                                                                     type="button"
                                                                     className="btn btn-primary" 
-                                                                    style={{ padding: '3px 8px', fontSize: '10.5px', background: 'var(--warning)', borderColor: 'var(--warning)' }} 
+                                                                    style={{ padding: '2px 5px', fontSize: '10.5px', background: 'var(--warning)', borderColor: 'var(--warning)' }} 
                                                                     onClick={() => triggerPeerReviewLottery(exam.id, exam.name)}
                                                                   >
                                                                     🎲 Lottery
@@ -363,7 +363,7 @@ export function AssignedExamsSection({
                                                                   <button 
                                                                     type="button"
                                                                     className="btn btn-secondary" 
-                                                                    style={{ padding: '3px 8px', fontSize: '10.5px' }} 
+                                                                    style={{ padding: '2px 5px', fontSize: '10.5px' }} 
                                                                     onClick={() => openPeerReviewStatus(exam.id, exam.name)}
                                                                   >
                                                                     📊 Status
@@ -373,7 +373,7 @@ export function AssignedExamsSection({
                                                                   <button 
                                                                     type="button"
                                                                     className="btn btn-secondary" 
-                                                                    style={{ padding: '3px 8px', fontSize: '10.5px', background: 'var(--accent-tint)', color: 'var(--accent)', fontWeight: 600 }} 
+                                                                    style={{ padding: '2px 5px', fontSize: '10.5px', background: 'var(--accent-tint)', color: 'var(--accent)', fontWeight: 600 }} 
                                                                     onClick={() => openTruthTestReport(exam.id, exam.name)}
                                                                   >
                                                                     ⚖️ Truth Test
@@ -398,7 +398,7 @@ export function AssignedExamsSection({
                                                             <button 
                                                               type="button"
                                                               className="btn btn-secondary" 
-                                                              style={{ padding: '3px 8px', fontSize: '10.5px', color: 'var(--danger)' }} 
+                                                              style={{ padding: '2px 5px', fontSize: '10.5px', color: 'var(--danger)' }} 
                                                               onClick={() => handleDeleteExam(exam.id, exam.name, type)}
                                                             >
                                                               🗑️ Delete
