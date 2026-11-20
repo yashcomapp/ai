@@ -101,7 +101,7 @@ export default function AdminSyllabusPage() {
     name: '',
     code: '',
     textbookSetsStr: '',
-    targetQuestions: 55 as number | string,
+    targetQuestions: 80 as number | string,
     topicClassification: 'standard',
     hasSubtopics: false,
     subtopicsSum: 0
@@ -117,7 +117,7 @@ export default function AdminSyllabusPage() {
     number: '',
     name: '',
     code: '',
-    targetQuestions: 30 as number | string,
+    targetQuestions: 80 as number | string,
     topicClassification: 'standard'
   });
 
@@ -645,7 +645,7 @@ export default function AdminSyllabusPage() {
       name: '',
       code: '',
       textbookSetsStr: '',
-      targetQuestions: 90,
+      targetQuestions: 80,
       topicClassification: 'standard',
       hasSubtopics: false,
       subtopicsSum: 0
@@ -659,7 +659,7 @@ export default function AdminSyllabusPage() {
       : '';
     const subs = Array.isArray(topic.subtopics) ? topic.subtopics : [];
     const hasSubtopics = subs.length > 0;
-    const subtopicsSum = subs.reduce((sum: number, s: any) => sum + (Number(typeof s === 'object' ? s.targetQuestions : 0) || 50), 0);
+    const subtopicsSum = subs.reduce((sum: number, s: any) => sum + (Number(typeof s === 'object' ? s.targetQuestions : 0) || 80), 0);
     setTopicModal({
       show: true,
       mode: 'edit',
@@ -669,7 +669,7 @@ export default function AdminSyllabusPage() {
       name: topic.name,
       code: topic.topicCode || '',
       textbookSetsStr: setsStr,
-      targetQuestions: hasSubtopics ? subtopicsSum : (topic.targetQuestions !== undefined ? Number(topic.targetQuestions) : 90),
+      targetQuestions: hasSubtopics ? subtopicsSum : (topic.targetQuestions !== undefined ? Number(topic.targetQuestions) : 80),
       topicClassification: 'standard',
       hasSubtopics,
       subtopicsSum
@@ -757,7 +757,7 @@ export default function AdminSyllabusPage() {
       number: nextSubNum,
       name: '',
       code: '',
-      targetQuestions: 90,
+      targetQuestions: 80,
       topicClassification: 'standard'
     });
   };
@@ -772,7 +772,7 @@ export default function AdminSyllabusPage() {
       : (parentTopic ? `${parentTopic.number}.${subIdx + 1}` : `${subIdx + 1}`);
     const targetQ = (typeof sub === 'object' && sub && sub.targetQuestions !== undefined) 
       ? Number(sub.targetQuestions) 
-      : 90;
+      : 80;
 
     setSubtopicModal({
       show: true,
@@ -805,7 +805,7 @@ export default function AdminSyllabusPage() {
     const bPart = getCanonicalBoardCode(activeSubjectDoc.boardCode || activeSubjectDoc.board);
     const sPart = activeSubjectDoc.subjectCode || 'GEN';
     const code = `${bPart}-${activeSubjectDoc.class}-${sPart}-${chapter.number}-${number}`;
-    const quotaVal = Number(targetQuestions) || 30;
+    const quotaVal = Number(targetQuestions) || 80;
 
     const subtopics = Array.isArray(topic.subtopics) ? [...topic.subtopics] : [];
     if (mode === 'add') {
@@ -830,7 +830,7 @@ export default function AdminSyllabusPage() {
 
     topic.subtopics = subtopics;
     // Auto-update parent topic target questions to equal the sum of its subtopics
-    topic.targetQuestions = subtopics.reduce((acc: number, s: any) => acc + (Number(s.targetQuestions) || 30), 0);
+    topic.targetQuestions = subtopics.reduce((acc: number, s: any) => acc + (Number(s.targetQuestions) || 80), 0);
 
     setSubtopicModal(prev => ({ ...prev, show: false }));
     await saveChaptersArray(chapters);
@@ -1331,8 +1331,8 @@ Return ONLY a valid JSON object matching the schema below:
                                   const subs = Array.isArray(topic.subtopics) ? topic.subtopics : [];
                                   const hasSubs = subs.length > 0;
                                   const targetCount = hasSubs
-                                    ? subs.reduce((acc: number, s: any) => acc + (Number(typeof s === 'object' ? s.targetQuestions : 0) || 30), 0)
-                                    : (topic.targetQuestions || 30);
+                                    ? subs.reduce((acc: number, s: any) => acc + (Number(typeof s === 'object' ? s.targetQuestions : 0) || 80), 0)
+                                    : (Number(topic.targetQuestions) || 80);
 
                                   return (
                                     <div
@@ -1529,7 +1529,7 @@ Return ONLY a valid JSON object matching the schema below:
                                                     S - {subjCount}
                                                   </span>
                                                   <span style={{ fontWeight: 700, background: 'var(--warning-bg)', color: 'var(--warning)', padding: '1px 4px', borderRadius: '3px' }}>
-                                                    🎯 Target: {typeof sub === 'object' ? (sub.targetQuestions || 90) : 90} Qs
+                                                    🎯 Target: {typeof sub === 'object' ? (sub.targetQuestions || 80) : 80} Qs
                                                   </span>
                                                   
                                                   <span 
@@ -1881,7 +1881,7 @@ Return ONLY a valid JSON object matching the schema below:
                 Competitive Question Standard
               </label>
               <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--warning)' }}>
-                🎯 Target: 90 Questions (40 Exam | 30 Practice | 20 Foundation)
+                🎯 Target: 80 Questions (40 Exam | 20 Practice | 20 Foundation)
               </div>
             </div>
 
@@ -1904,7 +1904,7 @@ Return ONLY a valid JSON object matching the schema below:
                   value={topicModal.targetQuestions}
                   min={5}
                   max={200}
-                  placeholder="e.g. 50"
+                  placeholder="e.g. 80"
                   onChange={(e) => setTopicModal(prev => ({ ...prev, targetQuestions: e.target.value === '' ? '' : (parseInt(e.target.value, 10) || '') }))}
                   style={{ width: '100%', padding: '8px', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', background: 'var(--surface)', color: 'var(--text)', fontSize: '12px' }}
                 />
@@ -1967,7 +1967,7 @@ Return ONLY a valid JSON object matching the schema below:
                 Competitive Question Standard
               </label>
               <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--warning)' }}>
-                🎯 Target: 90 Questions (40 Exam | 30 Practice | 20 Foundation)
+                🎯 Target: 80 Questions (40 Exam | 20 Practice | 20 Foundation)
               </div>
             </div>
 
@@ -1978,7 +1978,7 @@ Return ONLY a valid JSON object matching the schema below:
                 value={subtopicModal.targetQuestions}
                 min={5}
                 max={200}
-                placeholder="e.g. 50"
+                placeholder="e.g. 80"
                 onChange={(e) => setSubtopicModal(prev => ({ ...prev, targetQuestions: e.target.value === '' ? '' : (parseInt(e.target.value, 10) || '') }))}
                 style={{ width: '100%', padding: '8px', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', background: 'var(--surface)', color: 'var(--text)', fontSize: '12px' }}
               />

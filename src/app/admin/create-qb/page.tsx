@@ -519,7 +519,7 @@ function CreateQBContent() {
           if (n.trim()) {
             if (!allTopics.some(at => at.topic === fullName && at.subject === item.subject)) {
               const subsTargetSum = hasSubs
-                ? t.subtopics.reduce((acc: number, s: any) => acc + (Number(typeof s === 'object' ? s.targetQuestions : 0) || 30), 0)
+                ? t.subtopics.reduce((acc: number, s: any) => acc + (Number(typeof s === 'object' ? s.targetQuestions : 0) || 80), 0)
                 : 0;
 
               allTopics.push({
@@ -531,7 +531,7 @@ function CreateQBContent() {
                 topicNumber: (fullName.match(/^\s*([0-9]+(?:\.[0-9]+)+)/) || [, ''])[1] || String(t.number || ''),
                 objectiveCount: t.objectiveCount || 0,
                 subjectiveCount: t.subjectiveCount || 0,
-                targetQuestions: hasSubs ? subsTargetSum : (t.targetQuestions || 30),
+                targetQuestions: hasSubs ? subsTargetSum : (t.targetQuestions || 80),
                 hasSubtopics: hasSubs
               });
             }
@@ -610,16 +610,18 @@ function CreateQBContent() {
   };
 
   const getVaultBreakdown = (count: number) => {
-    if (count === 30) {
+    if (count === 80) {
+      return { practice: 20, exam: 40, foundation: 20 };
+    } else if (count === 60) {
+      return { practice: 20, exam: 40 };
+    } else if (count === 30) {
       return { practice: 18, exam: 12 };
     } else if (count === 50) {
-      return { practice: 30, exam: 20 };
-    } else if (count === 80) {
-      return { practice: 50, exam: 30 };
+      return { practice: 20, exam: 30 };
     } else if (count === 90) {
-      return { practice: 55, exam: 35 };
+      return { practice: 20, exam: 40, foundation: 30 };
     } else {
-      const practice = Math.round(count * 0.6);
+      const practice = Math.min(20, Math.round(count * 0.3));
       const exam = Math.max(0, count - practice);
       return { practice, exam };
     }
@@ -738,7 +740,7 @@ function CreateQBContent() {
         topic: t.topic || '',
         topicNumber: t.topicNumber || ''
       };
-      const count = countsMap ? countsMap[topicKey(t)] : (t.targetQuestions || defaultPerTopicCount || 30);
+      const count = countsMap ? countsMap[topicKey(t)] : (t.targetQuestions || defaultPerTopicCount || 80);
       const countLine = (count !== null && count !== undefined) ? `\nMandatory questions to generate for this topic: ${count}` : '';
       return `contextId: ${cid}\nSubject: ${t.subject || ''}\nChapter: ${t.chapterName || ''}\nChapter Number: ${t.chapterNumber || ''}\nTopic: ${t.topic || ''}\nTopic Number: ${t.topicNumber || ''}${countLine}`;
     }).join('\n\n');
@@ -2344,7 +2346,7 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
 
                 {/* Batch Scope Selector (Fast 2-Batch Partitioning) */}
                 {questionType === 'objective' && (() => {
-                  const breakdown = getVaultBreakdown(getTotalTargetQuestions() || 30);
+                  const breakdown = getVaultBreakdown(getTotalTargetQuestions() || 80);
                   return (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)' }}>Batch:</span>
@@ -2393,7 +2395,7 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
                           }}
                           title="Generate entire suite in a single monolithic prompt"
                         >
-                          📦 Full Suite ({getTotalTargetQuestions() || 30} Qs)
+                          📦 Full Suite ({getTotalTargetQuestions() || 80} Qs)
                         </button>
                       </div>
                     </div>
@@ -2459,7 +2461,7 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
 
         {/* Fast Batch Progress Banner */}
         {selectedTopics.length > 0 && questionType === 'objective' && promptScope !== 'all' && (() => {
-          const breakdown = getVaultBreakdown(getTotalTargetQuestions() || 30);
+          const breakdown = getVaultBreakdown(getTotalTargetQuestions() || 80);
           const pLoaded = generatedQuestions.filter(q => q.vault === 'practice').length;
           const eLoaded = generatedQuestions.filter(q => q.vault === 'exam').length;
           return (
