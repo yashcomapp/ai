@@ -533,6 +533,29 @@ export default function DailyPracticeSummaryPage() {
   const getLockTag = (student: StudentSummary) => {
     const hasLocks = student.activeLocks && student.activeLocks.length > 0;
     const lockCount = student.activeLocks ? student.activeLocks.length : 0;
+    const autoBadge = student.isAutonomous ? (
+      <span
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minWidth: '16px',
+          height: '16px',
+          padding: '0 3px',
+          borderRadius: '4px',
+          background: 'rgba(245, 158, 11, 0.18)',
+          color: 'var(--warning, #f59e0b)',
+          border: '1px solid rgba(245, 158, 11, 0.35)',
+          fontSize: '10.5px',
+          fontWeight: 800,
+          lineHeight: 1
+        }}
+        title="Autonomous"
+      >
+        A
+      </span>
+    ) : null;
+
     if (hasLocks) {
       const firstLock = student.activeLocks[0];
       const parts = firstLock.split(':');
@@ -542,12 +565,12 @@ export default function DailyPracticeSummaryPage() {
       return (
         <span style={{ color: '#ef4444', fontSize: '11px', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '4px' }} title={student.activeLocks.join(', ')}>
           {label}
-          {student.isAutonomous && <span style={{ color: 'var(--warning)', fontSize: '10px' }}>(Auto)</span>}
+          {autoBadge}
         </span>
       );
     }
     if (student.isAutonomous) {
-      return <span style={{ color: 'var(--warning)', fontSize: '11px', fontWeight: 800 }}>🤖 Autonomous</span>;
+      return autoBadge;
     }
     return null;
   };
