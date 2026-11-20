@@ -21,7 +21,7 @@ const DEFAULT_FAULT_CATEGORIES: FaultCategory[] = [
   { id: 'no_homework', name: 'Incomplete / No Homework', category: 'academic', target: 'student', icon: '📚', isDefault: true },
   { id: 'no_pre_reading', name: 'No Pre-Reading / Topic Prep', category: 'academic', target: 'student', icon: '📖', isDefault: true },
   { id: 'zero_practice', name: 'Zero Practice / No Self-Study', category: 'academic', target: 'student', autoDetectKey: 'zero_practice', icon: '🎯', isDefault: true },
-  { id: 'carelessness', name: 'Carelessness / Lack of Focus', category: 'academic', target: 'student', icon: '⚠️', isDefault: true },
+  { id: 'carelessness', name: 'Negligence / Lack of Focus', category: 'academic', target: 'student', icon: '⚠️', isDefault: true },
   { id: 'class_talking', name: 'Class Talking / Disruption', category: 'conduct', target: 'student', icon: '🗣️', isDefault: true },
   { id: 'ptm_absent', name: 'Absent in Parent Meeting', category: 'conduct', target: 'parent', icon: '👥', isDefault: true }
 ];

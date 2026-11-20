@@ -36,7 +36,7 @@ type DurationPreset = 'today' | 'yesterday' | '7d' | '14d' | '30d' | 'thisMonth'
 
 interface StudentRemarkEvaluation {
   text: string;
-  badgeType: 'all_done' | 'outstanding' | 'strong' | 'sincere' | 'irregular' | 'careless' | 'needs_practice';
+  badgeType: 'all_done' | 'outstanding' | 'strong' | 'sincere' | 'irregular' | 'negligent' | 'careless' | 'needs_practice';
   bg: string;
   color: string;
   border?: string;
@@ -77,8 +77,8 @@ function evaluateStudentPracticeRemark(
     const severeLowThreshold = Math.max(1, Math.floor(durationDays * 0.4));
     if (s.sessionsCount <= severeLowThreshold) {
       return {
-        text: `⚠️ Careless (${s.sessionsCount} sess / ${durationDays}d)`,
-        badgeType: 'careless',
+        text: `⚠️ Negligent (${s.sessionsCount} sess / ${durationDays}d)`,
+        badgeType: 'negligent',
         bg: '#fee2e2',
         color: '#991b1b',
         border: '1.5px solid #fca5a5'
@@ -139,8 +139,8 @@ function evaluateStudentPracticeRemark(
     // If student has a substantial backlog of unpracticed topics (>= 10 pending topics)
     if (pendingTopics >= 10) {
       return {
-        text: '⚠️ Minimal Effort (1 set)',
-        badgeType: 'careless',
+        text: '⚠️ Negligent (1 set)',
+        badgeType: 'negligent',
         bg: '#fee2e2',
         color: '#991b1b',
         border: '1.5px solid #fca5a5'
@@ -595,7 +595,7 @@ export default function DailyPracticeSummaryPage() {
         const rank = idx + 1;
         const displayName = formatReportStudentName(s.name);
         const evalResult = evaluateStudentPracticeRemark(s, durationDays);
-        const isRedRemark = evalResult.badgeType === 'careless' || evalResult.badgeType === 'needs_practice' || evalResult.color === '#991b1b' || evalResult.bg === '#fee2e2';
+        const isRedRemark = evalResult.badgeType === 'negligent' || evalResult.badgeType === 'careless' || evalResult.badgeType === 'needs_practice' || evalResult.color === '#991b1b' || evalResult.bg === '#fee2e2';
 
         const rankBadge = isPerformanceRanked
           ? (rank === 1 ? '🥇 1' : rank === 2 ? '🥈 2' : rank === 3 ? '🥉 3' : `<span style="display:inline-block; min-width: 24px; padding: 2px 6px; border-radius: 4px; background: ${isRedRemark ? '#fee2e2' : '#e2e8f0'}; color: ${isRedRemark ? '#991b1b' : '#1e293b'}; font-weight: 800; font-size: 12px; ${isRedRemark ? 'border: 1px solid #fca5a5;' : ''}">${rank}</span>`)
@@ -1367,7 +1367,7 @@ export default function DailyPracticeSummaryPage() {
                     sortedActiveStudents.map((row, idx) => {
                       const evalResult = evaluateStudentPracticeRemark(row, durationDays);
                       const pendingTopics = row.totalAssignedTopics ? Math.max(0, row.totalAssignedTopics - (row.topicsAttemptedCount || 0)) : 0;
-                      const isRedRemark = evalResult.badgeType === 'careless' || evalResult.badgeType === 'needs_practice' || evalResult.color === '#991b1b' || evalResult.bg === '#fee2e2';
+                      const isRedRemark = evalResult.badgeType === 'negligent' || evalResult.badgeType === 'careless' || evalResult.badgeType === 'needs_practice' || evalResult.color === '#991b1b' || evalResult.bg === '#fee2e2';
 
                       return (
                         <tr 
