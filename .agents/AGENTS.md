@@ -162,11 +162,15 @@
   - A 10-second coalescing window and 5-second post-return stabilization buffer must be strictly maintained.
   - `useProctoring.ts` must NEVER duplicate `setTabViolations` calls in its `onViolation` callback.
 
-### T. Unified Topic Standard & Practice Quotas (90 Qs Standard Pack)
+### T. Unified Topic Standard & Practice Quotas (80 Qs Standard Pack / 20 Qs Practice Vault)
 - **Rule**: All topics and subtopics adhere to ONE unified competitive standard across all 3 vaults:
-  - **Standard Topic Pack**: **90 Questions Total** (strictly **40 Exam Vault**, **30 Practice Vault**, **20 Foundation Vault**).
+  - **Standard Topic Pack**: **80 Questions Total** (strictly **40 Exam Vault**, **20 Practice Vault**, **20 Foundation Vault**).
   - **Single Competitive Quality Standard**: Every question across all 3 vaults must be of competitive examination standard (rigorous conceptual depth, analytical reasoning, and 4 plausible options with structured 3-part step-by-step solutions).
-  - **Universal Practice Quota**: Standard **2 Practice Sets** ($2 \times 6 = 12$ questions target, max 2 sets to achieve mastery).
+  - **Universal Practice Quota & Vault Architecture**:
+    - Standard **2 Practice Sets** ($2 \times 6 = 12$ questions target, max 2 sets to achieve mastery).
+    - **Set 1 (Universal Baseline)**: 6 standard diagnostic questions common across all students to assess concept grounding.
+    - **Set 2 (Adaptive Tier)**: 6 questions dynamically optimized as per student's exam performance & Set 1 accuracy (branching into remedial reinforcement, medium application, or hard analytical modes).
+    - **Practice Vault Sufficiency**: $6 \text{ common baseline} + 12\text{--}14 \text{ adaptive branch pool} = \mathbf{18 \text{ to } 20 \text{ questions}}$ in the Practice Vault is mathematically and pedagogically optimal and sufficient.
   - **Elimination of Artificial Classifications**: All legacy classifications (`minor`, `medium`, `major`, `micro`, `conceptual`, `calculative`, `hots`) are permanently removed from syllabus management, UI indicators, and diagnostic algorithms.
 - **UI Copy Standard**: Always render `${practiceCount}/2 practices`.
 
