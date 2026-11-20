@@ -2,6 +2,7 @@
 
 import React from 'react';
 import type { Exam } from '@/types/exam.types';
+import { getExamClass, getClassBadgeStyle } from './examAdminUtils';
 
 interface UnassignedExamsTableProps {
   exams: Exam[];
@@ -53,10 +54,10 @@ export function UnassignedExamsTable({
           overflow: 'hidden',
         }}
       >
-        <div style={{ overflowX: 'auto' }}>
+        <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
           <table
             className="reviews-table"
-            style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '12.5px' }}
+            style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '12.5px', whiteSpace: 'nowrap' }}
           >
             <thead>
               <tr
@@ -65,14 +66,15 @@ export function UnassignedExamsTable({
                   borderBottom: '1px solid var(--border-light)',
                   color: 'var(--text-muted)',
                   fontSize: '11.5px',
+                  whiteSpace: 'nowrap'
                 }}
               >
-                <th style={{ padding: '4px 8px' }}>Exam Name</th>
-                <th style={{ padding: '4px 8px' }}>Subject</th>
-                <th style={{ padding: '4px 8px' }}>Topics</th>
-                <th style={{ padding: '4px 8px' }}>Questions</th>
-                <th style={{ padding: '4px 8px' }}>Marks</th>
-                <th style={{ padding: '4px 8px', textAlign: 'right' }}>Actions</th>
+                <th style={{ padding: '6px 8px', whiteSpace: 'nowrap' }}>Exam Name</th>
+                <th style={{ padding: '6px 8px', whiteSpace: 'nowrap' }}>Subject</th>
+                <th style={{ padding: '6px 8px', whiteSpace: 'nowrap' }}>Topics</th>
+                <th style={{ padding: '6px 8px', whiteSpace: 'nowrap' }}>Questions</th>
+                <th style={{ padding: '6px 8px', whiteSpace: 'nowrap' }}>Marks</th>
+                <th style={{ padding: '6px 8px', textAlign: 'right', whiteSpace: 'nowrap' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -83,36 +85,63 @@ export function UnassignedExamsTable({
                   </td>
                 </tr>
               ) : (
-                exams.map((exam) => (
-                  <tr key={exam.id} style={{ borderBottom: '1px solid var(--border-light)' }}>
-                    <td style={{ padding: '4px 8px', fontWeight: 600 }}>
-                      <button
-                        type="button"
-                        onClick={() => onOpenExamPaper?.(exam, type)}
-                        style={{
-                          background: 'none',
-                          border: 'none',
-                          padding: 0,
-                          fontWeight: 600,
-                          color: 'var(--primary, #3b82f6)',
-                          cursor: 'pointer',
-                          textAlign: 'left',
-                          textDecoration: 'underline',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '6px'
-                        }}
-                        title="Click to view exam paper questions and answer keys"
-                      >
-                        📄 {exam.name}
-                      </button>
-                    </td>
-                    <td style={{ padding: '4px 8px' }}>{exam.subjectName || exam.subjects?.[0] || '—'}</td>
-                    <td style={{ padding: '4px 8px' }}>{(exam.topicCodes || []).join(', ') || '—'}</td>
-                    <td style={{ padding: '4px 8px' }}>{exam.questionCount || exam.questions?.length || 0}</td>
-                    <td style={{ padding: '4px 8px' }}>{exam.totalMarks || 0}</td>
-                    <td style={{ padding: '4px 8px', textAlign: 'right' }}>
-                      <div style={{ display: 'flex', gap: '4px', justifyContent: 'flex-end' }}>
+                exams.map((exam) => {
+                  const examClass = getExamClass(exam);
+                  const badgeStyle = getClassBadgeStyle(examClass);
+
+                  return (
+                    <tr key={exam.id} style={{ borderBottom: '1px solid var(--border-light)', whiteSpace: 'nowrap', verticalAlign: 'middle' }}>
+                      <td style={{ padding: '6px 8px', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                        <button
+                          type="button"
+                          onClick={() => onOpenExamPaper?.(exam, type)}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            padding: 0,
+                            fontWeight: 600,
+                            color: 'var(--primary, #3b82f6)',
+                            cursor: 'pointer',
+                            textAlign: 'left',
+                            textDecoration: 'none',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            whiteSpace: 'nowrap'
+                          }}
+                          title="Click to view exam paper questions and answer keys"
+                        >
+                          <span
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              width: '24px',
+                              height: '24px',
+                              minWidth: '24px',
+                              borderRadius: '6px',
+                              background: badgeStyle.bg,
+                              color: badgeStyle.color,
+                              border: `1px solid ${badgeStyle.border}`,
+                              fontWeight: 900,
+                              fontSize: examClass.length > 2 ? '11px' : '13px',
+                              lineHeight: 1,
+                              flexShrink: 0,
+                              userSelect: 'none'
+                            }}
+                            title={`Class ${examClass}`}
+                          >
+                            {examClass !== 'General' ? examClass : '—'}
+                          </span>
+                          <span style={{ whiteSpace: 'nowrap' }}>{exam.name}</span>
+                        </button>
+                      </td>
+                      <td style={{ padding: '6px 8px', whiteSpace: 'nowrap' }}>{exam.subjectName || exam.subjects?.[0] || '—'}</td>
+                      <td style={{ padding: '6px 8px', whiteSpace: 'nowrap' }}>{(exam.topicCodes || []).join(', ') || '—'}</td>
+                      <td style={{ padding: '6px 8px', whiteSpace: 'nowrap' }}>{exam.questionCount || exam.questions?.length || 0}</td>
+                      <td style={{ padding: '6px 8px', whiteSpace: 'nowrap' }}>{exam.totalMarks || 0}</td>
+                      <td style={{ padding: '6px 8px', textAlign: 'right', whiteSpace: 'nowrap' }}>
+                        <div style={{ display: 'flex', gap: '4px', justifyContent: 'flex-end', flexWrap: 'nowrap', whiteSpace: 'nowrap' }}>
                         {onMockExam && (
                           <button
                             className="btn btn-secondary"
@@ -145,8 +174,9 @@ export function UnassignedExamsTable({
                       </div>
                     </td>
                   </tr>
-                ))
-              )}
+                );
+              })
+            )}
             </tbody>
           </table>
         </div>

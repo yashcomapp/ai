@@ -22,6 +22,7 @@ export const isExamAssigned = (
 
 export interface ExamTabCommonProps {
   assignments: Assignment[];
+  batches?: Batch[];
   attemptCounts: { [key: string]: number };
   isTodayOrTomorrow: (exam: Exam, type: 'objective' | 'subjective') => boolean;
   getExamSortTimestamp: (exam: Exam, type: 'objective' | 'subjective') => number;

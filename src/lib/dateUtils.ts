@@ -465,6 +465,30 @@ export function formatDateTimeShort(dateInput?: any, fallback: string = '—'): 
   });
 }
 
+/**
+ * Formats a date/timestamp into DD-MM-YY, hh:mm a in IST (Asia/Kolkata).
+ * Example: "20-11-26, 06:00 am"
+ */
+export function formatDateTimeShortYearIST(dateInput?: any, fallback: string = '—'): string {
+  const d = parseDateInput(dateInput);
+  if (!d) return fallback;
+
+  const day = String(d.toLocaleDateString('en-US', { timeZone: IST_TIMEZONE, day: 'numeric' })).padStart(2, '0');
+  const month = String(d.toLocaleDateString('en-US', { timeZone: IST_TIMEZONE, month: 'numeric' })).padStart(2, '0');
+  const fullYear = d.toLocaleDateString('en-US', { timeZone: IST_TIMEZONE, year: 'numeric' });
+  const yy = fullYear.slice(-2);
+
+  const timeStr = d.toLocaleTimeString('en-IN', {
+    timeZone: IST_TIMEZONE,
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true
+  });
+
+  return `${day}-${month}-${yy}, ${timeStr}`;
+}
+
+
 
 
 

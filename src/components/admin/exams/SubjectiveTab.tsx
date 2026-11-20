@@ -71,6 +71,7 @@ export default function SubjectiveTab(props: SubjectiveTabProps) {
         exams={filteredSubjectiveExams}
         type="subjective"
         assignments={assignments}
+        batches={props.batches}
         attemptCounts={attemptCounts}
         getAssignedNames={getAssignedNames}
         getLatestAssignmentDate={getLatestAssignmentDate}

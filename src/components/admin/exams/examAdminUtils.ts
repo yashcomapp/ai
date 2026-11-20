@@ -73,14 +73,129 @@ export function getExamChapter(exam: any): string {
   return exam.chapterDisplay || exam.chapter || exam.chapterName || (exam.chapterNumber ? `Chapter ${exam.chapterNumber}` : 'General / Mixed Chapters');
 }
 
-export function getExamClass(exam: any): string {
-  if (exam.class) return String(exam.class);
-  const parts = (exam.name || '').split('-');
+export function getExamClass(exam: any, assignments?: Assignment[], batches?: any[]): string {
+  if (!exam) return 'General';
+  const assigns = Array.isArray(assignments) ? assignments : undefined;
+  const batchList = Array.isArray(batches) ? batches : undefined;
+
+  // 1. Direct properties on exam
+  if (exam.class) {
+    const m = String(exam.class).match(/\d+/);
+    if (m) return m[0];
+    return String(exam.class);
+  }
+  if (exam.targetClass) {
+    const m = String(exam.targetClass).match(/\d+/);
+    if (m) return m[0];
+  }
+  if (exam.className) {
+    const m = String(exam.className).match(/\d+/);
+    if (m) return m[0];
+  }
+
+  // 2. Exam name patterns like '024-MH-8-...', 'MH-8-...', 'CBSE-10-...'
+  const name = String(exam.name || '');
+  const boardClassMatch = name.match(/(?:CBSE|MH|ICSE|STATE)[-_](\d+)/i);
+  if (boardClassMatch) {
+    return boardClassMatch[1];
+  }
+
+  // 3. Class word in exam name: 'Class 8', 'Std 9', etc.
+  const classWordMatch = name.match(/(?:Class|Std|Standard)\s*(\d+)/i);
+  if (classWordMatch) {
+    return classWordMatch[1];
+  }
+
+  // 4. Topic codes on exam (e.g. ['MH-8-SCI-5-5.2'])
+  if (Array.isArray(exam.topicCodes) && exam.topicCodes.length > 0) {
+    for (const tc of exam.topicCodes) {
+      const tcMatch = String(tc).match(/(?:CBSE|MH|ICSE|STATE)[-_](\d+)/i);
+      if (tcMatch) return tcMatch[1];
+    }
+  }
+
+  // 5. Look up assigned batches if batches list provided
+  if (batchList && batchList.length > 0) {
+    const targetBatchIds: string[] = [];
+    if (assigns && assigns.length > 0) {
+      const examAssigns = assigns.filter(a => a.examId === exam.id);
+      examAssigns.forEach(a => {
+        if (Array.isArray(a.targetBatches)) {
+          targetBatchIds.push(...a.targetBatches);
+        }
+      });
+    }
+    if (exam.batchId) {
+      targetBatchIds.push(exam.batchId);
+    }
+    if (Array.isArray(exam.batchIds)) {
+      targetBatchIds.push(...exam.batchIds);
+    }
+    if (Array.isArray(exam.targetBatches)) {
+      targetBatchIds.push(...exam.targetBatches);
+    }
+    for (const bid of targetBatchIds) {
+      const b = batchList.find(x => x.id === bid);
+      if (b && b.name) {
+        const m = String(b.name).match(/(?:Class|Std|Standard)\s*(\d+)/i) || String(b.name).match(/\b(\d{1,2})(?:th|st|nd|rd)?\b/i);
+        if (m) return m[1];
+      }
+    }
+  }
+
+  // 6. Name parts fallback
+  const parts = name.split('-');
   if (parts.length > 1 && !isNaN(Number(parts[1]))) {
     return parts[1];
   }
+  if (parts.length > 2 && !isNaN(Number(parts[2]))) {
+    return parts[2];
+  }
+
   return 'General';
 }
+
+export function getClassBadgeStyle(cls: string): { bg: string; color: string; border: string } {
+  switch (cls) {
+    case '8':
+      return {
+        bg: 'rgba(14, 165, 233, 0.16)',
+        color: '#38bdf8',
+        border: 'rgba(14, 165, 233, 0.4)'
+      };
+    case '9':
+      return {
+        bg: 'rgba(168, 85, 247, 0.16)',
+        color: '#c084fc',
+        border: 'rgba(168, 85, 247, 0.4)'
+      };
+    case '10':
+      return {
+        bg: 'rgba(245, 158, 11, 0.16)',
+        color: '#fbbf24',
+        border: 'rgba(245, 158, 11, 0.4)'
+      };
+    case '11':
+      return {
+        bg: 'rgba(236, 72, 153, 0.16)',
+        color: '#f472b6',
+        border: 'rgba(236, 72, 153, 0.4)'
+      };
+    case '12':
+      return {
+        bg: 'rgba(239, 68, 68, 0.16)',
+        color: '#f87171',
+        border: 'rgba(239, 68, 68, 0.4)'
+      };
+    default:
+      return {
+        bg: 'rgba(59, 130, 246, 0.16)',
+        color: '#60a5fa',
+        border: 'rgba(59, 130, 246, 0.4)'
+      };
+  }
+}
+
 
 export function getExamSortTimestamp(exam: Exam, type: 'objective' | 'subjective', assignments: Assignment[]): number {
   const targetCol = type === 'objective' ? 'batchAssignments' : 'subjectiveAssignments';
@@ -151,7 +266,7 @@ export function getExamScheduleStatus(
           state: 'closed',
           badgeBg: 'rgba(107, 114, 128, 0.15)',
           badgeColor: 'var(--text-muted)',
-          badgeText: '🏁 Closed / Over'
+          badgeText: '🏁 Closed'
         };
       }
       if (startDate && nowMs < startDate.getTime()) {
@@ -166,7 +281,7 @@ export function getExamScheduleStatus(
         state: 'active',
         badgeBg: 'rgba(16, 185, 129, 0.15)',
         badgeColor: 'var(--success)',
-        badgeText: '🟢 Active / Open'
+        badgeText: '🟢 Active'
       };
     }
 
@@ -189,7 +304,7 @@ export function getExamScheduleStatus(
           state: 'closed',
           badgeBg: 'rgba(107, 114, 128, 0.15)',
           badgeColor: 'var(--text-muted)',
-          badgeText: '🏁 Closed / Over'
+          badgeText: '🏁 Closed'
         };
       }
 
@@ -197,7 +312,7 @@ export function getExamScheduleStatus(
         state: 'active',
         badgeBg: 'rgba(16, 185, 129, 0.15)',
         badgeColor: 'var(--success)',
-        badgeText: '🟢 Active / Open'
+        badgeText: '🟢 Active'
       };
     }
   }
@@ -220,14 +335,14 @@ export function getExamScheduleStatus(
           state: 'closed',
           badgeBg: 'rgba(107, 114, 128, 0.15)',
           badgeColor: 'var(--text-muted)',
-          badgeText: '🏁 Closed / Over'
+          badgeText: '🏁 Closed'
         };
       }
       return {
         state: 'active',
         badgeBg: 'rgba(16, 185, 129, 0.15)',
         badgeColor: 'var(--success)',
-        badgeText: '🟢 Active / Open'
+        badgeText: '🟢 Active'
       };
     }
   }
@@ -236,12 +351,12 @@ export function getExamScheduleStatus(
     state: 'active',
     badgeBg: 'rgba(16, 185, 129, 0.15)',
     badgeColor: 'var(--success)',
-    badgeText: '🟢 Active / Open'
+    badgeText: '🟢 Active'
   };
 }
 
 export function getGroupedClasses(examsList: Exam[]): string[] {
-  const unique = Array.from(new Set(examsList.map(getExamClass)));
+  const unique = Array.from(new Set(examsList.map(exam => getExamClass(exam))));
   return unique.sort((a, b) => {
     const na = Number(a);
     const nb = Number(b);

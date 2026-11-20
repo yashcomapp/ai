@@ -3,6 +3,7 @@
 import React from 'react';
 import { Exam, Assignment, ExamScheduleStatus, AssignedExamsSectionProps } from './types';
 import { SubjectiveModeBadges } from './SubjectiveModeBadges';
+import { getClassBadgeStyle } from './examAdminUtils';
 
 export type { AssignedExamsSectionProps };
 
@@ -179,25 +180,25 @@ export function AssignedExamsSection({
                                           </div>
 
                                           {isChapExpanded && (
-                                            <div style={{ overflowX: 'auto' }}>
-                                              <table className="reviews-table" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: type === 'subjective' ? '13px' : '12.5px' }}>
+                                            <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+                                              <table className="reviews-table" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: type === 'subjective' ? '13px' : '12.5px', whiteSpace: 'nowrap' }}>
                                                 <thead>
-                                                  <tr style={{ background: 'var(--bg-soft)', borderBottom: '1px solid var(--border-light)', color: 'var(--text-muted)', fontSize: type === 'subjective' ? '12px' : '11.5px' }}>
-                                                    <th style={{ padding: '4px 8px', cursor: 'pointer', userSelect: 'none' }} onClick={() => handleAssignedSort('name')}>
+                                                  <tr style={{ background: 'var(--bg-soft)', borderBottom: '1px solid var(--border-light)', color: 'var(--text-muted)', fontSize: type === 'subjective' ? '12px' : '11.5px', whiteSpace: 'nowrap' }}>
+                                                    <th style={{ padding: '6px 8px', cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap' }} onClick={() => handleAssignedSort('name')}>
                                                       Exam Name {assignedSortField === 'name' ? (assignedSortDir === 'asc' ? '🔼' : '🔽') : ''}
                                                     </th>
                                                     {type === 'subjective' && (
                                                       <>
-                                                        <th style={{ padding: '4px 8px' }}>Mode</th>
-                                                        <th style={{ padding: '4px 8px' }}>Peer Review</th>
+                                                        <th style={{ padding: '6px 8px', whiteSpace: 'nowrap' }}>Mode</th>
+                                                        <th style={{ padding: '6px 8px', whiteSpace: 'nowrap' }}>Peer Review</th>
                                                       </>
                                                     )}
-                                                    <th style={{ padding: '4px 8px' }}>Assigned To</th>
-                                                    <th style={{ padding: '4px 8px', cursor: 'pointer', userSelect: 'none' }} onClick={() => handleAssignedSort('date')}>
+                                                    <th style={{ padding: '6px 8px', whiteSpace: 'nowrap' }}>Assigned To</th>
+                                                    <th style={{ padding: '6px 8px', cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap' }} onClick={() => handleAssignedSort('date')}>
                                                       {type === 'subjective' ? 'Status / Starts' : 'Assigned Date'} {assignedSortField === 'date' ? (assignedSortDir === 'asc' ? '🔼' : '🔽') : ''}
                                                     </th>
-                                                    {type === 'objective' && <th style={{ padding: '4px 8px' }}>Status / Starts</th>}
-                                                    <th style={{ padding: '4px 8px', textAlign: 'right' }}>Actions</th>
+                                                    {type === 'objective' && <th style={{ padding: '6px 8px', whiteSpace: 'nowrap' }}>Status / Starts</th>}
+                                                    <th style={{ padding: '6px 8px', textAlign: 'right', whiteSpace: 'nowrap' }}>Actions</th>
                                                   </tr>
                                                 </thead>
                                                 <tbody>
@@ -208,10 +209,12 @@ export function AssignedExamsSection({
                                                     const mode = activeAssign?.examMode || (exam as any).mode || 'home';
                                                     const peerStatus = (exam as any).peerReviewStatus || 'not_started';
                                                     const count = attemptCounts[exam.id] || 0;
+                                                    const examClass = getExamClass(exam);
+                                                    const badgeStyle = getClassBadgeStyle(examClass);
 
                                                     return (
-                                                      <tr key={exam.id} style={{ borderBottom: '1px solid var(--border-light)' }}>
-                                                        <td style={{ padding: '4px 8px', fontWeight: 600 }}>
+                                                      <tr key={exam.id} style={{ borderBottom: '1px solid var(--border-light)', whiteSpace: 'nowrap', verticalAlign: 'middle' }}>
+                                                        <td style={{ padding: '6px 8px', fontWeight: 600, whiteSpace: 'nowrap' }}>
                                                           <button
                                                             type="button"
                                                             onClick={() => handleOpenExamPaper?.(exam, type)}
@@ -223,23 +226,46 @@ export function AssignedExamsSection({
                                                               color: 'var(--primary, #3b82f6)',
                                                               cursor: 'pointer',
                                                               textAlign: 'left',
-                                                              textDecoration: 'underline',
+                                                              textDecoration: 'none',
                                                               display: 'inline-flex',
                                                               alignItems: 'center',
-                                                              gap: '6px'
+                                                              gap: '8px',
+                                                              whiteSpace: 'nowrap'
                                                             }}
                                                             title="Click to view exam paper questions and answer keys"
                                                           >
-                                                            📄 {exam.name}
+                                                            <span
+                                                              style={{
+                                                                display: 'inline-flex',
+                                                                alignItems: 'center',
+                                                                justifyContent: 'center',
+                                                                width: '24px',
+                                                                height: '24px',
+                                                                minWidth: '24px',
+                                                                borderRadius: '6px',
+                                                                background: badgeStyle.bg,
+                                                                color: badgeStyle.color,
+                                                                border: `1px solid ${badgeStyle.border}`,
+                                                                fontWeight: 900,
+                                                                fontSize: examClass.length > 2 ? '11px' : '13px',
+                                                                lineHeight: 1,
+                                                                flexShrink: 0,
+                                                                userSelect: 'none'
+                                                              }}
+                                                              title={`Class ${examClass}`}
+                                                            >
+                                                              {examClass !== 'General' ? examClass : '—'}
+                                                            </span>
+                                                            <span style={{ whiteSpace: 'nowrap' }}>{exam.name}</span>
                                                           </button>
                                                         </td>
                                                         {type === 'subjective' && (
                                                           <SubjectiveModeBadges mode={mode} peerStatus={peerStatus} />
                                                         )}
-                                                        <td style={{ padding: '4px 8px', fontSize: '11px', color: 'var(--text-muted)' }}>
+                                                        <td style={{ padding: '6px 8px', fontSize: '11px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
                                                           {getAssignedNames(exam.id, exam.batchId)}
                                                         </td>
-                                                        <td style={{ padding: '4px 8px', fontSize: '11px', color: 'var(--text-muted)' }}>
+                                                        <td style={{ padding: '6px 8px', fontSize: '11px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
                                                           {type === 'subjective' ? (
                                                             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                                                               <div style={{ display: 'flex', gap: '6px', flexDirection: 'row', alignItems: 'center' }}>
@@ -261,8 +287,8 @@ export function AssignedExamsSection({
                                                           )}
                                                         </td>
                                                         {type === 'objective' && (
-                                                          <td style={{ padding: '4px 8px' }}>
-                                                            <div style={{ display: 'flex', gap: '6px', flexDirection: 'row', alignItems: 'center' }}>
+                                                          <td style={{ padding: '6px 8px', whiteSpace: 'nowrap' }}>
+                                                            <div style={{ display: 'flex', gap: '6px', flexDirection: 'row', alignItems: 'center', whiteSpace: 'nowrap' }}>
                                                               <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', background: scheduleStatus.badgeBg, color: scheduleStatus.badgeColor, fontWeight: 700, whiteSpace: 'nowrap' }}>
                                                                 {scheduleStatus.badgeText}
                                                               </span>
@@ -274,7 +300,7 @@ export function AssignedExamsSection({
                                                             </div>
                                                           </td>
                                                         )}
-                                                        <td style={{ padding: '4px 8px', textAlign: 'right' }}>
+                                                        <td style={{ padding: '6px 8px', textAlign: 'right', whiteSpace: 'nowrap' }}>
                                                           <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end', flexWrap: 'nowrap', whiteSpace: 'nowrap' }}>
                                                             {activeAssign && activeAssign.openMode !== 'scheduled' && (
                                                               <button 

@@ -67,6 +67,7 @@ export default function ObjectiveTab(props: ObjectiveTabProps) {
         exams={filteredObjectiveExams}
         type="objective"
         assignments={assignments}
+        batches={props.batches}
         attemptCounts={attemptCounts}
         getAssignedNames={getAssignedNames}
         getLatestAssignmentDate={getLatestAssignmentDate}

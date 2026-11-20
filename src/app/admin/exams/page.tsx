@@ -12,7 +12,7 @@ const TruthTestModal = dynamic(() => import('@/components/admin/exams/TruthTestM
 const ExamPaperModal = dynamic(() => import('@/components/admin/exams/ExamPaperModal'), { ssr: false });
 import { useMathRender } from '@/hooks/useMathRender';
 import { useScorecard } from '@/hooks/useScorecard';
-import { toISTDateTimeLocalInput, formatDateDMY, parseDateInput, getDateKeyIST, formatDateTimeIST, getMorningTestTimes, getEveningTestTimes } from '@/lib/dateUtils';
+import { toISTDateTimeLocalInput, formatDateDMY, parseDateInput, getDateKeyIST, formatDateTimeIST, formatDateTimeShortYearIST, getMorningTestTimes, getEveningTestTimes } from '@/lib/dateUtils';
 import ObjectiveTab from '@/components/admin/exams/ObjectiveTab';
 import SubjectiveTab from '@/components/admin/exams/SubjectiveTab';
 import { isExamAssigned, Exam, Assignment, Batch, Student } from '@/components/admin/exams/types';
@@ -185,6 +185,9 @@ export default function AdminExamsPage() {
 
   const isTodayOrTomorrowCurried = (exam: Exam, type: 'objective' | 'subjective') =>
     isTodayOrTomorrow(exam, type, assignments);
+
+  const getExamClassCurried = (exam: any) =>
+    getExamClass(exam, assignments, batches);
 
   const getExamAssignedDateTime = (exam: Exam, type: 'objective' | 'subjective') => {
     const activeAssign = assignments.find(a => a.examId === exam.id && a.collection === (type === 'objective' ? 'batchAssignments' : 'subjectiveAssignments'));
@@ -454,7 +457,7 @@ export default function AdminExamsPage() {
     if (list.length === 0) {
       if (examBatchId) {
         const b = batches.find(x => x.id === examBatchId);
-        return `Batches: ${b ? b.name : examBatchId}`;
+        return b ? b.name : examBatchId;
       }
       return 'Not assigned';
     }
@@ -472,7 +475,7 @@ export default function AdminExamsPage() {
         const b = batches.find(x => x.id === bid);
         return b ? b.name : bid;
       });
-      parts.push(`Batches: ${names.slice(0, 2).join(', ')}${names.length > 2 ? ` +${names.length - 2}` : ''}`);
+      parts.push(`${names.slice(0, 2).join(', ')}${names.length > 2 ? ` +${names.length - 2}` : ''}`);
     }
     if (studentCodes.size > 0) {
       const names = Array.from(studentCodes).map(code => {
@@ -489,13 +492,13 @@ export default function AdminExamsPage() {
     if (list.length === 0) {
       const fallbackDate = exam?.scheduledDate || examAssignedAt || (exam as any)?.availableFrom;
       if (fallbackDate) {
-        return formatDateTimeIST(fallbackDate);
+        return formatDateTimeShortYearIST(fallbackDate);
       }
       return '—';
     }
     const dates = list.map(a => new Date(a.startAt || a.createdAt!));
     const maxDate = new Date(Math.max(...dates.map(d => d.getTime())));
-    return formatDateTimeIST(maxDate);
+    return formatDateTimeShortYearIST(maxDate);
   };
 
 
@@ -1011,7 +1014,8 @@ export default function AdminExamsPage() {
             setObjFilterTopic={setObjFilterTopic}
             isTodayOrTomorrow={isTodayOrTomorrowCurried}
             getExamSortTimestamp={getExamSortTimestampCurried}
-            getExamClass={getExamClass}
+            getExamClass={getExamClassCurried}
+            batches={batches}
             getExamSubject={getExamSubject}
             getExamChapter={getExamChapter}
             getAssignedNames={getAssignedNames}
@@ -1055,7 +1059,8 @@ export default function AdminExamsPage() {
             isSubjectiveAlreadyAssigned={isSubjectiveAlreadyAssigned}
             isTodayOrTomorrow={isTodayOrTomorrowCurried}
             getExamSortTimestamp={getExamSortTimestampCurried}
-            getExamClass={getExamClass}
+            getExamClass={getExamClassCurried}
+            batches={batches}
             getExamSubject={getExamSubject}
             getExamChapter={getExamChapter}
             getAssignedNames={getAssignedNames}
