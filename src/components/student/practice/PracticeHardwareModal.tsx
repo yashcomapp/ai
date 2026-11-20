@@ -110,7 +110,7 @@ export function PracticeHardwareModal({
                 <div>🎯 <strong>This Set:</strong> {topicData.questions?.length || 6} Questions</div>
                 <div>⏳ <strong>Ideal Time:</strong> {Math.round((topicData.idealTimeSeconds || 450) / 60)} Mins</div>
                 <div>📈 <strong>Current Mastery:</strong> {topicData.masteryAtStart || 0}%</div>
-                <div>🛡️ <strong>Pacing:</strong> Set {(topicData.dailySessions || 0) + 1} of {topicData.maxSessionsAllowed || (topicData.topicScope === 'minor' ? 2 : 3)}</div>
+                <div>🛡️ <strong>Pacing:</strong> Set {(topicData.dailySessions || 0) + 1} of {topicData.maxSessionsAllowed || 2}</div>
               </div>
 
               <div style={{ fontSize: '10.5px', color: 'var(--accent)', marginTop: '8px', fontWeight: 600, borderTop: '1px dashed var(--border-light)', paddingTop: '6px' }}>

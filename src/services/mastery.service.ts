@@ -524,7 +524,7 @@ export class MasteryService {
           createdAt: existingData.createdAt || new Date(),
           topicName: existingData.topicName || '',
           chapterName: existingData.chapterName || '',
-          topicClassification: existingData.topicClassification || 'medium'
+          topicClassification: 'standard'
         };
 
         const updated = MasteryService.calculateTopicMasteryUpdate(baseline, survivingEvaluations, latestExamCode);

@@ -101,11 +101,8 @@ export async function GET(req: NextRequest) {
     const dailySessions = isToday ? (masterySnap.data()!.dailyPracticeSessionsCount || 0) : 0;
     const practiceQuestionsAttempted = masterySnap.exists ? (masterySnap.data()!.practiceQuestionsAttempted || 0) : 0;
 
-    const rawScope = String(topicClassification || '').toLowerCase().trim();
-    const isMinorTopic = rawScope === 'minor' || rawScope === 'micro' || (targetQuestions !== undefined && targetQuestions <= 30);
-    const isMajorTopic = rawScope === 'major' || rawScope === 'calculative' || rawScope === 'hots' || (targetQuestions !== undefined && targetQuestions > 50);
     const maxSessionsAllowed = 2; // Fixed 2 practice tests per topic
-    const maxQuestionsAllowed = 12;
+    const maxQuestionsAllowed = 12; // Standard 2 sets x 6 Qs
 
     const isRevisionMode = category === 'revision';
 
@@ -380,8 +377,8 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({
         topicCode,
         topicName,
-        topicClassification: topicClassification || (targetQuestions && targetQuestions <= 35 ? 'minor' : (targetQuestions && targetQuestions >= 55 ? 'major' : 'medium')),
-        targetQuestions: targetQuestions || 50,
+        topicClassification: 'standard',
+        targetQuestions: 90,
         requiredConfidence: srsReqConfidence,
         dailySessions,
         practiceQuestionsAttempted,
@@ -656,14 +653,14 @@ export async function GET(req: NextRequest) {
     const reqConfidence = getRequiredConfidence(topicClassification, targetQuestions);
     const currentConfidence = masterySnap.exists ? (Number(masterySnap.data()!.confidence ?? questionsAttempted)) : 0;
     const isFullyMastered = (mastery >= MASTERY_THRESHOLDS.MASTERED_MIN && currentConfidence >= reqConfidence);
-    const resolvedScope = isMinorTopic ? 'minor' : (rawScope === 'major' || rawScope === 'calculative' || rawScope === 'hots' ? 'major' : 'medium');
+    const resolvedScope = 'standard';
 
     return NextResponse.json({
       topicCode,
       topicName,
       topicScope: resolvedScope,
       topicClassification: resolvedScope,
-      targetQuestions: targetQuestions || (isMinorTopic ? 12 : (resolvedScope === 'medium' ? 18 : 24)),
+      targetQuestions: 90,
       requiredConfidence: reqConfidence,
       maxSessionsAllowed,
       currentSetNumber: dailySessions + 1,

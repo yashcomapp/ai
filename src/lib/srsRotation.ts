@@ -122,14 +122,10 @@ export function calculateSrsSchedule(
 }
 
 /**
- * Returns recommended micro-refresher question set size based on topic classification.
+ * Returns recommended micro-refresher question set size (Standard 6 Qs).
  */
 export function getSrsMicroSetSize(topicClassification?: string): number {
-  const cls = String(topicClassification || '').toLowerCase().trim();
-  if (cls === 'minor' || cls === 'micro') return 5;
-  if (cls === 'medium' || cls === 'moderate' || cls === 'conceptual') return 8;
-  if (cls === 'major' || cls === 'calculative' || cls === 'hots') return 10;
-  return 8;
+  return 6;
 }
 
 /**

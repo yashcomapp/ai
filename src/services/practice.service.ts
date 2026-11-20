@@ -277,8 +277,8 @@ export class PracticeService {
     }
     const resolvedTopicName = topicName;
 
-    const fallbackClassification = sData?.topicClassification || 'minor';
-    const fallbackTargetQuestions = sData?.targetQuestions || (fallbackClassification === 'minor' ? 12 : fallbackClassification === 'major' ? 24 : 18);
+    const fallbackClassification = 'standard';
+    const fallbackTargetQuestions = sData?.targetQuestions || 90;
     const fallbackRequiredConfidence = sData?.requiredConfidence || getRequiredConfidence(fallbackClassification, fallbackTargetQuestions);
 
     const totalDuration = Number(durationSpent) || 0;

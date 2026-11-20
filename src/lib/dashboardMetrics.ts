@@ -119,22 +119,9 @@ export function extractConductedTopicCodes(input: ExtractConductedTopicCodesInpu
 
 /**
  * Single Source of Truth (SSOT) Topic Confidence Requirement:
- * - Minor / Micro: 12 questions (2 sets of 6 Qs)
- * - Medium / Conceptual: 18 questions (3 sets of 6 Qs)
- * - Major / HOTS: 24 questions (4 sets of 6 Qs)
+ * Standard universal threshold: 12 questions (2 full practice sets of 6 Qs)
  */
 export function getRequiredConfidence(topicClassification?: string, targetQuestions?: number): number {
-  const cls = String(topicClassification || '').toLowerCase().trim();
-  if (cls === 'minor' || cls === 'micro') return 12;
-  if (cls === 'medium' || cls === 'moderate' || cls === 'conceptual') return 18;
-  if (cls === 'major' || cls === 'calculative' || cls === 'hots') return 24;
-  
-  if (targetQuestions !== undefined) {
-    if (targetQuestions <= 30) return 12;
-    if (targetQuestions <= 50) return 18;
-    return 24;
-  }
-  // Baseline default for granular subtopics is 12 questions (2 full sets of 6)
   return 12;
 }
 
@@ -305,9 +292,9 @@ export function classifyAssignedTopics(input: ClassifyAssignedTopicsInput): Clas
 
     const isAbsentExam = normAbsentTopicCodes.has(tCode);
 
-    const targetQuestions = Number(sData?.targetQuestions || sData?.totalQuestions || sData?.questionCount || 30);
-    const topicClassification = sData?.topicClassification || sData?.classification || mData?.topicClassification || (targetQuestions <= 35 ? 'minor' : (targetQuestions >= 55 ? 'major' : 'medium'));
-    const reqConf = getRequiredConfidence(topicClassification, targetQuestions);
+    const targetQuestions = Number(sData?.targetQuestions || sData?.totalQuestions || sData?.questionCount || 90);
+    const topicClassification = 'standard';
+    const reqConf = 12; // Standard 2 practice sets x 6 Qs
 
     const parsed = parseTopicCode(tCode);
     const subCode = sData?.subjectCode || mData?.subjectCode || parsed?.subjectCode || (tCode.includes('-') ? tCode.split('-')[2] : '') || '';

@@ -78,7 +78,7 @@ export async function runIndexRebuild() {
           ? subtopics.reduce((acc: number, s: any) => acc + (Number(s.targetQuestions) || 30), 0)
           : 0;
         const topicTarget = hasSubs ? subtopicsSum : (Number(topic.targetQuestions) || 50);
-        const topicClassification = topic.topicClassification || (topicTarget <= 35 ? 'minor' : (topicTarget >= 55 ? 'major' : 'medium'));
+        const topicClassification = 'standard';
 
         const docRef = adminDb.collection('syllabusTopicIndex').doc(topicCode);
         batch.set(docRef, {
@@ -125,7 +125,7 @@ export async function runIndexRebuild() {
             subNum = subtopic.number ? String(subtopic.number) : `${topicNum}.${sIdx + 1}`;
             subName = subtopic.name || subtopic.title || '';
             subTarget = Number(subtopic.targetQuestions) || 30;
-            subClassification = subtopic.topicClassification || (subTarget <= 35 ? 'minor' : (subTarget >= 55 ? 'major' : 'medium'));
+            subClassification = 'standard';
           }
 
           if (!subNum || !subName) continue;

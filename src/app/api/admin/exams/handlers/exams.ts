@@ -367,8 +367,7 @@ export async function GET(req: NextRequest) {
         const reqConfidence = getRequiredConfidence(classification, targetQ);
         const isFullConfidence = confidence >= reqConfidence;
         const rawScope = String(classification || '').toLowerCase().trim();
-        const isMinorTopic = rawScope === 'minor' || rawScope === 'micro' || (targetQ !== undefined && targetQ <= 30);
-        const isMajorTopic = rawScope === 'major' || rawScope === 'calculative' || rawScope === 'hots' || (targetQ !== undefined && targetQ > 50);
+        // Standard 90-Q universal topics
         const maxPractices = 2; // Fixed 2 practice tests per topic
         const isLimitReached = practiceCount >= maxPractices;
 

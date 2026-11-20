@@ -79,10 +79,10 @@ async function rebuildIndex() {
         const subtopics = Array.isArray(topic.subtopics) ? topic.subtopics : [];
         const hasSubs = subtopics.length > 0;
         const subtopicsSum = hasSubs
-          ? subtopics.reduce((acc, s) => acc + (Number(s.targetQuestions) || 30), 0)
+          ? subtopics.reduce((acc, s) => acc + (Number(s.targetQuestions) || 90), 0)
           : 0;
-        const topicTarget = hasSubs ? subtopicsSum : (Number(topic.targetQuestions) || 50);
-        const topicClassification = topic.topicClassification || (topicTarget <= 35 ? 'minor' : (topicTarget >= 55 ? 'major' : 'medium'));
+        const topicTarget = hasSubs ? subtopicsSum : (Number(topic.targetQuestions) || 90);
+        const topicClassification = 'standard';
 
         const docRef = db.collection('syllabusTopicIndex').doc(topicCode);
         batch.set(docRef, {
@@ -115,8 +115,8 @@ async function rebuildIndex() {
           const subtopic = subtopics[sIdx];
           let subNum = '';
           let subName = '';
-          let subTarget = 30;
-          let subClassification = 'minor';
+          let subTarget = 90;
+          let subClassification = 'standard';
 
           if (typeof subtopic === 'string') {
             subNum = `${topicNum}.${sIdx + 1}`;
@@ -124,8 +124,8 @@ async function rebuildIndex() {
           } else if (subtopic && typeof subtopic === 'object') {
             subNum = subtopic.number ? String(subtopic.number) : `${topicNum}.${sIdx + 1}`;
             subName = subtopic.name || subtopic.title || '';
-            subTarget = Number(subtopic.targetQuestions) || 30;
-            subClassification = subtopic.topicClassification || (subTarget <= 35 ? 'minor' : (subTarget >= 55 ? 'major' : 'medium'));
+            subTarget = Number(subtopic.targetQuestions) || 90;
+            subClassification = 'standard';
           }
 
           if (!subNum || !subName) continue;

@@ -272,7 +272,7 @@ export default function TopicStatusBreakdownModal({
                             {t.mastery}% Accuracy
                           </span>
                           <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600 }}>
-                            {t.practiceCount}/{t.topicClassification === 'minor' || t.topicClassification === 'micro' ? 2 : 3} Practices ({t.attempts} Qs)
+                            {t.practiceCount}/2 Practices ({t.attempts} Qs)
                           </span>
                         </div>
                       </div>

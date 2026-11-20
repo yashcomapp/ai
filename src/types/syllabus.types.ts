@@ -11,7 +11,7 @@ export interface Subtopic {
   testsCount?: number;
   tests?: any[];
   targetQuestions?: number;
-  topicClassification?: 'minor' | 'medium' | 'major' | string;
+  topicClassification?: string;
   [key: string]: any;
 }
 

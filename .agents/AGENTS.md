@@ -42,7 +42,7 @@
 
 ### F. Topic Mastery & Diagnostic Breakdown (`src/lib/studentDb.ts`)
 - **Rule**: Topic mastery categorization and explanation logic must remain completely synchronized across Student, Parent, and Admin views:
-  - 🟢 **Mastered**: Mastery $\ge 90\%$ AND Confidence $\ge \text{requiredConfidence}$ (Minor/Micro: 12, Medium/Conceptual: 18, Major/HOTS: 24 questions; computed via `getRequiredConfidence`).
+  - 🟢 **Mastered**: Mastery $\ge 90\%$ AND Confidence $\ge 12$ questions (Standard 2 practice sets of 6 questions; computed via `getRequiredConfidence`).
   - 🟡 **In Progress / Practicing**: Mastery between $50\%$ and $89\%$ (or $\ge 90\%$ with confidence $< \text{requiredConfidence}$).
   - 🔴 **Needs Attention**: Mastery $< 50\%$ or missed scheduled exam unattempted.
   - Status dot badges (`🟢`, `🟡`, `🔴`) clicked by an admin MUST open a breakdown modal showing the exact same diagnostic guidance and explanation string displayed on the student's dashboard.
@@ -119,7 +119,7 @@
     - Mastery $60–84\%$: 20% Easy, 50% Medium, 30% Hard
     - Mastery $\ge 85\%$: 10% Easy, 40% Medium, 50% Hard
     - High-flyer rule: Mastery $\ge 80\%$ with $< 15$ attempts triggers 100% Hard mode.
-  - **Mastery Criteria**: Requires verified attempts $\ge \text{requiredConfidence}$ (Minor: 6, Medium: 10, Major: 15) and $\ge 90\%$ accuracy for Green Mastered status.
+  - **Mastery Criteria**: Requires verified attempts $\ge 12$ questions (Standard 2 practice sets of 6 questions) and $\ge 90\%$ accuracy for Green Mastered status.
   - **Option Integrity**: All MCQs served in practice sessions MUST have $\ge 2$ valid options. Corrupted entries with missing options must be automatically filtered out.
 
 ### O. Scorecard & Review Modal Question Hydration (`src/components/ScorecardModal.tsx` & `/api/student/results`)
@@ -162,12 +162,13 @@
   - A 10-second coalescing window and 5-second post-return stabilization buffer must be strictly maintained.
   - `useProctoring.ts` must NEVER duplicate `setTabViolations` calls in its `onViolation` callback.
 
-### T. Topic Practice Quotas & Dynamic UI Presentation
-- **Rule**: Practice set limits MUST dynamically reflect the topic's true scope:
-  - **Minor / Micro Topics**: Max 2 Practice Sets ($2 \times 6 = 12$ Qs max, target: 12 Qs).
-  - **Medium / Conceptual Topics**: Max 3 Practice Sets ($3 \times 6 = 18$ Qs max, target: 18 Qs).
-  - **Major / HOTS Topics**: Max 4 Practice Sets ($4 \times 6 = 24$ Qs max, target: 24 Qs).
-- **UI Copy Standard**: NEVER display hardcoded `/5 practices` or `5/5 practices done` in any UI component, diagnostic badge, or explanation banner. Always render dynamic targets `${practiceCount}/${maxPractices} practices`.
+### T. Unified Topic Standard & Practice Quotas (90 Qs Standard Pack)
+- **Rule**: All topics and subtopics adhere to ONE unified competitive standard across all 3 vaults:
+  - **Standard Topic Pack**: **90 Questions Total** (strictly **40 Exam Vault**, **30 Practice Vault**, **20 Foundation Vault**).
+  - **Single Competitive Quality Standard**: Every question across all 3 vaults must be of competitive examination standard (rigorous conceptual depth, analytical reasoning, and 4 plausible options with structured 3-part step-by-step solutions).
+  - **Universal Practice Quota**: Standard **2 Practice Sets** ($2 \times 6 = 12$ questions target, max 2 sets to achieve mastery).
+  - **Elimination of Artificial Classifications**: All legacy classifications (`minor`, `medium`, `major`, `micro`, `conceptual`, `calculative`, `hots`) are permanently removed from syllabus management, UI indicators, and diagnostic algorithms.
+- **UI Copy Standard**: Always render `${practiceCount}/2 practices`.
 
 
 

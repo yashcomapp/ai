@@ -93,7 +93,7 @@ export async function getCachedSyllabusTopicsMap(classCodes: string[] = []): Pro
           ? subtopics.reduce((acc: number, s: any) => acc + (Number(s?.targetQuestions) || 30), 0)
           : 0;
         const topicTarget = hasSubs ? subtopicsSum : (Number(t.targetQuestions) || 50);
-        const topicClassification = t.topicClassification || (topicTarget <= 35 ? 'minor' : (topicTarget >= 55 ? 'major' : 'medium'));
+        const topicClassification = 'standard';
 
         const tObj = {
           topicCode: tCode,
@@ -125,19 +125,19 @@ export async function getCachedSyllabusTopicsMap(classCodes: string[] = []): Pro
           const st = subtopics[sIdx];
           let subNum = '';
           let subName = '';
-          let subTarget = 30;
-          let subClassification = 'minor';
+          let subTarget = 90;
+          let subClassification = 'standard';
 
           if (typeof st === 'string') {
             subNum = `${tNum}.${sIdx + 1}`;
             subName = st.trim();
-            subTarget = 30;
-            subClassification = 'minor';
+            subTarget = 90;
+            subClassification = 'standard';
           } else if (st && typeof st === 'object') {
             subNum = st.topicNumber ? String(st.topicNumber) : (st.number ? String(st.number) : `${tNum}.${sIdx + 1}`);
             subName = st.name || st.title || '';
-            subTarget = Number(st.targetQuestions) || 30;
-            subClassification = st.topicClassification || (subTarget <= 35 ? 'minor' : (subTarget >= 55 ? 'major' : 'medium'));
+            subTarget = Number(st.targetQuestions) || 90;
+            subClassification = 'standard';
           }
 
           if (!subNum || !subName) continue;
