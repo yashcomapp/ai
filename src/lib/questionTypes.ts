@@ -530,11 +530,28 @@ export function evaluateQuestionAnswer(type: string, userAnswer: any, correctAns
       };
       const userNorm = normTF(userAnswer);
       const correctNorm = normTF(correctAnswer);
-      if (userNorm && correctNorm && userNorm === correctNorm) return true;
+      if ((userNorm === 'true' || userNorm === 'false') && userNorm === correctNorm) return true;
       if (Array.isArray(options) && options.length > 0) {
         const uOpt = normalizeOptionAnswer(userAnswer, options);
         const cOpt = normalizeOptionAnswer(correctAnswer, options);
-        return Boolean(uOpt && cOpt && uOpt === cOpt);
+        if (Boolean(uOpt && cOpt && uOpt === cOpt)) return true;
+
+        const getTruthFromOpt = (optVal: any) => {
+          if (!optVal) return '';
+          const s = String(optVal).trim().toUpperCase();
+          if (s === 'A' && options.length >= 1) {
+            const t0 = typeof options[0] === 'object' ? (options[0].text || options[0].value) : String(options[0]);
+            return normTF(t0);
+          }
+          if (s === 'B' && options.length >= 2) {
+            const t1 = typeof options[1] === 'object' ? (options[1].text || options[1].value) : String(options[1]);
+            return normTF(t1);
+          }
+          return normTF(optVal);
+        };
+        const uTruth = getTruthFromOpt(userAnswer);
+        const cTruth = getTruthFromOpt(correctAnswer);
+        if ((uTruth === 'true' || uTruth === 'false') && uTruth === cTruth) return true;
       }
       return Boolean(userNorm && correctNorm && userNorm === correctNorm);
     }

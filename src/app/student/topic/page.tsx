@@ -336,9 +336,11 @@ function TopicPracticeContent() {
       ? (Array.isArray(q.correctAnswers) && q.correctAnswers.length > 0 
           ? q.correctAnswers 
           : (Array.isArray(q.correctAnswer) ? q.correctAnswer : (q.correctAnswer !== undefined && q.correctAnswer !== null ? parseAnswerList(q.correctAnswer) : [])))
-      : (q.correctAnswer !== undefined && q.correctAnswer !== null && q.correctAnswer !== ''
-          ? q.correctAnswer 
-          : (Array.isArray(q.correctAnswers) && q.correctAnswers.length > 0 ? q.correctAnswers[0] : ''));
+      : (q.type === 'OTF' && Array.isArray(q.correctAnswers) && q.correctAnswers.length > 0 && (q.correctAnswers[0] === 'True' || q.correctAnswers[0] === 'False')
+          ? q.correctAnswers[0]
+          : (q.correctAnswer !== undefined && q.correctAnswer !== null && q.correctAnswer !== ''
+              ? q.correctAnswer 
+              : (Array.isArray(q.correctAnswers) && q.correctAnswers.length > 0 ? q.correctAnswers[0] : '')));
 
     const isCorrect = evaluateQuestionAnswer(
       q.type || 'OSC',

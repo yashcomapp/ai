@@ -409,7 +409,8 @@ export async function GET(req: NextRequest) {
     allQuestions.forEach((q: any) => {
       const eligible = PracticeService.isQuestionEligible(q.id, questionHistory);
       const priority = PracticeService.getQuestionPriority(q.id, questionHistory);
-      const diff = q.difficulty || 'medium';
+      const rawDiff = String(q.difficulty || '').trim().toLowerCase();
+      const diff = (rawDiff === 'easy' || rawDiff === 'medium' || rawDiff === 'hard') ? rawDiff : 'medium';
       
       if ((priority === 1 || priority === 2) && eligible) {
         if (priority === 2) {

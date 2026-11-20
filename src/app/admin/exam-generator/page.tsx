@@ -424,10 +424,13 @@ export default function AdminExamGeneratorPage() {
           const totTopics = existingCh?.totalTopicsCount ?? ch.totalTopicsCount ?? (Array.isArray(ch.topics) ? ch.topics.length : 0);
           const exStatus = existingCh?.examStatus ?? ch.examStatus ?? (condTopics !== undefined && condTopics > 0 ? (condTopics >= totTopics ? 'all_conducted' : 'partial_conducted') : undefined);
 
-          const activeVault = (currentTemplate?.examCategory === 'foundation' || currentTemplate?.examCategory === 'mock') ? 'foundation' : 'exam';
           const chVaultCounts = existingCh?.vaultCounts ?? ch.vaultCounts;
-          const objCount = chVaultCounts ? (chVaultCounts[activeVault]?.objective ?? 0) : (existingCh?.objectiveCount ?? ch.objectiveCount ?? 0);
-          const subjCount = chVaultCounts ? (chVaultCounts[activeVault]?.subjective ?? 0) : (existingCh?.subjectiveCount ?? ch.subjectiveCount ?? 0);
+          const objCount = chVaultCounts 
+            ? ((chVaultCounts.exam?.objective ?? 0) + (chVaultCounts.practice?.objective ?? 0) + (chVaultCounts.foundation?.objective ?? 0))
+            : (existingCh?.objectiveCount ?? ch.objectiveCount ?? 0);
+          const subjCount = chVaultCounts 
+            ? ((chVaultCounts.exam?.subjective ?? 0) + (chVaultCounts.practice?.subjective ?? 0) + (chVaultCounts.foundation?.subjective ?? 0))
+            : (existingCh?.subjectiveCount ?? ch.subjectiveCount ?? 0);
 
           instantChaptersList.push({
             subject,
@@ -464,10 +467,13 @@ export default function AdminExamGeneratorPage() {
               at => (topCode && at.topicCode === topCode) || (at.topic === label && String(at.chapterNumber) === String(chItem.chapterNumber))
             );
 
-            const activeVault = (currentTemplate?.examCategory === 'foundation' || currentTemplate?.examCategory === 'mock') ? 'foundation' : 'exam';
             const topVaultCounts = existingTop?.vaultCounts ?? (isObj ? t.vaultCounts : undefined);
-            const topObjCount = topVaultCounts ? (topVaultCounts[activeVault]?.objective ?? 0) : (existingTop?.objectiveCount ?? (isObj ? (t.objectiveCount || 0) : 0));
-            const topSubjCount = topVaultCounts ? (topVaultCounts[activeVault]?.subjective ?? 0) : (existingTop?.subjectiveCount ?? (isObj ? (t.subjectiveCount || 0) : 0));
+            const topObjCount = topVaultCounts 
+              ? ((topVaultCounts.exam?.objective ?? 0) + (topVaultCounts.practice?.objective ?? 0) + (topVaultCounts.foundation?.objective ?? 0))
+              : (existingTop?.objectiveCount ?? (isObj ? (t.objectiveCount || 0) : 0));
+            const topSubjCount = topVaultCounts 
+              ? ((topVaultCounts.exam?.subjective ?? 0) + (topVaultCounts.practice?.subjective ?? 0) + (topVaultCounts.foundation?.subjective ?? 0))
+              : (existingTop?.subjectiveCount ?? (isObj ? (t.subjectiveCount || 0) : 0));
 
             instantTopicsList.push({
               subject: chItem.subject,
@@ -513,8 +519,12 @@ export default function AdminExamGeneratorPage() {
               const syllabusDoc = await res.json();
               const list = syllabusDoc.chapters || [];
               list.forEach((ch: any, idx: number) => {
-                const chObjCount = ch.vaultCounts ? (ch.vaultCounts[activeVault]?.objective ?? 0) : (ch.objectiveCount || 0);
-                const chSubjCount = ch.vaultCounts ? (ch.vaultCounts[activeVault]?.subjective ?? 0) : (ch.subjectiveCount || 0);
+                const chObjCount = ch.vaultCounts 
+                  ? ((ch.vaultCounts.exam?.objective ?? 0) + (ch.vaultCounts.practice?.objective ?? 0) + (ch.vaultCounts.foundation?.objective ?? 0))
+                  : (ch.objectiveCount || 0);
+                const chSubjCount = ch.vaultCounts 
+                  ? ((ch.vaultCounts.exam?.subjective ?? 0) + (ch.vaultCounts.practice?.subjective ?? 0) + (ch.vaultCounts.foundation?.subjective ?? 0))
+                  : (ch.subjectiveCount || 0);
                 allChaptersList.push({
                   subject,
                   chapter: ch,
@@ -548,8 +558,12 @@ export default function AdminExamGeneratorPage() {
               const num = rawNum || label;
               const topCode = isObj ? (t.topicCode || t.subtopicCode || '') : (parentCode ? `${parentCode}.${sIdx + 1}` : '');
               const topVaultCounts = isObj ? t.vaultCounts : undefined;
-              const topObjCount = topVaultCounts ? (topVaultCounts[activeVault]?.objective ?? 0) : (isObj ? (t.objectiveCount || 0) : 0);
-              const topSubjCount = topVaultCounts ? (topVaultCounts[activeVault]?.subjective ?? 0) : (isObj ? (t.subjectiveCount || 0) : 0);
+              const topObjCount = topVaultCounts 
+                ? ((topVaultCounts.exam?.objective ?? 0) + (topVaultCounts.practice?.objective ?? 0) + (topVaultCounts.foundation?.objective ?? 0))
+                : (isObj ? (t.objectiveCount || 0) : 0);
+              const topSubjCount = topVaultCounts 
+                ? ((topVaultCounts.exam?.subjective ?? 0) + (topVaultCounts.practice?.subjective ?? 0) + (topVaultCounts.foundation?.subjective ?? 0))
+                : (isObj ? (t.subjectiveCount || 0) : 0);
               allTopicsList.push({
                 subject: chItem.subject,
                 chapterName: chItem.chapterName,
@@ -780,18 +794,22 @@ export default function AdminExamGeneratorPage() {
         const newVault = (newCat === 'foundation' || newCat === 'mock') ? 'foundation' : 'exam';
         setAvailableChapters(prev => prev.map(ch => {
           if (!ch.vaultCounts) return ch;
+          const totObj = (ch.vaultCounts.exam?.objective ?? 0) + (ch.vaultCounts.practice?.objective ?? 0) + (ch.vaultCounts.foundation?.objective ?? 0);
+          const totSubj = (ch.vaultCounts.exam?.subjective ?? 0) + (ch.vaultCounts.practice?.subjective ?? 0) + (ch.vaultCounts.foundation?.subjective ?? 0);
           return {
             ...ch,
-            objectiveCount: ch.vaultCounts[newVault]?.objective ?? 0,
-            subjectiveCount: ch.vaultCounts[newVault]?.subjective ?? 0
+            objectiveCount: totObj,
+            subjectiveCount: totSubj
           };
         }));
         setAvailableTopics(prev => prev.map(top => {
           if (!top.vaultCounts) return top;
+          const totObj = (top.vaultCounts.exam?.objective ?? 0) + (top.vaultCounts.practice?.objective ?? 0) + (top.vaultCounts.foundation?.objective ?? 0);
+          const totSubj = (top.vaultCounts.exam?.subjective ?? 0) + (top.vaultCounts.practice?.subjective ?? 0) + (top.vaultCounts.foundation?.subjective ?? 0);
           return {
             ...top,
-            objectiveCount: top.vaultCounts[newVault]?.objective ?? 0,
-            subjectiveCount: top.vaultCounts[newVault]?.subjective ?? 0
+            objectiveCount: totObj,
+            subjectiveCount: totSubj
           };
         }));
   };

@@ -176,7 +176,13 @@ export function SyllabusSelector<T extends { topic: string; subject?: string }>(
                         alignItems: 'center',
                         gap: '2px'
                       }}
-                      title={`Objective Questions: ${ch.objectiveCount ?? ch.chapter?.objectiveCount ?? 0} | Subjective Questions: ${ch.subjectiveCount ?? ch.chapter?.subjectiveCount ?? 0}`}
+                      title={(() => {
+                        const vc = ch.vaultCounts || ch.chapter?.vaultCounts;
+                        const obj = ch.objectiveCount ?? ch.chapter?.objectiveCount ?? 0;
+                        const subj = ch.subjectiveCount ?? ch.chapter?.subjectiveCount ?? 0;
+                        if (!vc) return `Total: O: ${obj} | S: ${subj}`;
+                        return `Total (All Vaults): O: ${obj} | S: ${subj} (Exam: ${vc.exam?.objective || 0}O/${vc.exam?.subjective || 0}S, Practice: ${vc.practice?.objective || 0}O/${vc.practice?.subjective || 0}S, Foundation: ${vc.foundation?.objective || 0}O/${vc.foundation?.subjective || 0}S)`;
+                      })()}
                     >
                       <span style={{ color: 'var(--accent)' }}>O: {ch.objectiveCount ?? ch.chapter?.objectiveCount ?? 0}</span>
                       <span style={{ opacity: 0.4 }}>|</span>
@@ -384,7 +390,13 @@ export function SyllabusSelector<T extends { topic: string; subject?: string }>(
                           alignItems: 'center',
                           gap: '2px'
                         }}
-                        title={`Objective Questions: ${(top as any).objectiveCount ?? 0} | Subjective Questions: ${(top as any).subjectiveCount ?? 0}`}
+                        title={(() => {
+                        const vc = (top as any).vaultCounts;
+                        const obj = (top as any).objectiveCount ?? 0;
+                        const subj = (top as any).subjectiveCount ?? 0;
+                        if (!vc) return `Total: O: ${obj} | S: ${subj}`;
+                        return `Total (All Vaults): O: ${obj} | S: ${subj} (Exam: ${vc.exam?.objective || 0}O/${vc.exam?.subjective || 0}S, Practice: ${vc.practice?.objective || 0}O/${vc.practice?.subjective || 0}S, Foundation: ${vc.foundation?.objective || 0}O/${vc.foundation?.subjective || 0}S)`;
+                      })()}
                       >
                         <span style={{ color: 'var(--info)' }}>O: {(top as any).objectiveCount ?? 0}</span>
                         <span style={{ opacity: 0.4 }}>|</span>
