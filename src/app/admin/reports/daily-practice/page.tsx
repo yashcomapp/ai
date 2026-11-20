@@ -602,7 +602,7 @@ export default function DailyPracticeSummaryPage() {
           : `<span style="display:inline-block; min-width: 24px; padding: 2px 6px; border-radius: 4px; background: ${isRedRemark ? '#fee2e2' : '#f1f5f9'}; color: ${isRedRemark ? '#991b1b' : '#475569'}; font-weight: 800; font-size: 12px; ${isRedRemark ? 'border: 1px solid #fca5a5;' : ''}">${rank}</span>`;
 
         const rowBg = isRedRemark 
-          ? (idx % 2 === 0 ? '#fff1f2' : '#fee2e2') 
+          ? '#fee2e2' 
           : (idx % 2 === 0 ? '#ffffff' : '#f8fafc');
         const rowBorder = isRedRemark ? '1px solid #fca5a5' : '1px solid #e2e8f0';
         const borderLeft = isRedRemark ? 'border-left: 5px solid #ef4444;' : '';
@@ -1378,7 +1378,7 @@ export default function DailyPracticeSummaryPage() {
                               : (isRedRemark ? '1px solid rgba(239, 68, 68, 0.4)' : '1px solid var(--border-light)'),
                             borderLeft: isRedRemark ? '4px solid #ef4444' : 'none',
                             background: isRedRemark
-                              ? (idx % 2 === 1 ? 'rgba(239, 68, 68, 0.18)' : 'rgba(239, 68, 68, 0.10)')
+                              ? 'rgba(239, 68, 68, 0.14)'
                               : (idx % 2 === 1 ? 'var(--bg-soft-even)' : 'transparent')
                           }}
                         >

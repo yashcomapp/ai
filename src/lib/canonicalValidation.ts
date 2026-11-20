@@ -350,4 +350,63 @@ export function assertCanonicalQuestionPayload(questionData: any): void {
     const sRes = validateSubjectCode(bCode, cls, questionData.subjectCode);
     if (!sRes.valid) throw new Error(`[CANONICAL BARRIER VIOLATION] ${sRes.error}`);
   }
+
+  // 1. Difficulty Invariant (Strictly 'easy', 'medium', or 'hard')
+  if (questionData.difficulty !== undefined && questionData.difficulty !== null) {
+    const diff = String(questionData.difficulty).trim().toLowerCase();
+    if (!['easy', 'medium', 'hard'].includes(diff)) {
+      throw new Error(`[CANONICAL BARRIER VIOLATION] Invalid difficulty "${questionData.difficulty}". Must strictly be 'easy', 'medium', or 'hard'.`);
+    }
+  }
+
+  // 2. Type Invariant (Strictly canonical 13 types)
+  const qType = String(questionData.type || questionData.typeCode || '').trim().toUpperCase();
+  if (qType && !CANONICAL_QUESTION_TYPES.includes(qType as any)) {
+    throw new Error(`[CANONICAL BARRIER VIOLATION] Invalid question type "${qType}". Must be one of: ${CANONICAL_QUESTION_TYPES.join(', ')}.`);
+  }
+
+  // 3. Objective Options & Answer Key Invariants
+  if (['OSC', 'OMC', 'OTF', 'OAR'].includes(qType)) {
+    const opts = Array.isArray(questionData.options) ? questionData.options : [];
+    if (opts.length < 2) {
+      throw new Error(`[CANONICAL BARRIER VIOLATION] Question type ${qType} requires at least 2 options, found ${opts.length}.`);
+    }
+    if (qType === 'OTF' && opts.length !== 2) {
+      throw new Error(`[CANONICAL BARRIER VIOLATION] OTF question requires exactly 2 options (True/False), found ${opts.length}.`);
+    }
+
+    // Anti-Placeholder Guard
+    for (const opt of opts) {
+      const optStr = typeof opt === 'object' && opt ? (opt.text || opt.value || '') : String(opt || '');
+      const trimmedOpt = optStr.trim();
+      if (/^Option\s+[A-D]$/i.test(trimmedOpt) || /^Option\s+[A-D]\s*\(/i.test(trimmedOpt) || /placeholder/i.test(trimmedOpt)) {
+        throw new Error(`[CANONICAL BARRIER VIOLATION] Option contains forbidden placeholder text: "${trimmedOpt}".`);
+      }
+    }
+
+    if (qType === 'OSC' || qType === 'OAR') {
+      const cAns = String(questionData.correctAnswer || '').trim().toUpperCase();
+      if (!['A', 'B', 'C', 'D'].includes(cAns)) {
+        throw new Error(`[CANONICAL BARRIER VIOLATION] ${qType} correctAnswer must be 'A', 'B', 'C', or 'D', got "${questionData.correctAnswer}".`);
+      }
+      const cIdx = cAns.charCodeAt(0) - 65;
+      if (cIdx >= opts.length) {
+        throw new Error(`[CANONICAL BARRIER VIOLATION] correctAnswer "${cAns}" is out of bounds for options length ${opts.length}.`);
+      }
+    }
+
+    if (qType === 'OTF') {
+      const cAns = String(questionData.correctAnswer || '').trim().toUpperCase();
+      if (!['A', 'B', 'TRUE', 'FALSE'].includes(cAns)) {
+        throw new Error(`[CANONICAL BARRIER VIOLATION] OTF correctAnswer must be 'A', 'B', 'True', or 'False', got "${questionData.correctAnswer}".`);
+      }
+    }
+  }
+
+  // 4. ONE Numerical Invariant
+  if (qType === 'ONE') {
+    if (questionData.numericalValue === undefined && questionData.correctAnswer === undefined) {
+      throw new Error(`[CANONICAL BARRIER VIOLATION] ONE numerical question must provide numericalValue or numerical correctAnswer.`);
+    }
+  }
 }

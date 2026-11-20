@@ -970,7 +970,7 @@ function ExamReportContent() {
         const isRedRemark = isGamble || stats.accuracy < 50;
         const rowBg = idx % 2 === 0 ? '#ffffff' : '#f8fafc';
         const blunderStyle = isRedRemark 
-          ? (idx % 2 === 0 ? 'background-color: #fff1f2; border-left: 5px solid #ef4444; border-bottom: 1px solid #fca5a5;' : 'background-color: #fee2e2; border-left: 5px solid #ef4444; border-bottom: 1px solid #fca5a5;')
+          ? 'background-color: #fee2e2; border-left: 5px solid #ef4444; border-bottom: 1px solid #fca5a5;'
           : `background-color: ${rowBg}; border-bottom: 1px solid #e2e8f0;`;
 
         const rankBadge = isRedRemark
@@ -987,7 +987,7 @@ function ExamReportContent() {
         } else if (stats.accuracy >= 50) {
           remarkHtml = `<span style="display:inline-block; padding: 4px 10px; border-radius: 6px; font-size: 11.5px; font-weight: 800; background: #fef9c3; color: #854d0e; border: 1.5px solid #fde047; white-space: nowrap;">🟡 Moderate</span>`;
         } else {
-          remarkHtml = `<span style="display:inline-block; padding: 4px 10px; border-radius: 6px; font-size: 11.5px; font-weight: 800; background: #fee2e2; color: #991b1b; border: 1.5px solid #fca5a5; white-space: nowrap;">⚠️ Penalty Trap</span>`;
+          remarkHtml = `<span style="display:inline-block; padding: 4px 10px; border-radius: 6px; font-size: 11.5px; font-weight: 800; background: #fee2e2; color: #991b1b; border: 1.5px solid #fca5a5; white-space: nowrap;">🚨 Penalty Trap</span>`;
         }
 
         const paceColorHex = stats.avgPaceSec > 0 && stats.avgPaceSec < 20 && stats.wrongCount > 5 ? '#b45309' : '#1e293b';
@@ -1457,7 +1457,7 @@ function ExamReportContent() {
                             borderBottom: isRedRemark ? '1px solid rgba(239, 68, 68, 0.4)' : '1px solid var(--border-light)', 
                             borderLeft: isRedRemark ? '4px solid #ef4444' : 'none',
                             background: isRedRemark 
-                              ? (idx % 2 === 1 ? 'rgba(239, 68, 68, 0.18)' : 'rgba(239, 68, 68, 0.10)') 
+                              ? 'rgba(239, 68, 68, 0.14)' 
                               : 'transparent',
                             cursor: 'pointer', 
                             height: '34px' 

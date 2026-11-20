@@ -23,7 +23,7 @@ export function formatReportStudentName(fullName: string): string {
 export function getDeepScoreColor(score: number): string {
   if (score >= 80) return '#14532d'; // Forest green (emerald-900)
   if (score >= 60) return '#0369a1'; // Ocean blue (sky-700)
-  if (score >= 40) return '#92400e'; // Warm bronze/amber (amber-800, never bright yellow!)
+  if (score >= 50) return '#92400e'; // Warm bronze/amber (amber-800, never bright yellow!)
   return '#991b1b'; // Deep crimson (red-800)
 }
 
@@ -50,7 +50,7 @@ export function getScoreChip(val: number | null | undefined, isHero: boolean = f
     bg = '#e0f2fe';
     color = '#0369a1';
     border = '#7dd3fc';
-  } else if (num >= 40) {
+  } else if (num >= 50) {
     // Deep warm bronze/amber on soft cream (never washed out yellow!)
     bg = '#fef3c7';
     color = '#92400e';
@@ -663,7 +663,7 @@ export async function exportBatchLqCardImage(params: BatchLqCardExportParams): P
     const insight = getBatchStudentLqInsight(s);
     const isRedRemark = insight.color === '#991b1b' || insight.bg === '#fee2e2';
     const effectiveRowBg = isRedRemark 
-      ? (idx % 2 === 0 ? '#fff1f2' : '#fee2e2') 
+      ? '#fee2e2' 
       : rowBg;
     const borderStyle = isRedRemark 
       ? 'border-bottom: 1px solid #fca5a5; border-left: 5px solid #ef4444;' 
@@ -1554,7 +1554,7 @@ export async function exportStudentPracticeCardImage(params: StudentPracticeCard
       const chapterStr = t.chapterName ? `${t.chapterName}` : (t.subjectName || '');
       const guidance = t.expText || (t.statusGroup === 'mastered' ? 'Concept thoroughly mastered' : t.statusGroup === 'practicing' ? 'Needs 1-2 more practice sets for mastery' : 'High priority revision & practice needed');
       const isRed = t.statusGroup !== 'mastered' && t.statusGroup !== 'practicing';
-      const effectiveRowBg = isRed ? (idx % 2 === 0 ? '#fff1f2' : '#fee2e2') : rowBg;
+      const effectiveRowBg = isRed ? '#fee2e2' : rowBg;
       const borderStyle = isRed ? 'border-bottom: 1px solid #fca5a5; border-left: 5px solid #ef4444;' : 'border-bottom: 1px solid #e2e8f0;';
 
       return `
