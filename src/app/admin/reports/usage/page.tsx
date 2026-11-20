@@ -69,7 +69,7 @@ export default function SystemHealthAuditPage() {
       <div style={{ maxWidth: '1280px', width: '100%', margin: '0 auto', padding: '8px 16px 0 16px' }}>
         <nav style={{ display: 'flex', gap: '14px', borderBottom: '1px solid var(--border-light)', paddingBottom: '6px', overflowX: 'auto' }}>
           <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', cursor: 'pointer', whiteSpace: 'nowrap' }} onClick={() => router.push('/admin/reports')}>
-            ⚡ Daily Intervention Queue
+            ⚡ Classroom Remediation Hub
           </span>
           <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', cursor: 'pointer', whiteSpace: 'nowrap' }} onClick={() => router.push('/admin/reports/daily-practice')}>
             📝 Practice Track Report

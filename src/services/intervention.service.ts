@@ -4,20 +4,62 @@ import { getDateKeyIST } from '@/lib/dateUtils';
 import { ReportCacheManager } from '@/lib/reportCache';
 import { getStudentMode } from '@/types/user.types';
 import { isDemoUser } from '@/lib/studentDb';
+import { fetchTopicIndexByCodes } from '@/lib/syllabusServerUtils';
 
 export type InterventionCategory = 
-  | 'missed_exam'       // Step 1: Baseline Exam missed
-  | 'reflection_gate'   // Step 3: Practice locked by mistake reflection
-  | 'conceptual_block'  // Step 3: Practiced, but still < 50% (Needs Re-Teach)
-  | 'neglected_topic';  // Step 2->3: Flagged 🔴 by exam, but 0 practice done
+  | 'conceptual_block'  // Practiced allowed sets, but still < 50% (Needs Classroom Re-Teach)
+  | 'neglected_topic'   // Flagged 🔴 by exam, but 0 practice done
+  | 'missed_exam';      // Baseline Exam missed
 
-export interface InterventionItem {
+export interface ReTeachStudent {
+  studentCode: string;
+  studentName: string;
+  className: string;
+  mastery: number;
+  questionsAttempted: number;
+}
+
+export interface ReTeachTopicGroup {
+  id: string;
+  className: string;
+  topicCode: string;
+  topicName: string;
+  studentCount: number;
+  avgMastery: number;
+  students: ReTeachStudent[];
+}
+
+export interface NeglectedTopicDetail {
+  topicCode: string;
+  topicName: string;
+  examScore: number;
+}
+
+export interface NeglectedStudentGroup {
   id: string;
   studentCode: string;
   studentName: string;
   className: string;
-  phone?: string;
-  parentPhone?: string;
+  topicCount: number;
+  topics: NeglectedTopicDetail[];
+}
+
+export interface MissedExamItem {
+  id: string;
+  studentCode: string;
+  studentName: string;
+  className: string;
+  examId: string;
+  examTitle: string;
+  daysOverdue: number;
+  dueDate: string;
+}
+
+export interface InterventionItem {
+  id: string;
+  studentCode?: string;
+  studentName?: string;
+  className: string;
   urgency: 'critical' | 'high' | 'medium' | 'low';
   category: InterventionCategory;
   title: string;
@@ -26,46 +68,37 @@ export interface InterventionItem {
   topicCode?: string;
   topicName?: string;
   examId?: string;
-  attemptId?: string;
   daysOverdue?: number;
   scorePercent?: number;
-  practiceQuestionsAttempted?: number;
-  whatsappMessage: string;
-  actionType: 'whatsapp' | 'dossier' | 'scorecard';
-  actionLabel: string;
+  studentCount?: number;
+  students?: ReTeachStudent[];
+  topics?: NeglectedTopicDetail[];
   createdAt?: string;
 }
 
 export interface InterventionSummary {
   totalItems: number;
-  criticalCount: number;         // Missed Exams
-  gateBlockedCount: number;      // Reflection Gates
-  conceptualBlockCount: number;  // Practiced but still <50% (Re-Teach)
-  neglectedTopicCount: number;   // In 🔴 with 0 practice done
+  criticalCount: number;          // Missed Baseline Exams
+  gateBlockedCount: number;       // Always 0 (practice locks are intentional by anti-abuse policy)
+  conceptualBlockCount: number;   // Number of unique topics needing classroom re-teach
+  reTeachStudentCount: number;    // Number of distinct students needing re-teach
+  neglectedTopicCount: number;    // Number of students with 0 practice on weak topics
+  reTeachTopics: ReTeachTopicGroup[];
+  neglectedStudents: NeglectedStudentGroup[];
+  missedExams: MissedExamItem[];
   items: InterventionItem[];
   lastUpdated: string;
 }
 
-/**
- * Normalizes phone numbers to standard international 10/12-digit format for WhatsApp web.
- */
-function normalizeWhatsAppPhone(phone?: string): string {
-  if (!phone) return '';
-  const digits = phone.replace(/\D/g, '');
-  if (digits.length === 10) return `91${digits}`;
-  if (digits.length === 12 && digits.startsWith('91')) return digits;
-  return digits;
-}
-
 export class InterventionService {
-  private static CACHE_KEY = 'admin_report_interventions_v2';
+  private static CACHE_KEY = 'admin_report_interventions_v3';
   private static CACHE_TTL_SECONDS = 60; // 1-minute TTL with on-demand refresh
 
   /**
-   * Generates a ranked, deduplicated Intervention Queue based on the 3-step lifecycle:
-   * 1. Baseline Exam assigned & conducted
-   * 2. Topics bucketed into 🟢, 🟡, 🔴 based on exam performance
-   * 3. Daily practice moves topics; interventions catch those failing to remediate
+   * Generates a deduplicated Classroom Remediation Digest:
+   * 1. Re-Teach Agenda: Groups students by Class & Topic where allowed practice failed to reach 50%
+   * 2. Neglected Practice: Identifies students with exam weaknesses who have completed 0 practice sets
+   * 3. Missed Baseline Exams: Identifies students who missed recent scheduled exams
    */
   static async getInterventionQueue(forceRefresh = false): Promise<InterventionSummary> {
     if (!forceRefresh) {
@@ -78,7 +111,7 @@ export class InterventionService {
     // 1. Fetch all active students (excluding deactivated accounts per Rule 2.C and Limited Mode students who cannot practice)
     const studentsSnap = await adminDb.collection('users')
       .where('role', '==', 'student')
-      .select('name', 'studentCode', 'className', 'batch', 'phone', 'parentPhone', 'status', 'batchId', 'batchIds', 'studentMode', 'autonomous')
+      .select('name', 'studentCode', 'className', 'batch', 'status', 'batchId', 'batchIds', 'studentMode', 'autonomous')
       .get();
 
     const activeStudents = studentsSnap.docs
@@ -94,9 +127,8 @@ export class InterventionService {
       if (Array.isArray(s.batchIds)) s.batchIds.forEach((b: string) => allBatchIds.add(b));
     });
 
-    const items: InterventionItem[] = [];
-
     // ── STEP 1: Missed Scheduled Baseline Exams ───────────────────────
+    const missedExamsList: MissedExamItem[] = [];
     if (allBatchIds.size > 0) {
       try {
         const { objectiveDocs } = await getAssignmentsForBatches(Array.from(allBatchIds), {
@@ -148,30 +180,15 @@ export class InterventionService {
               if (matchesBatch) {
                 const key = `${student.studentCode}_${ass.examId}`;
                 if (!attemptedSet.has(key)) {
-                  const examTitle = ass.title || ass.examId;
-                  const phone = normalizeWhatsAppPhone(student.phone || student.parentPhone);
-                  const msg = `Hello! Reminder from YASHCOM for ${student.name}. ` +
-                    `The scheduled baseline exam '${examTitle}' (conducted on ${getDateKeyIST(endAt)}) was missed. ` +
-                    `Taking baseline exams is required so your practice topics can be calibrated. Please take this test today.`;
-
-                  items.push({
+                  missedExamsList.push({
                     id: `missed_${key}`,
                     studentCode: student.studentCode,
                     studentName: student.name,
                     className: student.className || student.batch || 'General Batch',
-                    phone: student.phone,
-                    parentPhone: student.parentPhone,
-                    urgency: 'critical',
-                    category: 'missed_exam',
-                    title: `Missed Baseline Exam: ${examTitle}`,
-                    subtitle: `Due: ${getDateKeyIST(endAt)} • ${daysOverdue} days unattempted`,
-                    description: `Student missed the baseline exam. Topic diagnostic and daily practice cannot be calibrated without baseline test score.`,
                     examId: ass.examId,
+                    examTitle: ass.title || ass.examId,
                     daysOverdue,
-                    whatsappMessage: msg,
-                    actionType: 'whatsapp',
-                    actionLabel: 'Send Exam Notice',
-                    createdAt: endAt.toISOString()
+                    dueDate: getDateKeyIST(endAt)
                   });
                 }
               }
@@ -183,177 +200,217 @@ export class InterventionService {
       }
     }
 
-    // ── STEP 2 & 3: Practice Gate Lockdown (> 24 hours) ───────────────
-    const refSnap = await adminDb.collection('practiceSubmissions')
-      .where('reflectionRequiredByGate', '==', true)
-      .where('reflectionStatus', '==', 'pending')
-      .select('studentCode', 'topicCode', 'topicName', 'scorePercent', 'total', 'score', 'createdAt', 'practiceSessionId')
-      .get();
-
-    refSnap.docs.forEach(doc => {
-      const data = doc.data() as any;
-      const student = studentMap.get(data.studentCode);
-      if (!student) return;
-
-      const createdDate = data.createdAt?.toDate ? data.createdAt.toDate() : new Date(data.createdAt || now);
-      const hoursPending = Math.max(1, Math.round((now.getTime() - createdDate.getTime()) / (1000 * 60 * 60)));
-      const daysPending = Math.floor(hoursPending / 24);
-
-      const topicLabel = data.topicName || data.topicCode || 'Practice Set';
-      const phone = normalizeWhatsAppPhone(student.phone || student.parentPhone);
-      const msg = `Hello! Notice from YASHCOM regarding ${student.name}. ` +
-        `There is an incomplete mistake reflection for practice on '${topicLabel}' pending for ${hoursPending} hours. ` +
-        `Practice is currently locked. Please complete the mistake reflection to unlock your next practice sets.`;
-
-      items.push({
-        id: `gate_${doc.id}`,
-        studentCode: student.studentCode,
-        studentName: student.name,
-        className: student.className || student.batch || 'General Batch',
-        phone: student.phone,
-        parentPhone: student.parentPhone,
-        urgency: daysPending >= 2 ? 'critical' : 'high',
-        category: 'reflection_gate',
-        title: `Practice Locked: Reflection Pending (${hoursPending}h)`,
-        subtitle: `Topic: ${topicLabel} • Previous Set: ${data.scorePercent ?? 0}%`,
-        description: `Student made errors in practice set and must review explanations & reflect before unlocking further practice.`,
-        topicCode: data.topicCode,
-        topicName: topicLabel,
-        attemptId: data.practiceSessionId || doc.id,
-        daysOverdue: daysPending,
-        scorePercent: data.scorePercent,
-        whatsappMessage: msg,
-        actionType: 'whatsapp',
-        actionLabel: 'Unlock Nudge',
-        createdAt: createdDate.toISOString()
-      });
-    });
-
-    // ── STEP 3: Topic Mastery Triaging & Remediation Breakdown ─────────
-    // Query topics currently in 🔴 Needs Attention (<50%)
+    // ── STEP 2: Topic Mastery Triaging & Remediation Breakdown ─────────
     const lowMasterySnap = await adminDb.collection('studentTopicMastery')
       .where('mastery', '<', 50)
-      .select('studentCode', 'topicCode', 'topicName', 'mastery', 'questionsAttempted', 'practiceQuestionsAttempted', 'examQuestionsAttempted', 'dailyPracticeSessionsCount', 'lastPracticeDate', 'updatedAt')
+      .select('studentCode', 'topicCode', 'topicName', 'mastery', 'questionsAttempted', 'practiceQuestionsAttempted', 'updatedAt')
       .get();
 
-    const studentConceptualBlockMap = new Map<string, any[]>();
-    const studentNeglectedMap = new Map<string, any[]>();
+    const rawReTeachMap = new Map<string, {
+      className: string;
+      topicCode: string;
+      topicName?: string;
+      students: ReTeachStudent[];
+    }>();
+
+    const rawNeglectedMap = new Map<string, {
+      studentCode: string;
+      studentName: string;
+      className: string;
+      topics: NeglectedTopicDetail[];
+    }>();
+
+    const allTopicCodesSet = new Set<string>();
 
     lowMasterySnap.docs.forEach(doc => {
       const data = doc.data() as any;
-      if (!studentMap.has(data.studentCode)) return;
+      const student = studentMap.get(data.studentCode);
+      if (!student) return;
       if (!data.questionsAttempted || data.questionsAttempted <= 0) return;
 
+      const topicCode = (data.topicCode || '').trim();
+      if (!topicCode) return;
+      allTopicCodesSet.add(topicCode);
+
       const practiceQs = data.practiceQuestionsAttempted || 0;
+      const studentClass = student.className || student.batch || 'General Batch';
 
       if (practiceQs > 0) {
-        // Practiced, but STILL <50% -> Conceptual Block (Algorithm failed, Teacher needs to re-teach!)
-        const list = studentConceptualBlockMap.get(data.studentCode) || [];
-        list.push(data);
-        studentConceptualBlockMap.set(data.studentCode, list);
+        // Practiced, but STILL <50% -> Conceptual Block (Algorithm failed, Teacher needs to re-teach in class!)
+        const groupKey = `${studentClass}___${topicCode}`;
+        if (!rawReTeachMap.has(groupKey)) {
+          rawReTeachMap.set(groupKey, {
+            className: studentClass,
+            topicCode,
+            topicName: data.topicName,
+            students: []
+          });
+        }
+        rawReTeachMap.get(groupKey)!.students.push({
+          studentCode: student.studentCode,
+          studentName: student.name,
+          className: studentClass,
+          mastery: Math.round(data.mastery || 0),
+          questionsAttempted: data.questionsAttempted
+        });
       } else {
         // Flagged by exam, but 0 practice sessions attempted -> Neglected Remediation
-        const list = studentNeglectedMap.get(data.studentCode) || [];
-        list.push(data);
-        studentNeglectedMap.set(data.studentCode, list);
+        if (!rawNeglectedMap.has(student.studentCode)) {
+          rawNeglectedMap.set(student.studentCode, {
+            studentCode: student.studentCode,
+            studentName: student.name,
+            className: studentClass,
+            topics: []
+          });
+        }
+        rawNeglectedMap.get(student.studentCode)!.topics.push({
+          topicCode,
+          topicName: data.topicName || topicCode,
+          examScore: Math.round(data.mastery || 0)
+        });
       }
     });
 
-    // 3A. Conceptual Blocks (High Priority: Practiced but stuck in 🔴 -> Teacher Re-Teach)
-    studentConceptualBlockMap.forEach((topics, sCode) => {
-      const student = studentMap.get(sCode);
-      if (!student) return;
+    // Hydrate human-readable topic names for all unique topics
+    let topicIndexMap = new Map<string, any>();
+    try {
+      topicIndexMap = await fetchTopicIndexByCodes(Array.from(allTopicCodesSet));
+    } catch (err) {
+      console.warn('InterventionService: Error hydrating topic names:', err);
+    }
 
-      topics.sort((a, b) => (a.mastery - b.mastery) || (b.practiceQuestionsAttempted - a.practiceQuestionsAttempted));
-      const worst = topics[0];
-      const topicLabel = worst.topicName || worst.topicCode;
-      const phone = normalizeWhatsAppPhone(student.phone || student.parentPhone);
-      const msg = `Hello! Academic re-teach notice from YASHCOM for ${student.name}. ` +
-        `On topic '${topicLabel}', despite attempting ${worst.practiceQuestionsAttempted} practice questions, mastery remains at ${worst.mastery}%. ` +
-        `This indicates a core concept misunderstanding. Please attend teacher doubt-clearing or 1-on-1 concept revision today.`;
+    // Build structured Re-Teach Topic Groups
+    const reTeachTopics: ReTeachTopicGroup[] = [];
+    const reTeachStudentCodes = new Set<string>();
+
+    rawReTeachMap.forEach((g, groupKey) => {
+      const idxMeta = topicIndexMap.get(g.topicCode);
+      const friendlyName = g.topicName || idxMeta?.topicName || idxMeta?.title || idxMeta?.name || g.topicCode;
+
+      // Sort students inside topic: lowest mastery first
+      g.students.sort((a, b) => a.mastery - b.mastery);
+      g.students.forEach(s => reTeachStudentCodes.add(s.studentCode));
+
+      const avgMastery = Math.round(
+        g.students.reduce((sum, s) => sum + s.mastery, 0) / g.students.length
+      );
+
+      reTeachTopics.push({
+        id: `reteach_${groupKey.replace(/[^a-zA-Z0-9_-]/g, '_')}`,
+        className: g.className,
+        topicCode: g.topicCode,
+        topicName: friendlyName,
+        studentCount: g.students.length,
+        avgMastery,
+        students: g.students
+      });
+    });
+
+    // Sort Re-Teach Topics: Most struggling students first, then lowest average mastery
+    reTeachTopics.sort((a, b) => {
+      if (b.studentCount !== a.studentCount) return b.studentCount - a.studentCount;
+      return a.avgMastery - b.avgMastery;
+    });
+
+    // Build structured Neglected Practice Groups (1 entry per student)
+    const neglectedStudents: NeglectedStudentGroup[] = [];
+    rawNeglectedMap.forEach((s) => {
+      // Hydrate topic names
+      const hydratedTopics = s.topics.map(t => {
+        const idxMeta = topicIndexMap.get(t.topicCode);
+        return {
+          ...t,
+          topicName: t.topicName !== t.topicCode ? t.topicName : (idxMeta?.topicName || idxMeta?.title || idxMeta?.name || t.topicCode)
+        };
+      });
+
+      hydratedTopics.sort((a, b) => a.examScore - b.examScore);
+
+      neglectedStudents.push({
+        id: `neglected_${s.studentCode}`,
+        studentCode: s.studentCode,
+        studentName: s.studentName,
+        className: s.className,
+        topicCount: hydratedTopics.length,
+        topics: hydratedTopics
+      });
+    });
+
+    // Sort Neglected Students: Most unattempted topics first
+    neglectedStudents.sort((a, b) => b.topicCount - a.topicCount);
+
+    // Build flat backwards-compatible `items` array for the UI feed & search
+    const items: InterventionItem[] = [];
+
+    // 1. Re-Teach Topic Items
+    reTeachTopics.forEach(t => {
+      const studentNamesPreview = t.students.map(s => `${s.studentName} (${s.mastery}%)`).slice(0, 4).join(', ');
+      const moreCount = t.students.length > 4 ? ` +${t.students.length - 4} more` : '';
 
       items.push({
-        id: `block_${sCode}_${worst.topicCode}`,
-        studentCode: student.studentCode,
-        studentName: student.name,
-        className: student.className || student.batch || 'General Batch',
-        phone: student.phone,
-        parentPhone: student.parentPhone,
-        urgency: 'high',
+        id: t.id,
+        className: t.className,
+        urgency: t.studentCount >= 3 ? 'critical' : 'high',
         category: 'conceptual_block',
-        title: `🔴 Needs Re-Teach: ${topicLabel} (${worst.mastery}%)`,
-        subtitle: `Attempted ${worst.practiceQuestionsAttempted} practice Qs but still stuck in 🔴 (<50%)`,
-        description: `Student attempted autonomous practice, but algorithm alone has not cured the weakness. Teacher classroom re-teaching required.`,
-        topicCode: worst.topicCode,
-        topicName: topicLabel,
-        scorePercent: worst.mastery,
-        practiceQuestionsAttempted: worst.practiceQuestionsAttempted,
-        whatsappMessage: msg,
-        actionType: 'whatsapp',
-        actionLabel: 'Schedule Re-Teach',
-        createdAt: worst.updatedAt?.toDate ? worst.updatedAt.toDate().toISOString() : undefined
+        title: `🔴 ${t.topicName}`,
+        subtitle: `${t.className} • ${t.studentCount} student${t.studentCount > 1 ? 's' : ''} stuck in 🔴 (Avg: ${t.avgMastery}%)`,
+        description: `Students completed practice sets but mastery remains < 50%. Classroom whiteboard re-teaching needed for: ${studentNamesPreview}${moreCount}.`,
+        topicCode: t.topicCode,
+        topicName: t.topicName,
+        scorePercent: t.avgMastery,
+        studentCount: t.studentCount,
+        students: t.students
       });
     });
 
-    // 3B. Neglected Remediation (Medium Priority: In 🔴 from exam, but 0 practice done)
-    studentNeglectedMap.forEach((topics, sCode) => {
-      // If student already has a conceptual block, don't spam them with multiple cards
-      if (studentConceptualBlockMap.has(sCode)) return;
-
-      const student = studentMap.get(sCode);
-      if (!student) return;
-
-      topics.sort((a, b) => a.mastery - b.mastery);
-      const worst = topics[0];
-      const topicLabel = worst.topicName || worst.topicCode;
-      const phone = normalizeWhatsAppPhone(student.phone || student.parentPhone);
-      const msg = `Hello! Remediation reminder from YASHCOM for ${student.name}. ` +
-        `Topic '${topicLabel}' was flagged in 🔴 Needs Attention (${worst.mastery}%) from your recent exam, but 0 practice sets have been completed. ` +
-        `Please complete at least 1 practice set today to begin your topic recovery.`;
+    // 2. Neglected Practice Items (1 card per student, NOT 1 per topic!)
+    neglectedStudents.forEach(s => {
+      const topicNamesPreview = s.topics.map(t => t.topicName).slice(0, 3).join(', ');
+      const moreCount = s.topics.length > 3 ? ` +${s.topics.length - 3} more` : '';
 
       items.push({
-        id: `neglect_${sCode}_${worst.topicCode}`,
-        studentCode: student.studentCode,
-        studentName: student.name,
-        className: student.className || student.batch || 'General Batch',
-        phone: student.phone,
-        parentPhone: student.parentPhone,
-        urgency: 'medium',
+        id: s.id,
+        studentCode: s.studentCode,
+        studentName: s.studentName,
+        className: s.className,
+        urgency: s.topicCount >= 3 ? 'high' : 'medium',
         category: 'neglected_topic',
-        title: `🟡 Remediation Neglected: ${topicLabel}`,
-        subtitle: `Exam score: ${worst.mastery}% • 0 practice sets attempted so far`,
-        description: `Topic fell into 🔴 from exam baseline, but student has not attempted practice to recover it.`,
-        topicCode: worst.topicCode,
-        topicName: topicLabel,
-        scorePercent: worst.mastery,
-        practiceQuestionsAttempted: 0,
-        whatsappMessage: msg,
-        actionType: 'whatsapp',
-        actionLabel: 'Nudge to Practice',
-        createdAt: worst.updatedAt?.toDate ? worst.updatedAt.toDate().toISOString() : undefined
+        title: `🟡 ${s.studentName}`,
+        subtitle: `${s.className} • ${s.topicCount} weak topic${s.topicCount > 1 ? 's' : ''} with 0 practice sets started`,
+        description: `Topics flagged weak from exam, but student has not attempted self-practice: ${topicNamesPreview}${moreCount}.`,
+        scorePercent: s.topics[0]?.examScore,
+        studentCount: s.topicCount,
+        topics: s.topics
       });
     });
 
-    // Sort items by Urgency: critical > high > medium > low
-    const urgencyWeight: Record<string, number> = {
-      critical: 4,
-      high: 3,
-      medium: 2,
-      low: 1
-    };
-
-    items.sort((a, b) => {
-      const diff = urgencyWeight[b.urgency] - urgencyWeight[a.urgency];
-      if (diff !== 0) return diff;
-      return (b.daysOverdue || 0) - (a.daysOverdue || 0);
+    // 3. Missed Baseline Exam Items
+    missedExamsList.forEach(m => {
+      items.push({
+        id: m.id,
+        studentCode: m.studentCode,
+        studentName: m.studentName,
+        className: m.className,
+        urgency: 'critical',
+        category: 'missed_exam',
+        title: `Missed Exam: ${m.examTitle}`,
+        subtitle: `${m.studentName} (${m.className}) • Due: ${m.dueDate} (${m.daysOverdue}d overdue)`,
+        description: `Student missed the baseline exam. Topic diagnostic and daily practice cannot be calibrated without baseline score.`,
+        examId: m.examId,
+        daysOverdue: m.daysOverdue
+      });
     });
 
     const summary: InterventionSummary = {
       totalItems: items.length,
-      criticalCount: items.filter(i => i.category === 'missed_exam').length,
-      gateBlockedCount: items.filter(i => i.category === 'reflection_gate').length,
-      conceptualBlockCount: items.filter(i => i.category === 'conceptual_block').length,
-      neglectedTopicCount: items.filter(i => i.category === 'neglected_topic').length,
+      criticalCount: missedExamsList.length,
+      gateBlockedCount: 0,
+      conceptualBlockCount: reTeachTopics.length,
+      reTeachStudentCount: reTeachStudentCodes.size,
+      neglectedTopicCount: neglectedStudents.length,
+      reTeachTopics,
+      neglectedStudents,
+      missedExams: missedExamsList,
       items,
       lastUpdated: new Date().toISOString()
     };

@@ -904,7 +904,7 @@ export default function DailyPracticeSummaryPage() {
       <div className="no-print" style={{ maxWidth: '1400px', width: '100%', margin: '0 auto', padding: '10px 16px 0 16px' }}>
         <nav style={{ display: 'flex', gap: '14px', borderBottom: '1px solid var(--border-light)', paddingBottom: '6px', overflowX: 'auto' }}>
           <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', cursor: 'pointer', whiteSpace: 'nowrap' }} onClick={() => router.push('/admin/reports')}>
-            ⚡ Daily Intervention Queue
+            ⚡ Classroom Remediation Hub
           </span>
           <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--accent)', borderBottom: '2px solid var(--accent)', paddingBottom: '4px', whiteSpace: 'nowrap' }}>
             📝 Practice Track Report

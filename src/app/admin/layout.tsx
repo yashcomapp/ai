@@ -28,7 +28,7 @@ const getAdminPageTitle = (pathname: string): string => {
   if (pathname.startsWith('/admin/fees')) return 'Fees Manager';
   if (pathname.startsWith('/admin/notices')) return 'Notices & Announcements';
   if (pathname.startsWith('/admin/chat')) return 'Live Chat Workspace';
-  if (pathname === '/admin/reports') return 'Daily Intervention Queue';
+  if (pathname === '/admin/reports') return 'Classroom Remediation Hub';
   if (pathname.startsWith('/admin/reports/remediation')) return 'Topic Remediation Tracker';
   if (pathname.startsWith('/admin/reports/learning-quotient')) return 'Learning Quotient (LQ)';
   if (pathname.startsWith('/admin/reports/daily-practice')) return 'Daily Practice Summary';
