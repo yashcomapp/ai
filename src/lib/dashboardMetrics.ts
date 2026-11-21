@@ -31,6 +31,7 @@
 import { calculateSrsSchedule } from '@/lib/srsRotation';
 import { deriveTopicCodeFromQuestionCode, parseTopicCode, getCanonicalSubjectName, normalizeTopicCode } from '@/lib/questionTypes';
 import { deriveScoreMetrics } from '@/lib/scoreUtils';
+import { getDateKeyIST } from '@/lib/dateUtils';
 
 /**
  * Canonical Mastery Thresholds (Rule 2F Single Source of Truth)
@@ -62,13 +63,58 @@ function isCanonicalTopicCode(code?: string): boolean {
 }
 
 /**
+ * Validates whether an exam/assignment has actually been conducted or completed in the past.
+ * Strictly prevents upcoming or future scheduled exams from prematurely unlocking topics.
+ */
+function isExamConductedOrPast(item: any, now: Date, todayIST: string): boolean {
+  if (!item) return false;
+  // If it's already an evaluated attempt, review, or has score/percentage, it is conducted by definition
+  if (item.completedAt || item.percentage != null || item.score != null) {
+    return true;
+  }
+  // If explicitly marked conducted/completed
+  if (item.status === 'conducted' || item.status === 'completed' || item.isConducted === true) {
+    return true;
+  }
+  // Check if deadline/testing window has elapsed in the past
+  if (item.endAt) {
+    const endAt = item.endAt?.toDate ? item.endAt.toDate() : new Date(item.endAt);
+    if (!isNaN(endAt.getTime()) && now > endAt) return true;
+  }
+  if (item.availableUntil) {
+    const avail = item.availableUntil?.toDate ? item.availableUntil.toDate() : new Date(item.availableUntil);
+    if (!isNaN(avail.getTime()) && now > avail) return true;
+  }
+  if (item.scheduledDate && typeof item.scheduledDate === 'string') {
+    if (item.scheduledDate < todayIST) return true;
+  }
+  // Check if it is strictly scheduled in the future
+  if (item.startAt) {
+    const startAt = item.startAt?.toDate ? item.startAt.toDate() : new Date(item.startAt);
+    if (!isNaN(startAt.getTime()) && now < startAt) return false;
+  }
+  if (item.scheduledDate && typeof item.scheduledDate === 'string') {
+    if (item.scheduledDate > todayIST) return false;
+  }
+  // If it's an assignment without past completion or past endAt, do not assume conducted
+  if (item.examId && (item.targetBatches || item.targetStudents || item.openMode)) {
+    return false;
+  }
+  return true;
+}
+
+/**
  * Single Source of Truth (SSOT) to aggregate all unique topics on which exams/tests
  * have actually been conducted, assigned, practiced, or mastered so far.
  * Strictly filters to canonical topic codes (${boardCode}-${class}-${subjectCode}-${chapterNumber}-${topicNumber})
  * to prevent double-counting of short subtopic fragments (e.g., '7.1.1').
+ * 
+ * Flow Rule: Upcoming / future scheduled exams that have NOT yet been conducted are strictly excluded.
  */
 export function extractConductedTopicCodes(input: ExtractConductedTopicCodesInput): Set<string> {
   const conducted = new Set<string>();
+  const now = new Date();
+  const todayIST = getDateKeyIST(now);
 
   const addCode = (code?: string) => {
     if (code && typeof code === 'string') {
@@ -81,6 +127,7 @@ export function extractConductedTopicCodes(input: ExtractConductedTopicCodesInpu
 
   const processItem = (item: any) => {
     if (!item) return;
+    if (!isExamConductedOrPast(item, now, todayIST)) return;
     addCode(item.topicCode);
     addCode(item.resolvedTopicCode);
     if (Array.isArray(item.topicCodes)) item.topicCodes.forEach(addCode);

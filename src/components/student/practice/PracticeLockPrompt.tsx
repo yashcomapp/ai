@@ -9,7 +9,7 @@ interface PracticeLockPromptProps {
   topicCode: string;
   category: string;
   textbookStudyMessage?: string;
-  lockType?: 'initial' | 'cooldown' | 'daily' | 'quota_reached' | 'reflection_required' | 'exam_reflection_required' | null;
+  lockType?: 'initial' | 'cooldown' | 'daily' | 'quota_reached' | 'reflection_required' | 'exam_reflection_required' | 'exam_not_conducted' | null;
   firebaseUser?: any;
   reflectionReviewId?: string;
   reflectionQuestions?: any[];
@@ -59,7 +59,26 @@ export function PracticeLockPrompt({
     );
   }
 
-    if (lockType === 'exam_reflection_required') {
+  if (lockType === 'exam_not_conducted') {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '80vh', padding: '20px' }}>
+        <div style={{ maxWidth: '520px', width: '100%', textAlign: 'center', padding: '36px 24px', background: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--warning)', boxShadow: 'var(--shadow-glass)' }}>
+          <div style={{ fontSize: '3.5rem', marginBottom: '16px' }}>🔒</div>
+          <h3 style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--text)', marginBottom: '10px' }}>
+            Practice Locked / अभ्यास कुलूपबंद 🔒
+          </h3>
+          <p style={{ fontSize: '14px', color: 'var(--text-muted)', lineHeight: '1.6', marginBottom: '24px' }}>
+            {textbookStudyMessage || 'Practice for this topic is locked. Flow of our system is exam-based topic assignment. Practice unlocks once an exam on this topic has been conducted.'}
+          </p>
+          <button className="btn btn-primary" onClick={() => router.push('/student/learning')} style={{ width: '100%', fontWeight: 700 }}>
+            📚 Return to Learning Path
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (lockType === 'exam_reflection_required') {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '80vh', padding: '20px' }}>
         <div style={{ maxWidth: '520px', width: '100%', textAlign: 'center', padding: '36px 24px', background: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--danger)', boxShadow: 'var(--shadow-glass)' }}>

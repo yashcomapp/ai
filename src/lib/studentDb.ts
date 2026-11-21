@@ -1304,8 +1304,11 @@ export async function getStudentLearningData(userData: any, preloadedData?: Prel
 
     chunkResults.forEach(([examsSnap, subExamsSnap]) => {
       examsSnap.docs.forEach((doc: any) => {
-        const data = doc.data();
+        const isAttempted = attemptedExamIds.has(doc.id);
         const isAbsent = absentExamIds.has(doc.id);
+        if (!isAttempted && !isAbsent) return; // Flow Invariant: Exclude unconducted upcoming or future exams
+
+        const data = doc.data();
         const processTopic = (tc?: string) => {
           if (!tc || !tc.includes('-')) return;
           const norm = normalizeTopicCode(tc);
@@ -1325,8 +1328,11 @@ export async function getStudentLearningData(userData: any, preloadedData?: Prel
         }
       });
       subExamsSnap.docs.forEach((doc: any) => {
-        const data = doc.data();
+        const isAttempted = attemptedExamIds.has(doc.id);
         const isAbsent = absentExamIds.has(doc.id);
+        if (!isAttempted && !isAbsent) return; // Flow Invariant: Exclude unconducted upcoming or future exams
+
+        const data = doc.data();
         const processTopic = (tc?: string) => {
           if (!tc || !tc.includes('-')) return;
           const norm = normalizeTopicCode(tc);
@@ -1341,21 +1347,34 @@ export async function getStudentLearningData(userData: any, preloadedData?: Prel
     });
   }
 
-  // Also harvest topics from mastery and practice reviews
+  // Also harvest topics from mastery if originated from a conducted exam
   masterySnaps.docs.forEach((d: any) => {
-    const tc = d.data().topicCode;
-    if (tc && tc.includes('-')) {
+    const mData = d.data();
+    const tc = mData.topicCode;
+    if (tc && tc.includes('-') && (mData.lastExamCode || mData.lastExamId || mData.examId)) {
       const norm = normalizeTopicCode(tc);
       if (norm) rawConductedTopicCodes.add(norm);
     }
   });
-  parentReviewsSnap.docs.forEach((d: any) => {
-    const tc = d.data().topicCode;
-    if (tc && tc.includes('-')) {
-      const norm = normalizeTopicCode(tc);
-      if (norm) rawConductedTopicCodes.add(norm);
+
+  // Include explicit teacher-assigned practice targets
+  if (studentCode) {
+    try {
+      const assignedPracticesSnap = await adminDb.collection('assignedPractices')
+        .where('studentCode', '==', studentCode)
+        .where('status', '==', 'pending')
+        .get();
+      assignedPracticesSnap.docs.forEach((d: any) => {
+        const tc = d.data().topicCode;
+        if (tc) {
+          const norm = normalizeTopicCode(tc);
+          if (norm) rawConductedTopicCodes.add(norm);
+        }
+      });
+    } catch (e) {
+      // silent fallback
     }
-  });
+  }
 
   // Canonical filtering matching Single Source of Truth
   const conductedTopicCodes = new Set<string>();
@@ -1518,4 +1537,72 @@ export async function getStudentLearningData(userData: any, preloadedData?: Prel
 
   setInCache(cacheKey, result, 60000); // 60s in-memory TTL (bounds multi-instance freshness)
   return result;
+}
+
+/**
+ * Single Source of Truth (SSOT) gatekeeper for exam-based topic practice.
+ * Enforces the core invariant: "Flow of our system is exam based topic assignment."
+ * Students can ONLY access practice on topics where an exam has actually been conducted
+ * (attempted exam, or past absent/missed exam) or explicitly assigned by a teacher.
+ */
+export async function isTopicConductedForStudent(
+  userData: any,
+  rawTopicCode: string,
+  bypassCache: boolean = false
+): Promise<{ conducted: boolean; reason?: string }> {
+  if (!rawTopicCode || !userData) {
+    return { conducted: false, reason: 'missing_parameters' };
+  }
+
+  if (getStudentMode(userData) === 'limited') {
+    return { conducted: false, reason: 'limited_mode' };
+  }
+
+  const normTopic = normalizeTopicCode(rawTopicCode.trim());
+  if (!normTopic) {
+    return { conducted: false, reason: 'invalid_topic_code' };
+  }
+
+  const studentCode = userData?.studentCode;
+
+  // 1. Check if teacher explicitly assigned practice for this topic via assignedPractices
+  if (studentCode) {
+    try {
+      const assignedDoc = await adminDb.collection('assignedPractices').doc(`${studentCode}_${normTopic}`).get();
+      if (assignedDoc.exists && assignedDoc.data()?.status === 'pending') {
+        return { conducted: true, reason: 'teacher_assigned' };
+      }
+    } catch (e) {
+      // silent fallback
+    }
+  }
+
+  // 2. Fetch the student's authorized learning path topics (uses 60s in-memory cache)
+  try {
+    const learningData = await getStudentLearningData(userData, undefined, bypassCache);
+    const allStudentTopics = [
+      ...(learningData.needsAttention || []),
+      ...(learningData.continuePractice || []),
+      ...(learningData.revision || []),
+      ...(learningData.mastered || [])
+    ];
+
+    const isMatch = allStudentTopics.some((t: any) => {
+      const tCode = normalizeTopicCode(t.topicCode || '');
+      return tCode === normTopic || tCode.startsWith(normTopic + '.') || normTopic.startsWith(tCode + '.');
+    });
+
+    if (isMatch) {
+      return { conducted: true, reason: 'exam_conducted' };
+    }
+
+    // 3. If not found in cache, retry once with bypassCache=true in case an exam was completed moments ago
+    if (!bypassCache) {
+      return isTopicConductedForStudent(userData, rawTopicCode, true);
+    }
+  } catch (err) {
+    console.error('Error verifying conducted topic for student:', err);
+  }
+
+  return { conducted: false, reason: 'exam_not_conducted' };
 }

@@ -67,7 +67,7 @@ function TopicPracticeContent() {
   const [data, setData] = useState<PracticeData | null>(null);
   const [requireTextbookStudy, setRequireTextbookStudy] = useState(false);
   const [textbookStudyMessage, setTextbookStudyMessage] = useState('');
-  const [lockType, setLockType] = useState<'initial' | 'cooldown' | 'daily' | 'quota_reached' | 'reflection_required' | null>(null);
+  const [lockType, setLockType] = useState<'initial' | 'cooldown' | 'daily' | 'quota_reached' | 'reflection_required' | 'exam_not_conducted' | null>(null);
   const [reflectionReviewId, setReflectionReviewId] = useState<string>('');
   const [reflectionQuestions, setReflectionQuestions] = useState<any[]>([]);
 

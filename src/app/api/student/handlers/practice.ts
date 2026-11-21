@@ -46,6 +46,19 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ message: 'Missing topicCode parameter.' }, { status: 400 });
     }
 
+    // 0. EXAM CONDUCTED ENFORCEMENT: Flow of our system is exam-based topic assignment.
+    // Students can ONLY practice topics on which an exam has been conducted or assigned by teacher.
+    const { isTopicConductedForStudent } = await import('@/lib/studentDb');
+    const topicCheck = await isTopicConductedForStudent(student.userData, topicCode);
+    if (!topicCheck.conducted) {
+      return NextResponse.json({
+        locked: true,
+        requireTextbookStudy: true,
+        lockType: 'exam_not_conducted',
+        message: 'Practice for this topic is locked. Flow of our system is exam-based topic assignment. Practice unlocks once an exam on this topic has been conducted.'
+      }, { status: 403 });
+    }
+
     // Check if maximum 3 practices completed limit has been reached
     const countSnap = await adminDb.collection('parentReviews')
       .where('studentCode', '==', studentCode)
@@ -707,6 +720,15 @@ export async function POST(req: NextRequest) {
 
     if (!topicCode || !Array.isArray(answers)) {
       return NextResponse.json({ message: 'Missing required parameters (topicCode, answers).' }, { status: 400 });
+    }
+
+    // EXAM CONDUCTED ENFORCEMENT: Reject submissions for unconducted topics
+    const { isTopicConductedForStudent } = await import('@/lib/studentDb');
+    const topicCheck = await isTopicConductedForStudent(student.userData, topicCode);
+    if (!topicCheck.conducted) {
+      return NextResponse.json({
+        message: 'Access Denied. Practice submission rejected. No exam has been conducted on this topic.'
+      }, { status: 403 });
     }
 
     const result = await PracticeService.submitPracticeGrade({
