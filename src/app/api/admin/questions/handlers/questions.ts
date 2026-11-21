@@ -5,6 +5,7 @@ import { verifyRole } from '@/lib/auth';
 import { QuestionRepository } from '@/repositories/question.repository';
 import { ChunkedBatch } from '@/lib/firebase/batch';
 import { validateQuestion, normalizeBloomLevel, OBJECTIVE_QUESTION_TYPES, SUBJECTIVE_QUESTION_TYPES, QUESTION_TYPE_MAP, cleanStringForMatch, toCanonicalQuestionType, isObjectiveType, isSubjectiveType, stripCitations, canonicalizeQuestionAnswers, isQuestionInVault } from '@/lib/questionTypes';
+import { validateBatchDistinctness } from '@/lib/questionSimilarity';
 import { validateQuestionCurriculum } from '@/lib/curriculumGuard';
 import { getFromCache, setInCache, invalidateCache } from '@/lib/firebase/cache';
 import { 
@@ -317,6 +318,15 @@ export async function POST(req: NextRequest) {
       const { questions } = body;
       if (!Array.isArray(questions) || questions.length === 0) {
         return NextResponse.json({ message: 'Invalid or empty questions array.' }, { status: 400 });
+      }
+
+      // Anti-Plagiarism / Deduplication Guardrail (Rule 2J)
+      const distinctCheck = validateBatchDistinctness(questions);
+      if (!distinctCheck.valid) {
+        return NextResponse.json({
+          message: `Deduplication Guardrail Violation: ${distinctCheck.errors.slice(0, 3).join(' | ')}`,
+          errors: distinctCheck.errors
+        }, { status: 400 });
       }
 
       // Pre-fetch boardCodes & subjectCodes config

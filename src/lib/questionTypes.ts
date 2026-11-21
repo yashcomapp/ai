@@ -1232,6 +1232,7 @@ function areOptionsTooSimilar(rawA: any, rawB: any): { tooSimilar: boolean; reas
   // 3c. Mathematical fraction or division check (e.g. "\frac{3}{7}", "3/7", "\( \frac{7}{3} \)")
   const parseFraction = (str: string): { num: number; den: number } | null => {
     const cleanStr = str.replace(/\\\(|\\\)/g, '').trim();
+    if (cleanStr.includes(',')) return null; // Ordered pairs e.g. (3/2, 0) vs (0, 3/2) are distinct points
     // LaTeX \frac{a}{b}
     const fracMatch = cleanStr.match(/\\frac\s*\{([+-]?\d+(?:\.\d+)?)\}\s*\{([+-]?\d+(?:\.\d+)?)\}/);
     if (fracMatch) {
@@ -1592,10 +1593,10 @@ export function validateQuestion(q: any, questionType: 'objective' | 'subjective
       const stemWithoutSvg = textStr.replace(/<svg[\s\S]*?<\/svg>/gi, '');
 
       // 1. Extract named triangles/quadrilaterals from question stem
-      const figureRegex = /(?:\\triangle|\\Delta|triangle|quadrilateral|parallelogram|rectangle|rhombus|trapezium)\s*(?:\{([A-Z]{3,4})\}|([A-Z]{3,4}))/gi;
+      const figureRegex = /(?:\\triangle|\\Delta|triangle|quadrilateral|parallelogram|rectangle|rhombus|trapezium)\s*(?:\{([A-Z]{3,4})\}|([A-Z]{3,4})\b)/gi;
       const stemPolygons: string[] = [];
       let match: RegExpExecArray | null;
-      const COMMON_NON_SHAPES = new Set(['WHEN', 'THEN', 'WHAT', 'EACH', 'FIND', 'TRUE', 'SIDE', 'AREA']);
+      const COMMON_NON_SHAPES = new Set(['WHEN', 'THEN', 'WHAT', 'EACH', 'FIND', 'TRUE', 'SIDE', 'AREA', 'EVER', 'TRIG', 'WITH', 'FROM', 'THAT', 'HAVE', 'HAS', 'MUST', 'WILL', 'SOME', 'SUCH', 'INTO', 'WHOSE', 'HAVING', 'WHERE', 'GIVEN', 'ARE', 'TEST', 'TESTS', 'FOR', 'SUM', 'PAIR', 'SETS', 'SAME', 'BOTH', 'ONLY', 'FOUR', 'LINE', 'RAYS', 'VIEW']);
       while ((match = figureRegex.exec(stemWithoutSvg)) !== null) {
         const polyName = (match[1] || match[2] || '').toUpperCase();
         if (polyName && !COMMON_NON_SHAPES.has(polyName)) {

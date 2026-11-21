@@ -16,11 +16,13 @@ const STOP_WORDS = new Set([
 function normalizeQuestionText(text: string): string {
   if (!text) return '';
   return text
+    .replace(/<svg[\s\S]*?<\/svg>/gi, ' ') // Strip embedded SVG diagrams
+    .replace(/<[^>]+>/g, ' ')             // Strip HTML tags
     .toLowerCase()
-    .replace(/\\[a-zA-Z]+/g, ' ') // Remove LaTeX commands like \frac, \sqrt
-    .replace(/[$_{}\\^~`"']/g, '') // Remove LaTeX & formatting
-    .replace(/[^\w\s]/g, ' ')     // Replace punctuation with space
-    .replace(/\s+/g, ' ')        // Collapse multiple whitespace
+    .replace(/\\([a-zA-Z]+)/g, '$1')          // Keep command names like sin, cos, sqrt, frac
+    .replace(/[$_{}\\^~`"']/g, '')         // Remove LaTeX & formatting
+    .replace(/[^\w\s]/g, ' ')              // Replace punctuation with space
+    .replace(/\s+/g, ' ')                 // Collapse multiple whitespace
     .trim();
 }
 
@@ -135,10 +137,15 @@ export function areQuestionsTooSimilar(
   const diceSim = calculateDiceSimilarity(contentTokens1, contentTokens2);
 
   // Check if answers are identical or distinct
-  const ans1 = getResolvedCorrectAnswerText(q1);
-  const ans2 = getResolvedCorrectAnswerText(q2);
+  const ans1 = getResolvedCorrectAnswerText(q1).trim().toLowerCase();
+  const ans2 = getResolvedCorrectAnswerText(q2).trim().toLowerCase();
   const hasBothAnswers = Boolean(ans1 && ans2);
-  const sameAnswer = hasBothAnswers && (ans1 === ans2 || ans1.includes(ans2) || ans2.includes(ans1));
+  const words1 = ans1.split(/\s+/).filter(Boolean);
+  const words2 = ans2.split(/\s+/).filter(Boolean);
+  const isWordSubset = words1.length > 1 && words2.length > 1 && (
+    words1.every(w => words2.includes(w)) || words2.every(w => words1.includes(w))
+  );
+  const sameAnswer = hasBothAnswers && (ans1 === ans2 || isWordSubset);
   const distinctAnswers = hasBothAnswers && !sameAnswer;
 
   // 2. If answers are provided and distinct (e.g. Xylem = Water vs Phloem = Food)
@@ -179,3 +186,40 @@ export function filterDistinctCandidates<T>(
 
   return distinct;
 }
+
+/**
+ * Validates that all questions in a batch/set are mutually distinct and non-plagiarized.
+ * Rejects exact normalized text duplicates and near-identical questions.
+ */
+export function validateBatchDistinctness(questions: any[]): { valid: boolean; errors: string[] } {
+  const errors: string[] = [];
+  const textMap = new Map<string, string>();
+
+  for (let i = 0; i < questions.length; i++) {
+    const qA = questions[i];
+    const codeA = qA.questionCode || qA.id || `Item #${i + 1}`;
+    const textA = getQuestionComparableText(qA);
+    const normA = normalizeQuestionText(textA);
+
+    if (!normA) continue;
+
+    if (textMap.has(normA)) {
+      const priorCode = textMap.get(normA);
+      errors.push(`Identical question text detected: ${codeA} is a verbatim duplicate of ${priorCode}.`);
+      continue;
+    }
+    textMap.set(normA, codeA);
+
+    for (let j = 0; j < i; j++) {
+      const qB = questions[j];
+      const codeB = qB.questionCode || qB.id || `Item #${j + 1}`;
+      if (areQuestionsTooSimilar(qA, qB)) {
+        errors.push(`Near-duplicate question detected: ${codeA} is too similar to ${codeB}. Each question must test a distinct scenario.`);
+        break;
+      }
+    }
+  }
+
+  return { valid: errors.length === 0, errors };
+}
+
