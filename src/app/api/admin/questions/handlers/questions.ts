@@ -146,17 +146,26 @@ export async function GET(req: NextRequest) {
       appliedFilterCount++;
     }
 
+    if (cleanChapNum) {
+      const chNumVal = parseInt(cleanChapNum, 10);
+      const chPossibleVals = isNaN(chNumVal)
+        ? [cleanChapNum]
+        : [chNumVal, cleanChapNum, `Chapter ${cleanChapNum}`, `Ch.${cleanChapNum}`];
+      baseQuery = baseQuery.where('chapterNumber', 'in', chPossibleVals);
+      appliedFilterCount++;
+    }
+
     if (appliedFilterCount === 0) {
       return NextResponse.json({ questions: [], totalCount: 0 });
     }
 
-    // Safety limit: allow up to 3,000 for a specific subject (covers subjects like MH-9-SCIT with ~1,200 Qs without truncation)
-    // For broad queries without a subject, cap at 1,000 to prevent unbounded collection scans.
-    const queryLimit = (canonicalSubjectCode || subject) ? 3000 : 1000;
+    // Safety limit: allow up to 10,000 for a specific subject (covers subjects up to ~8,000 Qs without truncation)
+    // For single chapter queries, 2,000 is plenty. For broad queries without a subject, cap at 1,000.
+    const queryLimit = cleanChapNum ? 2000 : ((canonicalSubjectCode || subject) ? 10000 : 1000);
     baseQuery = baseQuery.limit(queryLimit);
 
-    // Fetch base documents matching canonical SSOT boardCode, class, subjectCode
-    const cacheKey = `qb_base_${canonicalBoard}_${canonicalClass}_${canonicalSubjectCode || subject}`;
+    // Fetch base documents matching canonical SSOT boardCode, class, subjectCode, and chapterNumber
+    const cacheKey = `qb_base_${canonicalBoard}_${canonicalClass}_${canonicalSubjectCode || subject}_ch${cleanChapNum || 'all'}`;
     let allQuestions = getFromCache<any[]>(cacheKey);
 
     if (!allQuestions) {
