@@ -1286,6 +1286,16 @@ function areOptionsTooSimilar(rawA: any, rawB: any): { tooSimilar: boolean; reas
     }
   }
 
+  // 3e. Algebraic variable equality check (e.g. \(x = c\) vs \(y = c\) or x = 5 vs y = 5)
+  // Equations with distinct variables (e.g. x vs y) represent distinct geometric lines or axes!
+  const eqVarA = cleanA.replace(/\\\(|\\\)/g, '').trim().match(/^([a-zA-Z])\s*=\s*(.+)$/);
+  const eqVarB = cleanB.replace(/\\\(|\\\)/g, '').trim().match(/^([a-zA-Z])\s*=\s*(.+)$/);
+  if (eqVarA && eqVarB) {
+    if (eqVarA[1].toLowerCase() !== eqVarB[1].toLowerCase()) {
+      return { tooSimilar: false };
+    }
+  }
+
   // 4. EXEMPTION: Chemical / algebraic formulas differing by mathematical operators (+, -, =)
   // e.g. C_nH_{2n+2} vs C_nH_{2n-2} vs C_nH_{2n}
   const signsA = cleanA.match(/[+\-=]/g)?.join('') || '';
@@ -1392,7 +1402,27 @@ function areOptionsTooSimilar(rawA: any, rawB: any): { tooSimilar: boolean; reas
     ['soluble', 'insoluble'],
     ['conductor', 'insulator'],
     ['acidic', 'basic'],
-    ['anode', 'cathode']
+    ['anode', 'cathode'],
+    ['sss test', 'sas test'],
+    ['sss test', 'asa test'],
+    ['sss test', 'aas test'],
+    ['sas test', 'asa test'],
+    ['sas test', 'aas test'],
+    ['asa test', 'aas test'],
+    ['sss criterion', 'sas criterion'],
+    ['sss criterion', 'asa criterion'],
+    ['sas criterion', 'asa criterion'],
+    ['x-axis', 'y-axis'],
+    ['x axis', 'y axis'],
+    ['x minus axis', 'y minus axis'],
+    ['quadrant i', 'quadrant ii'],
+    ['quadrant iii', 'quadrant iv'],
+    ['quadrant i', 'quadrant iv'],
+    ['quadrant ii', 'quadrant iii'],
+    ['quadrant 1', 'quadrant 2'],
+    ['quadrant 3', 'quadrant 4'],
+    ['quadrant 1', 'quadrant 4'],
+    ['quadrant 2', 'quadrant 3']
   ];
 
   const isAntonymPair = KNOWN_ANTONYMS.some(([ant1, ant2]) => 
@@ -1479,6 +1509,19 @@ function areOptionsTooSimilar(rawA: any, rawB: any): { tooSimilar: boolean; reas
  */
 export function isOptionMatch(opt: any, target: any): boolean {
   if (opt === undefined || opt === null || target === undefined || target === null) return false;
+  if (typeof opt === 'object' && opt !== null) {
+    const targetStr = String(target).trim();
+    if (opt.id && String(opt.id).trim().toUpperCase() === targetStr.toUpperCase()) {
+      return true;
+    }
+    if (opt.text && isOptionMatch(opt.text, target)) {
+      return true;
+    }
+    if (opt.value && isOptionMatch(opt.value, target)) {
+      return true;
+    }
+    return false;
+  }
   const optStr = String(opt).trim();
   const targetStr = String(target).trim();
   if (optStr === targetStr) return true;
@@ -1643,7 +1686,11 @@ export function validateQuestion(q: any, questionType: 'objective' | 'subjective
           }
         }
 
-        const isMatched = q.options.some((opt: any) => isOptionMatch(opt, q.correctAnswer));
+        const isMatched = q.options.some((opt: any, idx: number) => {
+          const letter = String.fromCharCode(65 + idx);
+          if (String(q.correctAnswer).trim().toUpperCase() === letter) return true;
+          return isOptionMatch(opt, q.correctAnswer);
+        });
         if (!isMatched) {
           errors.push('Correct answer does not match any items in options list.');
         }
