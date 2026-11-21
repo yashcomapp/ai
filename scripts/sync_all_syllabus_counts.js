@@ -132,31 +132,40 @@ async function syncAllSyllabusCounts() {
     console.log(`Updated ${doc.id} (${bCode} Class ${classNum} ${data.subject}): ${docTotalObj} Obj / ${docTotalSubj} Subj`);
   }
 
-  console.log('\n3. Rebuilding syllabusTopicIndex...');
+  console.log('\n3. Rebuilding syllabusTopicIndex in batches of 400...');
   const indexSnap = await db.collection('syllabusTopicIndex').get();
-  const indexBatch = db.batch();
-  let bCount = 0;
+  let currentBatch = db.batch();
+  let opsInBatch = 0;
+  let totalCommitted = 0;
 
-  indexSnap.docs.forEach(doc => {
+  for (const doc of indexSnap.docs) {
     const tCode = doc.id;
     const objCount = topicObjCounts[tCode] || 0;
     const subjCount = topicSubjCounts[tCode] || 0;
     const totalCount = objCount + subjCount;
 
-    indexBatch.update(doc.ref, {
+    currentBatch.update(doc.ref, {
       objectiveCount: objCount,
       subjectiveCount: subjCount,
       questionCount: totalCount,
       updatedAt: admin.firestore.FieldValue.serverTimestamp()
     });
-    bCount++;
-  });
+    opsInBatch++;
 
-  if (bCount > 0) {
-    await indexBatch.commit();
+    if (opsInBatch >= 400) {
+      await currentBatch.commit();
+      totalCommitted += opsInBatch;
+      currentBatch = db.batch();
+      opsInBatch = 0;
+    }
   }
 
-  console.log(`Rebuilt ${indexSnap.size} syllabusTopicIndex documents.`);
+  if (opsInBatch > 0) {
+    await currentBatch.commit();
+    totalCommitted += opsInBatch;
+  }
+
+  console.log(`Rebuilt ${totalCommitted} syllabusTopicIndex documents.`);
   console.log('\n=== ALL SYLLABUS COUNTS AND TOPIC INDEXES ARE 100% SYNCHRONIZED ===');
 }
 
