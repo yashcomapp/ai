@@ -65,18 +65,60 @@ export async function GET(req: NextRequest) {
         return NextResponse.json(cachedPool.data);
       }
 
-      // Query questions collection for matching class + query existing exams to cross-check used questions
+      // Scoped Firestore query targeting class, boardCode, subjectCode, and chapterNumber (preventing full-table scans)
+      const canonicalBoard = getCanonicalBoardCode(board);
+      const searchSubjectRawList = subject.split(',').map(s => s.trim()).filter(Boolean);
+      const canonicalSubjectCodes = Array.from(new Set(
+        searchSubjectRawList.map(s => getCanonicalSubjectCode(canonicalBoard, cleanClass, s)).filter(Boolean)
+      ));
+
+      let questionsQuery: FirebaseFirestore.Query = adminDb.collection('questions')
+        .where('class', 'in', classVariations);
+
+      if (canonicalBoard) {
+        questionsQuery = questionsQuery.where('boardCode', '==', canonicalBoard);
+      }
+
+      if (canonicalSubjectCodes.length === 1) {
+        questionsQuery = questionsQuery.where('subjectCode', '==', canonicalSubjectCodes[0]);
+      } else if (canonicalSubjectCodes.length > 1 && canonicalSubjectCodes.length <= 10) {
+        questionsQuery = questionsQuery.where('subjectCode', 'in', canonicalSubjectCodes);
+      }
+
+      const chapterVariations = Array.from(new Set(
+        chapterNumbers.flatMap(c => [c, Number(c)].filter(v => !isNaN(Number(v)) || typeof v === 'string'))
+      ));
+
+      if (chapterVariations.length > 0 && chapterVariations.length <= 30) {
+        questionsQuery = questionsQuery.where('chapterNumber', 'in', chapterVariations);
+      }
+
+      // Query scoped questions collection + query existing exams to cross-check used questions
       const [questionsSnap, existingObjExamsSnap, existingSubjExamsSnap] = await Promise.all([
-        adminDb.collection('questions')
-          .where('class', 'in', classVariations)
-          .get(),
+        questionsQuery.get(),
         adminDb.collection('exams')
           .where('class', 'in', classVariations)
+          .select('questionCodes', 'questionIds', 'questions')
           .get(),
         adminDb.collection('subjectiveExams')
           .where('class', 'in', classVariations)
+          .select('questionCodes', 'questionIds', 'questions')
           .get()
       ]);
+
+      let questionsDocs = questionsSnap.docs;
+      // Fallback: if scoped chapter query returned 0, try without chapter filter in case questions stored chapter in alternate format
+      if (questionsDocs.length === 0 && chapterVariations.length > 0) {
+        let fallbackQuery: FirebaseFirestore.Query = adminDb.collection('questions')
+          .where('class', 'in', classVariations);
+        if (canonicalBoard) fallbackQuery = fallbackQuery.where('boardCode', '==', canonicalBoard);
+        if (canonicalSubjectCodes.length === 1) fallbackQuery = fallbackQuery.where('subjectCode', '==', canonicalSubjectCodes[0]);
+        else if (canonicalSubjectCodes.length > 1 && canonicalSubjectCodes.length <= 10) fallbackQuery = fallbackQuery.where('subjectCode', 'in', canonicalSubjectCodes);
+        const fallbackSnap = await fallbackQuery.get().catch(() => null);
+        if (fallbackSnap && !fallbackSnap.empty) {
+          questionsDocs = fallbackSnap.docs;
+        }
+      }
 
       // Collect all question codes/IDs that have been used in any existing exam
       const usedInExamsSet = new Set<string>();
@@ -110,7 +152,7 @@ export async function GET(req: NextRequest) {
       const boardLower = String(board).toLowerCase();
       const searchSubjects = subject.split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
 
-      const pool = questionsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() as any }))
+      const pool = questionsDocs.map(doc => ({ id: doc.id, ...doc.data() as any }))
         .filter(q => {
           if (isQuestionQuarantined(q)) return false;
           if (board) {

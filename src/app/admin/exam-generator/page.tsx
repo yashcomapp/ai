@@ -896,7 +896,8 @@ export default function AdminExamGeneratorPage() {
       });
 
       if (!res.ok) {
-        throw new Error('Failed to load candidate questions from bank.');
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.message || 'Failed to load candidate questions from bank.');
       }
       const data = await res.json();
       const pool: Question[] = data.questions || data.pool || [];
