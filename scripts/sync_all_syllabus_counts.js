@@ -1,3 +1,5 @@
+const dns = require('dns');
+dns.setDefaultResultOrder('ipv4first');
 const fs = require('fs');
 const path = require('path');
 const admin = require('firebase-admin');
@@ -132,17 +134,24 @@ async function syncAllSyllabusCounts() {
     console.log(`Updated ${doc.id} (${bCode} Class ${classNum} ${data.subject}): ${docTotalObj} Obj / ${docTotalSubj} Subj`);
   }
 
-  console.log('\n3. Rebuilding syllabusTopicIndex in batches of 400...');
+  console.log('\n3. Rebuilding syllabusTopicIndex (only changed docs)...');
   const indexSnap = await db.collection('syllabusTopicIndex').get();
   let currentBatch = db.batch();
   let opsInBatch = 0;
   let totalCommitted = 0;
+  let totalUpdated = 0;
 
   for (const doc of indexSnap.docs) {
     const tCode = doc.id;
+    const data = doc.data();
     const objCount = topicObjCounts[tCode] || 0;
     const subjCount = topicSubjCounts[tCode] || 0;
     const totalCount = objCount + subjCount;
+
+    // Only update if counts have changed
+    if (data.objectiveCount === objCount && data.subjectiveCount === subjCount && data.questionCount === totalCount) {
+      continue;
+    }
 
     currentBatch.update(doc.ref, {
       objectiveCount: objCount,
@@ -151,10 +160,12 @@ async function syncAllSyllabusCounts() {
       updatedAt: admin.firestore.FieldValue.serverTimestamp()
     });
     opsInBatch++;
+    totalUpdated++;
 
-    if (opsInBatch >= 400) {
+    if (opsInBatch >= 100) {
       await currentBatch.commit();
       totalCommitted += opsInBatch;
+      console.log(`  Committed batch of ${opsInBatch} index updates...`);
       currentBatch = db.batch();
       opsInBatch = 0;
     }
@@ -163,9 +174,10 @@ async function syncAllSyllabusCounts() {
   if (opsInBatch > 0) {
     await currentBatch.commit();
     totalCommitted += opsInBatch;
+    console.log(`  Committed final batch of ${opsInBatch} index updates.`);
   }
 
-  console.log(`Rebuilt ${totalCommitted} syllabusTopicIndex documents.`);
+  console.log(`Updated ${totalUpdated} changed syllabusTopicIndex documents (out of ${indexSnap.size} total).`);
   console.log('\n=== ALL SYLLABUS COUNTS AND TOPIC INDEXES ARE 100% SYNCHRONIZED ===');
 }
 
