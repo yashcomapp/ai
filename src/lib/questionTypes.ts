@@ -1233,11 +1233,14 @@ function areOptionsTooSimilar(rawA: any, rawB: any): { tooSimilar: boolean; reas
   const parseFraction = (str: string): { num: number; den: number } | null => {
     const cleanStr = str.replace(/\\\(|\\\)/g, '').trim();
     if (cleanStr.includes(',')) return null; // Ordered pairs e.g. (3/2, 0) vs (0, 3/2) are distinct points
-    // LaTeX \frac{a}{b}
-    const fracMatch = cleanStr.match(/\\frac\s*\{([+-]?\d+(?:\.\d+)?)\}\s*\{([+-]?\d+(?:\.\d+)?)\}/);
+    if (/[<>]/.test(cleanStr) || /\\le|\\ge/.test(cleanStr)) return null; // Inequalities e.g. 3/5 > 4/7 vs 3/5 < 4/7 are distinct statements
+    if (cleanStr.includes('\\sqrt') || cleanStr.includes('sqrt')) return null; // Radical expressions e.g. \sqrt{6}/2 vs 3/2 are distinct
+    // LaTeX \frac{a}{b} - match only standalone or assigned fraction
+    const fracMatch = cleanStr.match(/(?:^|[=:]\s*)([+-]?)\\frac\s*\{([+-]?\d+(?:\.\d+)?)\}\s*\{([+-]?\d+(?:\.\d+)?)\}\s*$/);
     if (fracMatch) {
-      const num = parseFloat(fracMatch[1]);
-      const den = parseFloat(fracMatch[2]);
+      const sign = fracMatch[1] === '-' ? -1 : 1;
+      const num = sign * parseFloat(fracMatch[2]);
+      const den = parseFloat(fracMatch[3]);
       if (!isNaN(num) && !isNaN(den) && den !== 0) return { num, den };
     }
     // Simple a/b fraction
