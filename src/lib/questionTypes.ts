@@ -1904,22 +1904,29 @@ export function isOptionSelectedByUser(userAns: any, optKey: string, optIndex: n
   return list.some(item => {
     if (item === undefined || item === null) return false;
     const itemStr = String(item).trim();
+    if (!itemStr) return false;
     const itemUpper = itemStr.toUpperCase();
-    const cleanItem = cleanStringForMatch(itemStr);
 
-    if (itemStr === optKey || (optText && itemStr === optText)) return true;
-    if (optKey && String(optKey).toLowerCase() === itemStr.toLowerCase()) return true;
-    if (optText && String(optText).toLowerCase() === itemStr.toLowerCase()) return true;
-    if (cleanKey && cleanItem === cleanKey) return true;
-    if (cleanText && cleanItem === cleanText) return true;
+    // 1. If item is an explicit single letter or letter prefix (e.g. "A", "B", "Option A", "(C)", "option_a"):
+    // It strictly matches by option position (charCode), NEVER against another option's literal text!
+    // Prevents STEM variable collisions (e.g. option text "D" for diameter colliding with option letter (D)).
+    const letterPrefixMatch = itemStr.match(/^(?:option[\s_]+)?\(?([A-Za-z])\)?[:.\-\s]?$/i);
+    if (letterPrefixMatch) {
+      return letterPrefixMatch[1].toUpperCase() === charCode;
+    }
 
-    if (itemUpper === charCode) return true;
-    if (optKey && (itemStr.toLowerCase() === 'option_' + charCode.toLowerCase() || itemStr.toLowerCase() === 'option_' + String(optKey).toLowerCase())) return true;
-
-    // Assertion & Reason classification match
+    // 2. Assertion & Reason classification match
     if (/both\s+(?:assertion|a)\b/i.test(itemStr) || /\b(?:assertion|a)\s+is\s+(?:true|false)\b/i.test(itemStr)) {
       if (classifyAssertionReasonAnswer(itemStr) === charCode) return true;
     }
+
+    // 3. Match against option text or key for full-text/phrase answers
+    if (itemStr === optKey || (optText && itemStr === optText)) return true;
+    if (optKey && String(optKey).toLowerCase() === itemStr.toLowerCase()) return true;
+    if (optText && String(optText).toLowerCase() === itemStr.toLowerCase()) return true;
+    const cleanItem = cleanStringForMatch(itemStr);
+    if (cleanKey && cleanItem === cleanKey) return true;
+    if (cleanText && cleanItem === cleanText) return true;
 
     if (allOptions && Array.isArray(allOptions) && allOptions.length > 0) {
       const normLetter = normalizeOptionAnswer(item, allOptions);
@@ -1952,22 +1959,28 @@ export function isOptionCorrect(correctAns: any, optKey: string, optIndex: numbe
   return list.some(item => {
     if (item === undefined || item === null) return false;
     const itemStr = String(item).trim();
+    if (!itemStr) return false;
     const itemUpper = itemStr.toUpperCase();
-    const cleanItem = cleanStringForMatch(itemStr);
 
-    if (itemStr === optKey || (optText && itemStr === optText)) return true;
-    if (optKey && String(optKey).toLowerCase() === itemStr.toLowerCase()) return true;
-    if (optText && String(optText).toLowerCase() === itemStr.toLowerCase()) return true;
-    if (cleanKey && cleanItem === cleanKey) return true;
-    if (cleanText && cleanItem === cleanText) return true;
+    // 1. If item is an explicit single letter or letter prefix (e.g. "A", "B", "Option A", "(C)", "option_a"):
+    // It strictly matches by option position (charCode), NEVER against another option's literal text!
+    const letterPrefixMatch = itemStr.match(/^(?:option[\s_]+)?\(?([A-Za-z])\)?[:.\-\s]?$/i);
+    if (letterPrefixMatch) {
+      return letterPrefixMatch[1].toUpperCase() === charCode;
+    }
 
-    if (itemUpper === charCode) return true;
-    if (optKey && (itemStr.toLowerCase() === 'option_' + charCode.toLowerCase() || itemStr.toLowerCase() === 'option_' + String(optKey).toLowerCase())) return true;
-
-    // Assertion & Reason classification match
+    // 2. Assertion & Reason classification match
     if (/both\s+(?:assertion|a)\b/i.test(itemStr) || /\b(?:assertion|a)\s+is\s+(?:true|false)\b/i.test(itemStr)) {
       if (classifyAssertionReasonAnswer(itemStr) === charCode) return true;
     }
+
+    // 3. Match against option text or key for full-text/phrase answers
+    if (itemStr === optKey || (optText && itemStr === optText)) return true;
+    if (optKey && String(optKey).toLowerCase() === itemStr.toLowerCase()) return true;
+    if (optText && String(optText).toLowerCase() === itemStr.toLowerCase()) return true;
+    const cleanItem = cleanStringForMatch(itemStr);
+    if (cleanKey && cleanItem === cleanKey) return true;
+    if (cleanText && cleanItem === cleanText) return true;
 
     if (allOptions && Array.isArray(allOptions) && allOptions.length > 0) {
       const normLetter = normalizeOptionAnswer(item, allOptions);

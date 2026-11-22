@@ -6,10 +6,15 @@ export interface ProctoringViolations {
 }
 
 export interface QuestionDetail {
+  id?: string;
+  questionId?: string;
   questionCode: string;
   questionText: string;
+  type?: string;
+  options?: any[];
   userAnswer: string;
   correctAnswer: any;
+  solution?: string;
   isAttempted: boolean;
   isCorrect: boolean;
   timeSpentSeconds: number;

@@ -87,13 +87,24 @@ export class AttemptService {
                          disputedSet.has(String(q.questionCode || '').toLowerCase());
 
       const isMultiple = isMultipleChoiceType(q.type);
-      const correctAnswer = isMultiple
+      let correctAnswer = isMultiple
         ? (Array.isArray(q.correctAnswers) && q.correctAnswers.length > 0 
             ? q.correctAnswers 
             : (Array.isArray(q.correctAnswer) ? q.correctAnswer : (q.correctAnswer !== undefined && q.correctAnswer !== null ? parseAnswerList(q.correctAnswer) : [])))
         : (q.correctAnswer !== undefined && q.correctAnswer !== null && q.correctAnswer !== ''
             ? q.correctAnswer 
             : (Array.isArray(q.correctAnswers) && q.correctAnswers.length > 0 ? q.correctAnswers[0] : ''));
+
+      // Invariant: In multi-choice questions, if correctAnswer in DB has fewer options than options marked isCorrect, infer from options
+      if (isMultiple && Array.isArray(q.options) && q.options.length > 0) {
+        const fromOpts = q.options
+          .map((opt: any, idx: number) => (opt && typeof opt === 'object' && (opt.isCorrect || opt.correct)) ? String.fromCharCode(65 + idx) : null)
+          .filter(Boolean);
+        if (fromOpts.length > 1 && (!Array.isArray(correctAnswer) || correctAnswer.length <= 1)) {
+          correctAnswer = fromOpts;
+        }
+      }
+
       const isAttempted = ans && ans !== '' && ans !== '[]' && ans !== '{}';
       
       let isCorrect = false;
@@ -110,8 +121,13 @@ export class AttemptService {
       const correctAnsText = getOptionText(q, correctAnswer ?? '');
 
       questionDetails.push({
+        id: q.id || '',
+        questionId: q.id || '',
         questionCode: q.questionCode || '',
         questionText: q.text || '',
+        type: q.type || 'OSC',
+        options: q.options || [],
+        solution: q.solution || q.explanation || '',
         userAnswer: isDisputed ? '[Reported / Disputed]' : userAnsText,
         correctAnswer: correctAnsText,
         isAttempted: !!isAttempted,

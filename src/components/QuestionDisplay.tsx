@@ -800,10 +800,7 @@ export const QuestionDisplay: React.FC<QuestionDisplayProps> = React.memo(({
           const letter = String.fromCharCode(65 + oi);
           const optKey = getRawOptionKey(opt);
           const optText = getRawOptionText(opt);
-          const isSelected = isMulti
-            ? (Array.isArray(qUserAnswer) ? qUserAnswer.includes(letter) : String(qUserAnswer).includes(letter))
-            : String(qUserAnswer).trim().toLowerCase() === String(letter).trim().toLowerCase() ||
-              String(qUserAnswer).trim().toLowerCase() === String(optKey).trim().toLowerCase();
+          const isSelected = isOptionSelectedByUser(qUserAnswer, optKey, oi, optText, resolvedOptions!);
 
           return (
             <div
