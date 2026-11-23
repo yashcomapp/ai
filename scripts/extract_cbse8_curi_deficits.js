@@ -12,7 +12,7 @@ async function extractDeficits() {
     process.exit(1);
   }
   const sylData = sylSnap.data();
-  console.log('Subject:', sylData.subjectName, '| Chapters:', sylData.chapters.length);
+  console.log('Subject:', sylData.subjectName || sylData.subject, '| Chapters:', sylData.chapters.length);
 
   const manifest = [];
   let totalLeafs = 0;
@@ -21,11 +21,11 @@ async function extractDeficits() {
 
   for (let cIdx = 0; cIdx < sylData.chapters.length; cIdx++) {
     const ch = sylData.chapters[cIdx];
-    const chNum = ch.chapterNumber;
-    const chName = ch.chapterName;
+    const chNum = ch.number || ch.chapterNumber || (cIdx + 1);
+    const chName = ch.name || ch.chapterName || `Chapter ${chNum}`;
     const chItem = {
       chapterIndex: cIdx,
-      chapterNumber: chNum,
+      chapterNumber: String(chNum),
       chapterName: chName,
       leafCount: 0,
       currentTotal: 0,
@@ -44,9 +44,9 @@ async function extractDeficits() {
 
           chItem.leafs.push({
             topicCode: tc,
-            name: sub.subtopicName || sub.name || tc,
-            number: sub.subtopicNumber || sub.number || '',
-            parentTopic: top.topicName || '',
+            name: sub.name || sub.subtopicName || tc,
+            number: sub.number || sub.subtopicNumber || '',
+            parentTopic: top.name || top.topicName || '',
             current: curr,
             needed: needed
           });
@@ -66,8 +66,8 @@ async function extractDeficits() {
 
         chItem.leafs.push({
           topicCode: tc,
-          name: top.topicName || tc,
-          number: top.topicNumber || '',
+          name: top.name || top.topicName || tc,
+          number: top.number || top.topicNumber || '',
           parentTopic: chName,
           current: curr,
           needed: needed
