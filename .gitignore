@@ -16,6 +16,7 @@ build/
 !package-lock.json
 !tsconfig.json
 !firestore.indexes.json
+!database.rules.json
 *.tsbuildinfo
 tsconfig.tsbuildinfo
 

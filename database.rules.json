@@ -1,0 +1,18 @@
+{
+  "rules": {
+    "webrtcSignaling": {
+      "$sessionId": {
+        ".read": "auth != null",
+        ".write": "auth != null"
+      }
+    },
+    "proctorPresence": {
+      ".read": "auth != null",
+      "$adminUid": {
+        ".write": "auth != null"
+      }
+    },
+    ".read": false,
+    ".write": false
+  }
+}
