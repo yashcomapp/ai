@@ -36,7 +36,7 @@ function estimatePayloadSizeBytes(data: any): number {
  * Inspects any Firestore mutation payload before write.
  * Emits console and telemetry warnings if payload exceeds cost safety threshold.
  */
-function inspectPayloadCostSafety(
+export function inspectPayloadCostSafety(
   collectionName: string,
   data: any,
   ceilingBytes = REALTIME_PAYLOAD_CEILING_BYTES
@@ -106,7 +106,7 @@ export function sanitizeRealTimePayload<T extends Record<string, any>>(
 /**
  * Cost Guard query auditor: warns if a query on large collections executes without filters or limit.
  */
-function assertCostSafeQuery(collectionName: string, filtersCount: number, limitVal?: number): void {
+export function assertCostSafeQuery(collectionName: string, filtersCount: number, limitVal?: number): void {
   if (filtersCount === 0 && (!limitVal || limitVal > 500)) {
     console.warn(`[COST GUARD ALERT] Potentially unbounded query on '${collectionName}' with 0 filters and limit=${limitVal}. Add filters or projection to keep Firestore data transfer within free tier.`);
   }

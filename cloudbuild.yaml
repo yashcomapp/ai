@@ -44,5 +44,19 @@ steps:
       - 'asia-south1'
       - '--allow-unauthenticated'
 
+  # 5. Automatically prune untagged/old container images from Artifact Registry to stay within 0.5 GB free tier
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        echo "Pruning untagged container image digests from Artifact Registry to preserve 0.5 GB free tier..."
+        UNTAGGED_DIGESTS=$$(gcloud artifacts docker images list asia-south1-docker.pkg.dev/ai-yashcom/cloud-run-source-deploy/los-next --filter="NOT tags:*" --format="get(version)" 2>/dev/null || true)
+        for digest in $$UNTAGGED_DIGESTS; do
+          echo "Deleting untagged image digest: $$digest"
+          gcloud artifacts docker images delete "asia-south1-docker.pkg.dev/ai-yashcom/cloud-run-source-deploy/los-next@$$digest" --delete-tags --quiet || true
+        done
+        echo "Artifact Registry storage prune complete."
+
 options:
   logging: 'CLOUD_LOGGING_ONLY'

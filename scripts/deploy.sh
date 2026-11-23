@@ -8,10 +8,7 @@ echo "=================================================="
 # Pull latest code from GitHub
 git pull
 
-# Deploy via official Cloud Run source builder (guaranteed permissions & network)
-gcloud run deploy los-next \
-  --source . \
-  --region asia-south1 \
-  --allow-unauthenticated
+# Deploy via Cloud Build pipeline (enforces default free-tier machine, layer cache, & Artifact Registry 0.5 GB pruning)
+gcloud builds submit --config=cloudbuild.yaml .
 
 echo "✅ Cloud Run deployment completed successfully!"
