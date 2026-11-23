@@ -788,7 +788,7 @@ export default function ScorecardModal({ scorecard, loading, onClose, actionButt
                           userAnswer={isUnanswered ? '' : q.userAnswer}
                           correctAnswer={getQuestionCorrectAnswer(q)}
                           explanation={q.solution}
-                          explanationLabel="💡 Step-by-Step Solution & Concept • चरणबद्ध हल व स्पष्टीकरण:"
+                          explanationLabel="💡 Concept & Solution • हल व स्पष्टीकरण:"
                         />
 
                         {/* Mistake Reflection & Self-Correction Note Box (Mistakes Only) */}
@@ -1160,7 +1160,7 @@ export default function ScorecardModal({ scorecard, loading, onClose, actionButt
                             userAnswer={isUnanswered ? '' : q.userAnswer}
                             correctAnswer={getQuestionCorrectAnswer(q)}
                             explanation={q.solution}
-                            explanationLabel="💡 Step-by-Step Solution & Concept:"
+                            explanationLabel="💡 Concept & Solution:"
                           />
 
                           {/* Mistake Reflection & Self-Correction Note Box (Mistakes Only) */}

@@ -200,6 +200,11 @@ export function formatRichText(text: any): string {
   const processedMath = preprocessMathText(text);
   let str = String(processedMath);
 
+  // Strip robotic "Step 1: ...", "Step 2: ...", "Step 3: ..." boilerplate headers from explanations
+  str = str.replace(/\*\*\s*Step\s*[1-9]\s*[:\-][^*]*\*\*\s*/gi, '');
+  str = str.replace(/###\s*Step\s*[1-9]\s*[:\-][^\n<]*\n*/gi, '');
+  str = str.replace(/###\s*\d+\.\s*(?:Mathematical Concept & Principle|Scientific Principle|Core Concept|Physical Context|Core Calculation|Theoretical Basis|Key Concept)[:\s]*/gi, '');
+
   // 1. Extract and preserve all SVG blocks to prevent modifying attributes or coordinates or inserting invalid HTML tags
   const preservedSvgs: string[] = [];
   str = str.replace(/<svg[\s\S]*?<\/svg>/gi, (match) => {

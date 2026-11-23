@@ -1222,7 +1222,7 @@ export const QuestionDisplay: React.FC<QuestionDisplayProps> = React.memo(({
      ----------------------------------------------------------------------- */
   const renderExplanation = () => {
     if (hideExplanation || !qExplanation) return null;
-    const label = explanationLabel || (mode === 'review' ? '💡 Step-by-Step Solution & Concept:' : '💡 Explanation:');
+    const label = explanationLabel || (mode === 'review' ? '💡 Concept & Solution:' : '💡 Explanation:');
 
     return (
       <div
