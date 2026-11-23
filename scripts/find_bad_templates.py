@@ -1,6 +1,6 @@
 import re
 
-with open('scripts/build_cbse9_scie_ch6_part_b.py', 'r', encoding='utf-8') as f:
+with open('scripts/build_cbse9_scie_ch7_part_b.py', 'r', encoding='utf-8') as f:
     lines = f.readlines()
 
 in_templates = False
