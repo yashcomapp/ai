@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useReports } from '@/hooks/useReports';
 import type { InterventionItem, InterventionSummary } from '@/services/intervention.service';
+import { sortBatchesAscending } from '@/lib/batchUtils';
 
 export default function AdminReportsHubPage() {
   const router = useRouter();
@@ -52,14 +53,14 @@ export default function AdminReportsHubPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [firebaseUser]);
 
-  // Unique batches from items
+  // Unique batches from items sorted ascending (8th, 9th, 10th)
   const batches = useMemo(() => {
     if (!data?.items) return [];
     const set = new Set<string>();
     data.items.forEach(item => {
       if (item.className) set.add(item.className);
     });
-    return Array.from(set).sort();
+    return sortBatchesAscending(Array.from(set).map(name => ({ name }))).map(b => b.name);
   }, [data]);
 
   // Filtered items

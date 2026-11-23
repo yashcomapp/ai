@@ -3,6 +3,7 @@
 import useSWR, { mutate as globalMutate } from 'swr';
 import { useAuth } from '@/context/AuthContext';
 import { fetchWithToken } from '@/lib/swrFetcher';
+import { sortBatchesAscending } from '@/lib/batchUtils';
 
 /**
  * Shared SWR hook for Admin Batches reference data (/api/admin/batches)
@@ -24,7 +25,7 @@ export function useAdminBatches<TBatch = any, TStudent = any>(options?: { enable
   );
 
   return {
-    batches: ((data?.batches || []) as TBatch[]),
+    batches: sortBatchesAscending((data?.batches || []) as TBatch[]),
     students: ((data?.students || []) as TStudent[]),
     raw: data,
     isLoading: !data && !error && isLoading,
@@ -60,7 +61,7 @@ export function useAdminStudents<TStudent = any, TBatch = any>(options?: { enabl
 
   return {
     students: ((data?.students || []) as TStudent[]),
-    batches: ((data?.batches || []) as TBatch[]),
+    batches: sortBatchesAscending((data?.batches || []) as TBatch[]),
     alerts: data?.alerts || [],
     raw: data,
     isLoading: !data && !error && isLoading,

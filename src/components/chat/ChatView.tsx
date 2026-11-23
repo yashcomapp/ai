@@ -23,6 +23,7 @@ const StarredMessagesModal = dynamic(() => import('@/components/chat/StarredMess
 const ReactionsModal = dynamic(() => import('@/components/chat/ReactionsModal'), { ssr: false });
 import { ChatRoom, Message } from '@/types/chat.types';
 import { UserProfile } from '@/types/user.types';
+import { sortBatchesAscending } from '@/lib/batchUtils';
 import { PageHeaderBar } from '@/components/common/PageShell';
 
 export type { ChatRoom, Message, UserProfile };
@@ -952,7 +953,7 @@ export default function ChatView({ role = 'admin', hideHeader = false }: ChatVie
         const res = await fetch('/api/batches');
         const data = await res.json();
         if (data.batches) {
-          setBatchesList(data.batches);
+          setBatchesList(sortBatchesAscending(data.batches));
         }
       } catch (e) {
         console.error('Failed to pre-fetch batches list:', e);
@@ -1254,10 +1255,11 @@ export default function ChatView({ role = 'admin', hideHeader = false }: ChatVie
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await res.json();
-      setBatchesList(data.batches || []);
-      if (data.batches?.length > 0) {
-        setSelectedBatchId(data.batches[0].id);
-        setGroupName(`${data.batches[0].name} Chat Group`);
+      const sorted = sortBatchesAscending(data.batches || []);
+      setBatchesList(sorted);
+      if (sorted.length > 0) {
+        setSelectedBatchId(sorted[0].id);
+        setGroupName(`${sorted[0].name} Chat Group`);
       }
     } catch (e) {
       console.error(e);

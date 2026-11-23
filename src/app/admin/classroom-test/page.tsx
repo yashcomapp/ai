@@ -12,6 +12,7 @@ import { fetchCachedSyllabusSubject } from '@/hooks/useAdminReferenceData';
 import InPlaceAiGenerator from '@/components/admin/classroom-test/InPlaceAiGenerator';
 import dynamic from 'next/dynamic';
 import { Batch } from '@/types/batch.types';
+import { sortBatchesAscending } from '@/lib/batchUtils';
 const ScheduledSuitesManagerModal = dynamic(() => import('@/components/admin/classroom-test/ScheduledSuitesManagerModal'), { ssr: false });
 const SaturdayAssignModal = dynamic(() => import('@/components/admin/classroom-test/SaturdayAssignModal'), { ssr: false });
 const BulkSaveProgressModal = dynamic(() => import('@/components/admin/create-qb/BulkSaveProgressModal'), { ssr: false });
@@ -171,7 +172,7 @@ export default function AdminClassroomTestPage() {
         if (!res.ok) throw new Error('Failed to load init configs.');
         const data = await res.json();
         
-        setBatches(data.batches || []);
+        setBatches(sortBatchesAscending(data.batches || []));
         const sSubjects = data.syllabusSubjects || {};
         setSyllabusSubjects(sSubjects);
         setBoards(Object.keys(sSubjects));

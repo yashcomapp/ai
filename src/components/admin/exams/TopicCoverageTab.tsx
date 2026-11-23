@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo, useDeferredValue } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Batch } from './types';
+import { sortBatchesAscending } from '@/lib/batchUtils';
 
 interface TopicExam {
   examId: string;
@@ -54,8 +55,18 @@ interface TopicCoverageTabProps {
 export default function TopicCoverageTab({ batches }: TopicCoverageTabProps) {
   const { firebaseUser } = useAuth();
   
+  // Sorted batches strictly ascending (8th, 9th, 10th)
+  const sortedBatches = useMemo(() => sortBatchesAscending(batches), [batches]);
+
   // Batch selection
   const [selectedBatchId, setSelectedBatchId] = useState<string>('');
+  
+  // Auto-select first batch (Class 8th)
+  useEffect(() => {
+    if (sortedBatches.length > 0 && !selectedBatchId) {
+      setSelectedBatchId(sortedBatches[0].id);
+    }
+  }, [sortedBatches, selectedBatchId]);
   
   // Data state
   const [data, setData] = useState<TopicCoverageData | null>(null);
@@ -308,7 +319,7 @@ export default function TopicCoverageTab({ batches }: TopicCoverageTabProps) {
               cursor: 'pointer'
             }}
           >
-            {batches.map(b => (
+            {sortedBatches.map(b => (
               <option key={b.id} value={b.id}>
                 {b.name || b.id} {b.class ? `(${b.class})` : ''}
               </option>

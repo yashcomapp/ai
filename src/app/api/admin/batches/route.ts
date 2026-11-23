@@ -3,20 +3,19 @@ import { adminDb } from '@/lib/firebase/admin';
 import { verifyRole, syncUserCustomClaims, invalidateUserCache } from '@/lib/auth';
 import { ChunkedBatch } from '@/lib/firebase/batch';
 import { isDemoUser } from '@/lib/studentDb';
+import { sortBatchesAscending } from '@/lib/batchUtils';
 
 export async function GET(request: Request) {
   try {
     const admin = await verifyRole(request, 'admin');
     if (!admin) return NextResponse.json({ message: 'Unauthorized. Admin role required.' }, { status: 403 });
     
-    // Fetch all batches
-    const batchesSnap = await adminDb.collection('batches')
-      .orderBy('createdAt', 'desc')
-      .get();
-    const batches = batchesSnap.docs.map(doc => ({
+    // Fetch all batches sorted in ascending class order (8th, 9th, 10th)
+    const batchesSnap = await adminDb.collection('batches').get();
+    const batches = sortBatchesAscending(batchesSnap.docs.map(doc => ({
       id: doc.id,
       ...doc.data()
-    }));
+    })));
     
     // Fetch all students (names, emails, batchIds, feeStatus, rollNumber)
     const studentsSnap = await adminDb.collection('users')

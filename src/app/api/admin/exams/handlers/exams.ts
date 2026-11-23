@@ -15,6 +15,7 @@ import { getObjectiveExamTopics, getSubjectiveExamTopics, getExamDateKey, isExam
 import { ExamService, getAssignmentsForBatches } from '@/services/exam.service';
 import { ExamRepository } from '@/repositories/exam.repository';
 import { getCachedBatches, getFromCache, setInCache, invalidateCache } from '@/lib/firebase/cache';
+import { sortBatchesAscending } from '@/lib/batchUtils';
 import { assertCanonicalStudentCode } from '@/lib/canonicalValidation';
 import { shouldBypassCache } from '@/lib/cacheBypassGuard';
 import { deriveScoreMetrics } from '@/lib/scoreUtils';
@@ -835,7 +836,12 @@ export async function GET(req: NextRequest) {
 
     const exams = examsList.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     const subjectiveExams = subjExamsList.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    const batches = batchesList.docs.map(doc => ({ id: doc.id, name: doc.data().name || doc.id }));
+    const batches = sortBatchesAscending(batchesList.docs.map(doc => ({ 
+      id: doc.id, 
+      name: doc.data().name || doc.id,
+      class: doc.data().class || '',
+      ...doc.data()
+    })));
     
     const students = studentsList.docs.map(doc => {
       const data = doc.data();

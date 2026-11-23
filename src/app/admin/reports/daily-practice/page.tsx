@@ -8,6 +8,7 @@ import { formatDateDMY, getDateKeyIST } from '@/lib/dateUtils';
 import { loadHtml2Canvas, formatReportStudentName, getScoreChip, getReportStudentModeBadge } from '@/lib/lqCardExport';
 import { playNotificationSound } from '@/lib/audioUtils';
 import { getStudentMode } from '@/types/user.types';
+import { sortBatchesAscending } from '@/lib/batchUtils';
 
 interface StudentSummary {
   studentCode: string;
@@ -305,7 +306,7 @@ export default function DailyPracticeSummaryPage() {
       if (res.ok) {
         const data = await res.json();
         setStudents(data.students || []);
-        setBatches(data.batches || []);
+        setBatches(sortBatchesAscending(data.batches || []));
         if (data.earliestExamDate) {
           setEarliestExamDate(data.earliestExamDate);
         }

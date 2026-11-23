@@ -13,6 +13,7 @@ import { formatReportStudentName, getScoreChip, getDeepScoreColor, loadHtml2Canv
 import { Batch } from '@/types/batch.types';
 import { Student } from '@/types/user.types';
 import { Exam } from '@/types/exam.types';
+import { sortBatchesAscending } from '@/lib/batchUtils';
 
 interface Attempt {
   id: string;
@@ -332,7 +333,7 @@ function ExamReportContent() {
       setExam(examData);
       setAttempts(data.attempts || []);
       setStudents(data.students || []);
-      setBatches(data.batches || []);
+      setBatches(sortBatchesAscending(data.batches || []));
       setAssignments(data.assignments || []);
 
       const qMap: { [key: string]: any } = {};

@@ -1,4 +1,5 @@
 import { adminDb } from './admin';
+import { sortBatchesAscending } from '@/lib/batchUtils';
 
 interface CachedData<T> {
   data: T;
@@ -86,7 +87,7 @@ export async function getCachedBatches() {
     batchesData = cached;
   } else {
     const snap = await adminDb.collection('batches').get();
-    batchesData = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    batchesData = sortBatchesAscending(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
     setInCache(cacheKey, batchesData, 600000); // 10 mins
   }
 

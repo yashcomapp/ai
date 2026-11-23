@@ -7,6 +7,7 @@ import { getDateKeyIST, formatDateDMY } from '@/lib/dateUtils';
 import { useAdminBatches } from '@/hooks/useAdminReferenceData';
 import DateInputDMY from '@/components/DateInputDMY';
 import { FaultCategory, StudentFaultEntry } from '@/services/fault.service';
+import { sortBatchesAscending } from '@/lib/batchUtils';
 
 export default function AdminFaultRegisterPage() {
   const { user, firebaseUser, loading: authLoading } = useAuth();
@@ -160,7 +161,7 @@ export default function AdminFaultRegisterPage() {
 
   useEffect(() => {
     if (swrBatches && swrBatches.length > 0) {
-      setBatches(swrBatches);
+      setBatches(sortBatchesAscending(swrBatches));
     }
   }, [swrBatches]);
 

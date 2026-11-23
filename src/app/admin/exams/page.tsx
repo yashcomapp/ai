@@ -16,6 +16,7 @@ import { toISTDateTimeLocalInput, formatDateDMY, parseDateInput, getDateKeyIST, 
 import ObjectiveTab from '@/components/admin/exams/ObjectiveTab';
 import SubjectiveTab from '@/components/admin/exams/SubjectiveTab';
 import { isExamAssigned, Exam, Assignment, Batch, Student } from '@/components/admin/exams/types';
+import { sortBatchesAscending } from '@/lib/batchUtils';
 import {
   getNormExamDuration,
   getExamSubject,
@@ -371,7 +372,7 @@ export default function AdminExamsPage() {
       const fetchedSubjExams: Exam[] = data.subjectiveExams || [];
       setExams(fetchedExams);
       setSubjectiveExams(fetchedSubjExams);
-      setBatches(data.batches || []);
+      setBatches(sortBatchesAscending(data.batches || []));
       setStudents(data.students || []);
       setAssignments(data.assignments || []);
       setAttemptCounts(data.attemptCounts || {});

@@ -6,6 +6,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { validateName, validateEmail, validateMobile, validatePassword } from '@/lib/validation';
 import { Batch } from '@/types/batch.types';
+import { sortBatchesAscending } from '@/lib/batchUtils';
 
 export default function RegisterPage() {
   const [batches, setBatches] = useState<Batch[]>([]);
@@ -42,7 +43,7 @@ export default function RegisterPage() {
         const res = await fetch('/api/batches');
         if (res.ok) {
           const data = await res.json();
-          setBatches(data.batches || []);
+          setBatches(sortBatchesAscending(data.batches || []));
         }
       } catch (err) {
         console.error('Failed to load batches:', err);

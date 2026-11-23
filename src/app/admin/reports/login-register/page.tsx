@@ -6,6 +6,7 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
+import { sortBatchesAscending } from '@/lib/batchUtils';
 
 interface Member {
   id: string;
@@ -67,7 +68,7 @@ export default function LoginRegisterReportPage() {
       });
       if (!res.ok) throw new Error('Failed to load login register report.');
       const data = await res.json();
-      setBatches(data.batches || []);
+      setBatches(sortBatchesAscending(data.batches || []));
       setLogs(data.logs || []);
     } catch (err: any) {
       console.error(err);

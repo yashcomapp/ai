@@ -6,6 +6,7 @@ import dynamic from 'next/dynamic';
 import { formatDateDMY } from '@/lib/dateUtils';
 import DateInputDMY from '@/components/DateInputDMY';
 import { Registration } from '@/types/user.types';
+import { getBatchClassNumber } from '@/lib/batchUtils';
 
 export default function RegistrationsManager() {
   const { firebaseUser } = useAuth();
@@ -225,7 +226,9 @@ export default function RegistrationsManager() {
     } else if (sortField === 'studentName') {
       comparison = (a.studentName || '').localeCompare(b.studentName || '');
     } else if (sortField === 'batchName') {
-      comparison = (a.batchName || '').localeCompare(b.batchName || '');
+      const classA = getBatchClassNumber({ name: a.batchName });
+      const classB = getBatchClassNumber({ name: b.batchName });
+      comparison = classA !== classB ? classA - classB : (a.batchName || '').localeCompare(b.batchName || '', undefined, { numeric: true });
     } else if (sortField === 'status') {
       comparison = (a.status || '').localeCompare(b.status || '');
     } else {

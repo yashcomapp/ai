@@ -3,7 +3,8 @@
 import DateTimeInputDMY from '@/components/DateTimeInputDMY';
 import { calculateEndDatetime } from '@/lib/dateUtils';
 
-import React from 'react';
+import React, { useMemo } from 'react';
+import { sortBatchesAscending } from '@/lib/batchUtils';
 
 export interface SaturdayAssignModalState {
   show: boolean;
@@ -29,6 +30,7 @@ export function SaturdayAssignModal({
   batches,
   handleSaveSaturdayAssignment,
 }: SaturdayAssignModalProps) {
+  const sortedBatches = useMemo(() => sortBatchesAscending(batches), [batches]);
   if (!saturdayAssignModal.show) return null;
 
   return (
@@ -57,7 +59,7 @@ export function SaturdayAssignModal({
               disabled={!!saturdayAssignModal.assignmentId}
             >
               <option value="">-- Select Batch --</option>
-              {batches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+              {sortedBatches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
             </select>
           </div>
 

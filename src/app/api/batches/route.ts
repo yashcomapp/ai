@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase/admin';
 import { getFromCache, setInCache } from '@/lib/firebase/cache';
+import { sortBatchesAscending } from '@/lib/batchUtils';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,14 +16,16 @@ export async function GET() {
       });
     }
 
-    const snapshot = await adminDb.collection('batches').orderBy('name', 'asc').limit(100).get();
-    // Return minimal metadata fields needed by registration
-    const batches = snapshot.docs.map(doc => ({
+    const snapshot = await adminDb.collection('batches').limit(100).get();
+    // Return minimal metadata fields needed by registration, sorted ascending (8th, 9th, 10th)
+    const rawBatches = snapshot.docs.map(doc => ({
       id: doc.id,
       name: doc.data().name || '',
+      class: doc.data().class || '',
       subject: doc.data().subject || '',
       description: doc.data().description || ''
     }));
+    const batches = sortBatchesAscending(rawBatches);
     setInCache(cacheKey, batches, 300000); // 5 mins
 
     return NextResponse.json({ batches }, {

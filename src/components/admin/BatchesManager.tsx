@@ -5,6 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useAdminBatches, invalidateAdminReferenceData } from '@/hooks/useAdminReferenceData';
 import { Batch } from '@/types/batch.types';
 import { Student } from '@/types/user.types';
+import { sortBatchesAscending } from '@/lib/batchUtils';
 
 export default function BatchesManager() {
   const { firebaseUser } = useAuth();
@@ -219,12 +220,12 @@ export default function BatchesManager() {
   const deferredSearch = useDeferredValue(searchQuery);
   const deferredRosterSearch = useDeferredValue(rosterSearch);
 
-  // Filters
-  const uniqueClasses = useMemo(() => Array.from(new Set(batches.map(b => b.class).filter(Boolean))), [batches]);
+  // Filters (Classes sorted numerically: 8, 9, 10)
+  const uniqueClasses = useMemo(() => Array.from(new Set(batches.map(b => b.class).filter(Boolean))).sort((a: any, b: any) => Number(a) - Number(b)), [batches]);
   
   const filteredBatches = useMemo(() => {
     const q = deferredSearch.toLowerCase().trim();
-    return batches.filter(b => {
+    const matches = batches.filter(b => {
       if (classFilter !== 'all' && b.class !== classFilter) return false;
       if (q) {
         return (
@@ -235,6 +236,7 @@ export default function BatchesManager() {
       }
       return true;
     });
+    return sortBatchesAscending(matches);
   }, [batches, classFilter, deferredSearch]);
 
   const filteredRoster = useMemo(() => {

@@ -23,3 +23,5 @@ export interface Batch {
   updatedAt?: any;
   [key: string]: any;
 }
+
+export { getBatchClassNumber, sortBatchesAscending } from '@/lib/batchUtils';

@@ -1,6 +1,7 @@
 'use client';
 
-import React from 'react';
+import React, { useMemo } from 'react';
+import { sortBatchesAscending } from '@/lib/batchUtils';
 
 export interface NewGroupModalProps {
   showGroupModal: boolean;
@@ -23,6 +24,7 @@ export function NewGroupModal({
   setGroupName,
   handleCreateGroup,
 }: NewGroupModalProps) {
+  const sortedBatches = useMemo(() => sortBatchesAscending(batchesList), [batchesList]);
   if (!showGroupModal) return null;
 
   return (
@@ -47,7 +49,7 @@ export function NewGroupModal({
               }}
               style={{ padding: '8px 10px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: '16px', outline: 'none' }}
             >
-              {batchesList.map(b => (
+              {sortedBatches.map(b => (
                 <option key={b.id} value={b.id}>{b.name}</option>
               ))}
             </select>

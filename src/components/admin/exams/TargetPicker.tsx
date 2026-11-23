@@ -1,6 +1,7 @@
 import { getStudentMode } from '@/types/user.types';
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Batch } from '@/types/batch.types';
+import { sortBatchesAscending, getBatchClassNumber } from '@/lib/batchUtils';
 
 export interface TargetPickerProps {
   targetType: 'batch' | 'student' | 'mixed';
@@ -31,10 +32,23 @@ export default function TargetPicker({
   const [onlyMode3, setOnlyMode3] = useState(true);
   const { grouped, unassigned } = getStudentsGroupedByBatch();
 
-  // If batches are selected, only consider groups from those batches
-  const relevantBatches = selectedBatches.size > 0
-    ? Object.entries(grouped).filter(([bid]) => selectedBatches.has(bid))
-    : Object.entries(grouped);
+  // Strictly sort batches in ascending order (8th, 9th, 10th)
+  const sortedBatches = useMemo(() => sortBatchesAscending(batches), [batches]);
+
+  // If batches are selected, only consider groups from those batches, sorted ascending
+  const relevantBatches = useMemo(() => {
+    const raw = selectedBatches.size > 0
+      ? Object.entries(grouped).filter(([bid]) => selectedBatches.has(bid))
+      : Object.entries(grouped);
+    return raw.sort(([bidA, gA], [bidB, gB]) => {
+      const bA = batches.find(b => b.id === bidA);
+      const bB = batches.find(b => b.id === bidB);
+      const classA = bA ? getBatchClassNumber(bA) : getBatchClassNumber({ name: gA.batchName });
+      const classB = bB ? getBatchClassNumber(bB) : getBatchClassNumber({ name: gB.batchName });
+      if (classA !== classB) return classA - classB;
+      return (gA.batchName || '').localeCompare(gB.batchName || '', undefined, { numeric: true });
+    });
+  }, [grouped, selectedBatches, batches]);
 
   const candidateStudents = relevantBatches.flatMap(([_, g]) => g.list);
   const limitedStudents = candidateStudents.filter(s => getStudentMode(s) === 'limited');
@@ -139,7 +153,7 @@ export default function TargetPicker({
             msOverflowStyle: 'none'
           }}
         >
-          {batches.map(b => (
+          {sortedBatches.map(b => (
             <label key={b.id} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', padding: '1px 0', cursor: 'pointer' }}>
               <input 
                 type="checkbox" 

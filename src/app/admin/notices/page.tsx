@@ -12,6 +12,7 @@ import { sanitizeNoticeHtml } from '@/lib/sanitize';
 import { Batch } from '@/types/batch.types';
 import { Student } from '@/types/user.types';
 import { Notice } from '@/types/notice.types';
+import { sortBatchesAscending } from '@/lib/batchUtils';
 
 interface Parent {
   email: string;
@@ -132,7 +133,7 @@ export default function AdminNoticesPage() {
       });
       if (examsRes.ok) {
         const examsData = await examsRes.json();
-        setBatches(examsData.batches || []);
+        setBatches(sortBatchesAscending(examsData.batches || []));
         const sorted = (examsData.students || []).sort((a: any, b: any) => (a.name || '').localeCompare(b.name || ''));
         setStudents(sorted);
         setParents(examsData.parents || []);

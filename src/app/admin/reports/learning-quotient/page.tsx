@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useReports } from '@/hooks/useReports';
 import { getScoreColor } from '@/lib/dashboardMetrics';
 import { exportStudentLqCardImage, exportBatchLqCardImage, formatReportStudentName } from '@/lib/lqCardExport';
+import { sortBatchesAscending } from '@/lib/batchUtils';
 
 interface StudentLQ {
   id: string;
@@ -143,7 +144,7 @@ export default function LearningQuotientReportPage() {
       const resData = await getQuotientReport(idToken, undefined, selectedDuration);
       if (resData && resData.success) {
         setStudents(resData.students || []);
-        setBatches(resData.batches || []);
+        setBatches(sortBatchesAscending(resData.batches || []));
       }
     } catch (e) {
       console.error('Error loading quotient roster:', e);
