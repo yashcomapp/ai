@@ -64,7 +64,7 @@ export function useLiveExam({
 
   const addProctoringSnapshot = useCallback((snapshot: ProctoringSnapshot) => {
     if (examType === 'practice') return;
-    if (proctoringSnapshotsRef.current.length >= 5) return;
+    if (proctoringSnapshotsRef.current.length >= 8) return;
     const updated = [...proctoringSnapshotsRef.current, snapshot];
     proctoringSnapshotsRef.current = updated;
     setProctoringSnapshots(updated);

@@ -1229,7 +1229,7 @@ function TakeExamContent() {
           </div>
 
           {/* Question Card */}
-          <div ref={questionContainerRef} key={currentQuestion?.id || safeQIndex} className="card" style={{ background: 'var(--surface)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-lg)', padding: '16px', marginBottom: '12px' }}>
+          <div ref={questionContainerRef} key={currentQuestion?.id || safeQIndex} className="card" style={{ background: 'var(--surface)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-lg)', padding: '16px', marginBottom: '12px', userSelect: 'none', WebkitUserSelect: 'none' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-light)', paddingBottom: '8px', marginBottom: '12px', color: 'var(--text-muted)', fontSize: '12px' }}>
               <span>Question {safeQIndex + 1} of {exam.questions?.length || 0}</span>
               <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -1242,6 +1242,7 @@ function TakeExamContent() {
               mode="exam"
               question={currentQuestion}
               userAnswer={currentAnswer}
+              watermarkText={`${user?.name || 'Student'} • ${user?.studentCode || ''} • Protected Exam`}
               onSelectOption={handleSelectOptionCurrent}
               onTextInput={handleTextInputCurrent}
             />

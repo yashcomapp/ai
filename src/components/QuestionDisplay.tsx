@@ -597,6 +597,9 @@ export interface QuestionDisplayProps {
   hideExplanation?: boolean;
   explanationLabel?: string;
 
+  /** Anti-OCR camera-resistant student watermark */
+  watermarkText?: string;
+
   /** Optional nested children rendered between stem and options (e.g. stats bar) */
   children?: React.ReactNode;
 
@@ -634,6 +637,7 @@ export const QuestionDisplay: React.FC<QuestionDisplayProps> = React.memo(({
   isCorrect,
   hideExplanation = false,
   explanationLabel,
+  watermarkText,
   children,
   className = '',
   style
@@ -1246,62 +1250,128 @@ export const QuestionDisplay: React.FC<QuestionDisplayProps> = React.memo(({
      Master Layout Assembler
      ----------------------------------------------------------------------- */
   return (
-    <div className={`question-display-root ${className}`.trim()} style={{ width: '100%', ...style }}>
-      {/* 1. Stem */}
-      {renderStem()}
-
-      {/* 2. Optional Image (Clickable Zoom Inspection) */}
-      {qImage && (
+    <div
+      className={`question-display-root ${className}`.trim()}
+      style={{
+        width: '100%',
+        position: 'relative',
+        userSelect: 'none',
+        WebkitUserSelect: 'none',
+        ...style
+      }}
+    >
+      {/* Anti-OCR Camera-Resistant Moiré & Identity Watermark */}
+      {watermarkText && (
         <div
-          className="zoomable-image-wrapper"
-          style={{ margin: '8px 0 12px', position: 'relative', display: 'inline-block', cursor: 'zoom-in' }}
-          onClick={() => setZoomedDiagram({ type: 'image', content: qImage, title: 'Figure Inspection' })}
-          title="Click or tap to zoom figure"
+          aria-hidden="true"
+          style={{
+            position: 'absolute',
+            inset: 0,
+            pointerEvents: 'none',
+            userSelect: 'none',
+            zIndex: 0,
+            overflow: 'hidden',
+            borderRadius: 'inherit'
+          }}
         >
-          <div style={{ position: 'relative', display: 'inline-block' }}>
-            <Image
-              src={qImage}
-              alt="Question illustration"
-              width={320}
-              height={200}
-              style={{ objectFit: 'contain', borderRadius: '6px', border: '1px solid var(--border-light, #e2e8f0)' }}
-            />
-            <div style={{
+          {/* 1. Moiré Anti-Camera Micro-Lattice (distorts mobile camera sensor OCR while remaining subtle to human reading) */}
+          <div
+            style={{
               position: 'absolute',
-              top: '6px',
-              right: '6px',
-              background: 'rgba(15,23,42,0.8)',
-              color: '#ffffff',
-              padding: '2px 8px',
-              borderRadius: '4px',
-              fontSize: '11px',
-              fontWeight: 600,
-              pointerEvents: 'none',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '4px',
-              backdropFilter: 'blur(4px)',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
-              letterSpacing: '0.3px'
-            }}>
-              🔍 Zoom
-            </div>
+              inset: 0,
+              backgroundImage: `radial-gradient(circle, rgba(148, 163, 184, 0.08) 1px, transparent 1px), linear-gradient(45deg, transparent 48%, rgba(148, 163, 184, 0.04) 49%, rgba(148, 163, 184, 0.04) 51%, transparent 52%)`,
+              backgroundSize: '11px 11px, 9px 9px'
+            }}
+          />
+          {/* 2. Repeating Diagonal Student Watermark */}
+          <div
+            style={{
+              position: 'absolute',
+              width: '240%',
+              height: '240%',
+              top: '-70%',
+              left: '-70%',
+              transform: 'rotate(-24deg)',
+              display: 'flex',
+              flexWrap: 'wrap',
+              alignContent: 'center',
+              justifyContent: 'center',
+              gap: '40px 60px',
+              opacity: 0.048,
+              fontSize: '12px',
+              fontWeight: 800,
+              color: 'var(--text, #0f172a)',
+              letterSpacing: '1px',
+              textTransform: 'uppercase'
+            }}
+          >
+            {Array.from({ length: 48 }).map((_, i) => (
+              <span key={i} style={{ whiteSpace: 'nowrap' }}>
+                {watermarkText}
+              </span>
+            ))}
           </div>
         </div>
       )}
 
-      {/* 3. Middle / Custom Content (e.g. progress bar, stats) */}
-      {children}
+      {/* Main Content Layer */}
+      <div style={{ position: 'relative', zIndex: 1 }}>
+        {/* 1. Stem */}
+        {renderStem()}
 
-      {/* 4. Options by Mode */}
-      {mode === 'exam' && renderExamOptions()}
-      {mode === 'practice' && renderPracticeOptions()}
-      {mode === 'review' && renderReviewOptions()}
-      {mode === 'report' && renderReportOptions()}
-      {(mode === 'bank' || mode === 'preview') && renderBankOptions()}
+        {/* 2. Optional Image (Clickable Zoom Inspection) */}
+        {qImage && (
+          <div
+            className="zoomable-image-wrapper"
+            style={{ margin: '8px 0 12px', position: 'relative', display: 'inline-block', cursor: 'zoom-in' }}
+            onClick={() => setZoomedDiagram({ type: 'image', content: qImage, title: 'Figure Inspection' })}
+            title="Click or tap to zoom figure"
+          >
+            <div style={{ position: 'relative', display: 'inline-block' }}>
+              <Image
+                src={qImage}
+                alt="Question illustration"
+                width={320}
+                height={200}
+                style={{ objectFit: 'contain', borderRadius: '6px', border: '1px solid var(--border-light, #e2e8f0)' }}
+              />
+              <div style={{
+                position: 'absolute',
+                top: '6px',
+                right: '6px',
+                background: 'rgba(15,23,42,0.8)',
+                color: '#ffffff',
+                padding: '2px 8px',
+                borderRadius: '4px',
+                fontSize: '11px',
+                fontWeight: 600,
+                pointerEvents: 'none',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
+                backdropFilter: 'blur(4px)',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+                letterSpacing: '0.3px'
+              }}>
+                🔍 Zoom
+              </div>
+            </div>
+          </div>
+        )}
 
-      {/* 4. Explanation / Solution */}
-      {(mode === 'review' || mode === 'report' || mode === 'bank' || mode === 'preview' || (mode === 'practice' && isSubmitted)) && renderExplanation()}
+        {/* 3. Middle / Custom Content (e.g. progress bar, stats) */}
+        {children}
+
+        {/* 4. Options by Mode */}
+        {mode === 'exam' && renderExamOptions()}
+        {mode === 'practice' && renderPracticeOptions()}
+        {mode === 'review' && renderReviewOptions()}
+        {mode === 'report' && renderReportOptions()}
+        {(mode === 'bank' || mode === 'preview') && renderBankOptions()}
+
+        {/* 4. Explanation / Solution */}
+        {(mode === 'review' || mode === 'report' || mode === 'bank' || mode === 'preview' || (mode === 'practice' && isSubmitted)) && renderExplanation()}
+      </div>
 
       {/* 5. Diagram & Image Zoom Lightbox Modal */}
       <DiagramZoomModal

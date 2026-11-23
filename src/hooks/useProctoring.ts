@@ -94,6 +94,7 @@ export function useProctoring({
   }, []);
   
   const lookingAwayStartRef = useRef<number | null>(null);
+  const chinDownStartRef = useRef<number | null>(null);
   const headMovementStartRef = useRef<number | null>(null);
   const multipleFacesStartRef = useRef<number | null>(null);
   const noFaceStartRef = useRef<number | null>(null);
@@ -111,9 +112,9 @@ export function useProctoring({
 
   const takeSnapshot = useCallback((type: ProctoringSnapshot['type'], reason: string) => {
     if (disableSnapshots || !onSnapshotCaptured) return;
-    if (snapshotsCountRef.current >= 5) return;
+    if (snapshotsCountRef.current >= 8) return;
     const now = Date.now();
-    if (snapshotsCountRef.current > 0 && now - lastSnapshotTimeRef.current < 15000) return;
+    if (snapshotsCountRef.current > 0 && now - lastSnapshotTimeRef.current < 10000) return;
 
     const base64 = captureCameraSnapshot(videoRef.current);
     if (!base64) return;
@@ -195,7 +196,23 @@ export function useProctoring({
     const lookingAway = checkLookingAway(currentPose);
     setIsLookingAway(lookingAway);
 
-    if (lookingAway) {
+    // Dedicated Chin-Down / Desk-Gaze Detection (operating a second phone on lap or desk)
+    const isChinDown = currentPose.pitch > 15.5;
+    if (isChinDown) {
+      if (!chinDownStartRef.current) {
+        chinDownStartRef.current = now;
+      }
+      const chinDebounce = isNumericalRef.current ? 5000 : 4000;
+      if (now - chinDownStartRef.current > chinDebounce) {
+        onViolation?.('gaze', 'Chin-down / desk gaze detected (possible second screen)', null);
+        takeSnapshot('gaze', 'Chin-down / desk gaze detected (possible second screen)');
+        chinDownStartRef.current = now + 12000; // throttle 12s before next capture
+      }
+    } else {
+      chinDownStartRef.current = null;
+    }
+
+    if (lookingAway && !isChinDown) {
       if (!lookingAwayStartRef.current) {
         lookingAwayStartRef.current = now;
       }
@@ -206,7 +223,7 @@ export function useProctoring({
         takeSnapshot('gaze', 'Looking away from screen');
         lookingAwayStartRef.current = now; // reset to throttle
       }
-    } else {
+    } else if (!isChinDown) {
       lookingAwayStartRef.current = null;
     }
 
