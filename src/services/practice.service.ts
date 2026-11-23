@@ -429,6 +429,32 @@ export class PracticeService {
         updatedData.mastery = Math.max(updatedData.mastery, existingMastery);
       }
 
+      // Practice Mastery Acceleration:
+      // High accuracy in a genuine (non-rushed) practice session represents proven current competence.
+      // Do not allow historical denominator accumulation from old diagnostic exams to trap students below mastery.
+      if (!isRushedSession && sessionAccuracy >= 80) {
+        let acceleratedMastery = updatedData.mastery;
+        if (sessionAccuracy >= 100) {
+          // 6/6 (100% correct): Substantial leap towards or into Mastered band
+          const gain = Math.max(15, Math.round((100 - existingMastery) * 0.6));
+          acceleratedMastery = Math.min(100, Math.max(updatedData.mastery, existingMastery + gain));
+          if (existingMastery >= 75 || practiceNumber >= 2 || (existingConf >= 6)) {
+            acceleratedMastery = Math.max(acceleratedMastery, MASTERY_THRESHOLDS.MASTERED_MIN);
+          }
+        } else if (sessionAccuracy >= 80) {
+          // 5/6 (83.3% correct): Substantial positive progression (+8% to +12%)
+          const gain = Math.max(8, Math.round((sessionAccuracy - existingMastery) * 0.5));
+          acceleratedMastery = Math.min(95, Math.max(updatedData.mastery, existingMastery + gain));
+        }
+
+        updatedData.mastery = Math.min(100, Math.max(existingMastery, acceleratedMastery));
+
+        // Re-calibrate weighted points so earned / possible accurately reflects the accelerated mastery
+        if (updatedData.weightedPointsPossible > 0) {
+          updatedData.weightedPointsEarned = Math.round((updatedData.mastery / 100) * updatedData.weightedPointsPossible);
+        }
+      }
+
       // Enforce Deliberation Gate: Rushed sessions (< 18s/question) do NOT advance mastery & trigger 30-min cooldown
       if (isRushedSession) {
         if (!isMasteredTopic) {

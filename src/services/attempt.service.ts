@@ -43,6 +43,7 @@ export class AttemptService {
     examChapter: string;
     wrongAnswers: any[];
     unattemptedQuestions: any[];
+    questionDetails?: any[];
     status: string;
   }> {
     const {
@@ -213,6 +214,7 @@ export class AttemptService {
             examChapter: data.chapter,
             wrongAnswers: [],
             unattemptedQuestions: [],
+            questionDetails: data.questionDetails || [],
             status: data.status || 'approved'
           };
         }
@@ -506,7 +508,8 @@ export class AttemptService {
         examChapter,
         wrongAnswers,
         unattemptedQuestions: unattempted,
-        status: (wrongAnswers.length === 0 && unattempted.length === 0) ? 'pending' : 'student_review'
+        questionDetails,
+        status: (wrongAnswers.length === 0 && unattempted.length === 0) ? (isAutonomous ? 'approved' : 'pending') : 'student_review'
       };
     });
 

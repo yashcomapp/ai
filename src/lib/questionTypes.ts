@@ -3,7 +3,12 @@ import { getCanonicalBoardName } from './syllabusUtils';
 
 export function stripOptionLabel(text: any): string {
   if (text == null) return '';
-  return String(text).replace(/^\s*\(?[A-Da-d]\)?[).:]\s*/, '');
+  const str = String(text).trim();
+  // If the string is purely a single option letter/token (e.g. "(A)", "A.", "(B)", "A"), do NOT strip it to an empty string!
+  if (/^\(?([A-Da-d])\)?[).:]?$/.test(str)) {
+    return str;
+  }
+  return str.replace(/^\s*\(?[A-Da-d]\)?[).:]\s+/, '');
 }
 
 /**

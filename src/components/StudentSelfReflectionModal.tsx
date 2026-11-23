@@ -68,7 +68,8 @@ export default function StudentSelfReflectionModal({
               questionText: q.text || q.questionText,
               userAnswer: '',
               correctAnswer: q.correctAnswer || (q.correctAnswers ? q.correctAnswers.join(', ') : ''),
-              type: 'unanswered',
+              type: q.type || 'OSC',
+              category: 'unanswered',
               qIndex: idx
             });
           } else if (!q.isCorrect) {
@@ -77,7 +78,8 @@ export default function StudentSelfReflectionModal({
               questionText: q.text || q.questionText,
               userAnswer: q.userAnswer,
               correctAnswer: q.correctAnswer || (q.correctAnswers ? q.correctAnswers.join(', ') : ''),
-              type: 'incorrect',
+              type: q.type || 'OSC',
+              category: 'incorrect',
               qIndex: idx
             });
           }
@@ -97,13 +99,13 @@ export default function StudentSelfReflectionModal({
   }, [examId, firebaseUser]);
 
   const questionsToReview = [
-    ...wrongAnswers.map((w, idx) => ({ ...w, globalIdx: idx, type: 'incorrect' })),
-    ...unattemptedQuestions.map((u, idx) => ({ ...u, globalIdx: wrongAnswers.length + idx, type: 'unanswered' }))
+    ...wrongAnswers.map((w, idx) => ({ ...w, globalIdx: idx, category: 'incorrect' })),
+    ...unattemptedQuestions.map((u, idx) => ({ ...u, globalIdx: wrongAnswers.length + idx, category: 'unanswered' }))
   ];
 
   const filteredQuestions = questionsToReview.filter(q => {
-    if (filterTab === 'incorrect') return q.type === 'incorrect';
-    if (filterTab === 'unanswered') return q.type === 'unanswered';
+    if (filterTab === 'incorrect') return q.category === 'incorrect';
+    if (filterTab === 'unanswered') return q.category === 'unanswered';
     return true;
   });
 

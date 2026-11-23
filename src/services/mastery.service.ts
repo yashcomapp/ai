@@ -150,6 +150,29 @@ export class MasteryService {
     data.mastery = data.weightedPointsPossible > 0
       ? Math.min(100, Math.max(0, Math.round((data.weightedPointsEarned / data.weightedPointsPossible) * 100)))
       : 0;
+
+    // Pedagogical Practice Acceleration Invariant:
+    // When a student completes a practice session with high accuracy (>= 80% or 100%),
+    // current demonstrated mastery must not be dampened by historical denominator inflation from old exam mistakes.
+    if (isPractice && evaluations.length > 0) {
+      const correctRatio = questionsAttemptedDelta > 0 ? (questionsCorrectDelta / questionsAttemptedDelta) : 0;
+      if (correctRatio >= 0.8) {
+        const prevMastery = Number(existing.mastery || 0);
+        const gain = correctRatio >= 1
+          ? Math.max(15, Math.round((100 - prevMastery) * 0.6))
+          : Math.max(8, Math.round((correctRatio * 100 - prevMastery) * 0.5));
+        const targetMastery = Math.min(100, Math.max(data.mastery, prevMastery + gain));
+        if (correctRatio >= 1 && (prevMastery >= 75 || (data.confidence || 0) >= 12)) {
+          data.mastery = Math.max(targetMastery, 90);
+        } else {
+          data.mastery = targetMastery;
+        }
+        if (data.weightedPointsPossible > 0) {
+          data.weightedPointsEarned = Math.round((data.mastery / 100) * data.weightedPointsPossible);
+        }
+      }
+    }
+
     data.confidence = Math.min(data.questionsAttempted, 100);
 
     // Update question seen history (excluding disputed questions)

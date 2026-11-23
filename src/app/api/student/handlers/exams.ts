@@ -699,6 +699,7 @@ export async function POST(req: NextRequest) {
       examChapter: txResult.examChapter,
       wrongAnswers: txResult.wrongAnswers || [],
       unattemptedQuestions: txResult.unattemptedQuestions || [],
+      questionDetails: txResult.questionDetails || [],
       status: txResult.status,
       message: txResult.alreadySubmitted ? 'Already submitted. Returned cached score.' : 'Exam submission processed successfully.'
     });

@@ -85,6 +85,7 @@ function TakeExamContent() {
 
   const [wrongAnswers, setWrongAnswers] = useState<any[]>([]);
   const [unattemptedQuestions, setUnattemptedQuestions] = useState<any[]>([]);
+  const [submittedQuestionDetails, setSubmittedQuestionDetails] = useState<any[]>([]);
   const [reviewedQuestions, setReviewedQuestions] = useState<Set<number>>(new Set());
   const [selectedReasons, setSelectedReasons] = useState<{[key: number]: string}>({});
   const [studentExplanations, setStudentExplanations] = useState<{[key: number]: string}>({});
@@ -115,7 +116,7 @@ function TakeExamContent() {
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
   const [showResultModal, setShowResultModal] = useState(false);
   const [activeViolationWarning, setActiveViolationWarning] = useState<string | null>(null);
-  const [questionFilterTab, setQuestionFilterTab] = useState<'all' | 'incorrect' | 'unanswered'>('all');
+  const [questionFilterTab, setQuestionFilterTab] = useState<'all' | 'incorrect' | 'unanswered' | 'correct'>('all');
   const [autoSubmittedReason, setAutoSubmittedReason] = useState<string | null>(null);
 
   // Refs
@@ -160,16 +161,27 @@ function TakeExamContent() {
   }, [userAnswers]);
 
   const questionsToReview = useMemo(() => {
+    if (submittedQuestionDetails.length > 0) {
+      return submittedQuestionDetails.map((qd: any, idx: number) => {
+        const isUnatt = !qd.userAnswer || qd.userAnswer === '' || qd.userAnswer === '[]' || qd.userAnswer === 'blank';
+        return {
+          ...qd,
+          globalIdx: idx,
+          type: isUnatt ? 'unanswered' : (qd.isCorrect ? 'correct' : 'incorrect')
+        };
+      });
+    }
     return [
       ...wrongAnswers.map((w, idx) => ({ ...w, globalIdx: idx, type: 'incorrect' })),
       ...unattemptedQuestions.map((u, idx) => ({ ...u, globalIdx: wrongAnswers.length + idx, type: 'unanswered' }))
     ];
-  }, [wrongAnswers, unattemptedQuestions]);
+  }, [submittedQuestionDetails, wrongAnswers, unattemptedQuestions]);
 
   const filteredQuestionsToReview = useMemo(() => {
     return questionsToReview.filter(q => {
       if (questionFilterTab === 'incorrect') return q.type === 'incorrect';
       if (questionFilterTab === 'unanswered') return q.type === 'unanswered';
+      if (questionFilterTab === 'correct') return q.type === 'correct';
       return true;
     });
   }, [questionsToReview, questionFilterTab]);
@@ -713,6 +725,9 @@ function TakeExamContent() {
       mutateFresh('/api/student/dashboard', firebaseUser).catch(() => {});
       
       if (resData.status === 'student_review') {
+        if (Array.isArray(resData.questionDetails) && resData.questionDetails.length > 0) {
+          setSubmittedQuestionDetails(resData.questionDetails);
+        }
         setWrongAnswers(resData.wrongAnswers || []);
         setUnattemptedQuestions(resData.unattemptedQuestions || []);
         setReviewScores({
@@ -724,6 +739,9 @@ function TakeExamContent() {
         setSelectedReasons({});
         setReviewModalOpen(true);
       } else {
+        if (Array.isArray(resData.questionDetails) && resData.questionDetails.length > 0) {
+          setSubmittedQuestionDetails(resData.questionDetails);
+        }
         setReviewScores({
           score: resData.score,
           totalMarks: resData.totalMarks,
@@ -1486,7 +1504,7 @@ function TakeExamContent() {
                 </div>
               </div>
 
-              {/* Filter Tabs Bar (Correct tab is disabled) */}
+              {/* Filter Tabs Bar with enabled Correct tab */}
               <div className="outcome-tabs" style={{ display: 'flex', gap: '8px', marginBottom: '16px', borderBottom: '1px solid var(--border-light)', paddingBottom: '12px' }}>
                 <button 
                   onClick={() => setQuestionFilterTab('all')} 
@@ -1501,23 +1519,22 @@ function TakeExamContent() {
                     cursor: 'pointer'
                   }}
                 >
-                  All ({wrongAnswers.length + unattemptedQuestions.length})
+                  All ({questionsToReview.length})
                 </button>
                 <button 
-                  disabled
+                  onClick={() => setQuestionFilterTab('correct')}
                   style={{
                     padding: '6px 12px',
                     fontSize: '11px',
                     fontWeight: 'bold',
                     borderRadius: 'var(--radius-sm)',
-                    border: '1px dashed var(--border-light)',
-                    background: 'transparent',
-                    color: 'var(--text-faint)',
-                    cursor: 'not-allowed',
-                    opacity: 0.4
+                    border: questionFilterTab === 'correct' ? '1px solid var(--success)' : '1px solid var(--border-light)',
+                    background: questionFilterTab === 'correct' ? 'var(--success-bg)' : 'transparent',
+                    color: questionFilterTab === 'correct' ? 'var(--success)' : 'var(--text-muted)',
+                    cursor: 'pointer'
                   }}
                 >
-                  Correct (0)
+                  Correct ({questionsToReview.filter(q => q.type === 'correct').length})
                 </button>
                 <button 
                   onClick={() => setQuestionFilterTab('incorrect')} 
@@ -1532,7 +1549,7 @@ function TakeExamContent() {
                     cursor: 'pointer'
                   }}
                 >
-                  Incorrect ({wrongAnswers.length})
+                  Incorrect ({questionsToReview.filter(q => q.type === 'incorrect').length})
                 </button>
                 <button 
                   onClick={() => setQuestionFilterTab('unanswered')} 
@@ -1547,7 +1564,7 @@ function TakeExamContent() {
                     cursor: 'pointer'
                   }}
                 >
-                  Unanswered ({unattemptedQuestions.length})
+                  Unanswered ({questionsToReview.filter(q => q.type === 'unanswered').length})
                 </button>
               </div>
 
@@ -1562,10 +1579,12 @@ function TakeExamContent() {
                 ) : (
                   filteredQuestionsToReview.map((qItem) => {
                     const isUnanswered = qItem.type === 'unanswered';
+                    const isCorrect = qItem.type === 'correct' || qItem.isCorrect === true;
                     const isUnderstood = reviewedQuestions.has(qItem.globalIdx);
-                    const matchingQ = exam?.questions?.find((x: any) => x.text === qItem.questionText);
-                    const explanation = matchingQ?.solution || qItem.explanation || '';
+                    const matchingQ = exam?.questions?.find((x: any) => (x.text && x.text === qItem.questionText) || (x.questionCode && x.questionCode === qItem.questionCode));
+                    const explanation = qItem.solution || matchingQ?.solution || qItem.explanation || '';
                     const currentReason = selectedReasons[qItem.globalIdx];
+                    const qOptions = (Array.isArray(qItem.options) && qItem.options.length > 0) ? qItem.options : matchingQ?.options;
 
                     return (
                        <div 
@@ -1573,8 +1592,8 @@ function TakeExamContent() {
                          style={{
                            padding: '16px',
                            borderRadius: 'var(--radius)',
-                           border: '1px solid var(--review-card-border)',
-                           background: 'var(--review-card-bg)',
+                           border: isCorrect ? '1px solid var(--success-border, rgba(46, 204, 113, 0.3))' : '1px solid var(--review-card-border)',
+                           background: isCorrect ? 'var(--success-bg, rgba(46, 204, 113, 0.04))' : 'var(--review-card-bg)',
                            display: 'flex',
                            flexDirection: 'column',
                            gap: '8px'
@@ -1588,7 +1607,7 @@ function TakeExamContent() {
                                    ? exam.questions.findIndex((x: any) => x.text === matchingQ.text)
                                    : -1;
                                  return actualIdx !== -1 ? actualIdx + 1 : qItem.globalIdx + 1;
-                               })()} ({matchingQ?.difficulty?.toUpperCase() || 'MEDIUM'} • {matchingQ?.bloomLevel || 'Understand'})</span>
+                               })()} ({matchingQ?.difficulty?.toUpperCase() || qItem.difficulty?.toUpperCase() || 'MEDIUM'} • {matchingQ?.bloomLevel || qItem.bloomLevel || 'Understand'})</span>
                              {currentReason && (
                                <span style={{ background: 'var(--warning-bg)', color: 'var(--warning)', border: '1px solid rgba(251, 191, 36, 0.25)', padding: '2px 6px', borderRadius: '4px', fontSize: '9px', fontWeight: 'bold', marginLeft: '8px' }}>
                                  ⚠️ Reason: {currentReason}
@@ -1600,10 +1619,10 @@ function TakeExamContent() {
                              fontSize: '10px',
                              padding: '2px 8px',
                              borderRadius: '12px',
-                             background: isUnanswered ? 'rgba(255,255,255,0.1)' : 'var(--danger-bg)',
-                             color: isUnanswered ? 'var(--text-muted)' : 'var(--danger)' 
+                             background: isUnanswered ? 'rgba(255,255,255,0.1)' : (isCorrect ? 'var(--success-bg)' : 'var(--danger-bg)'),
+                             color: isUnanswered ? 'var(--text-muted)' : (isCorrect ? 'var(--success)' : 'var(--danger)') 
                            }}>
-                             {isUnanswered ? 'Unattempted' : 'Incorrect'}
+                             {isUnanswered ? '⚪ Unattempted' : (isCorrect ? '🟢 Correct' : '🔴 Incorrect')}
                            </span>
                          </div>
 
@@ -1611,21 +1630,23 @@ function TakeExamContent() {
                         <QuestionDisplay
                           mode="review"
                           question={{
-                            text: qItem.questionText,
-                            type: matchingQ?.type,
-                            options: matchingQ?.options,
-                            correctAnswer: getQuestionCorrectAnswer(matchingQ) || qItem.correctAnswer,
+                            text: qItem.questionText || qItem.text,
+                            type: qItem.typeCode || qItem.type || matchingQ?.type || 'OSC',
+                            options: qOptions,
+                            correctAnswer: qItem.correctAnswer || getQuestionCorrectAnswer(matchingQ),
                             userAnswer: isUnanswered ? '' : qItem.userAnswer,
                             solution: explanation,
-                            isCorrect: false
+                            isCorrect: isCorrect
                           }}
-                          isCorrect={false}
+                          isCorrect={isCorrect}
                           userAnswer={isUnanswered ? '' : (getOptionText(matchingQ || qItem.questionText, qItem.userAnswer || '', exam?.questions) || qItem.userAnswer)}
                           correctAnswer={getOptionText(matchingQ || qItem.questionText, qItem.correctAnswer, exam?.questions) || qItem.correctAnswer}
                           explanation={explanation}
                         />
 
-                        {/* Error classification box (two lines of buttons in a nice box) */}
+                        {/* Error classification box (only shown for mistakes & unattempted) */}
+                        {(!isCorrect || isUnanswered) && (
+                        <>
                         <div style={{ 
                           marginTop: '10px', 
                           marginBottom: '10px', 
@@ -1768,6 +1789,8 @@ function TakeExamContent() {
                             </button>
                           );
                         })()}
+                        </>
+                        )}
                       </div>
                     );
                   })
@@ -1777,9 +1800,10 @@ function TakeExamContent() {
 
             {/* Review bottom status bar */}
             {(() => {
-              const totalToReview = wrongAnswers.length + unattemptedQuestions.length;
-              const reviewedCount = reviewedQuestions.size;
-              const isAllReviewed = reviewedCount === totalToReview;
+              const mistakeQuestions = questionsToReview.filter(q => q.type !== 'correct');
+              const totalToReview = mistakeQuestions.length;
+              const reviewedCount = mistakeQuestions.filter(q => reviewedQuestions.has(q.globalIdx)).length;
+              const isAllReviewed = totalToReview === 0 || reviewedCount === totalToReview;
               return (
                 <div style={{ padding: '16px 24px', borderTop: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', gap: '10px', background: 'var(--surface)' }}>
                   <div style={{ 
@@ -1793,8 +1817,8 @@ function TakeExamContent() {
                     fontWeight: 'bold'
                   }}>
                     {isAllReviewed 
-                      ? '✅ Excellent! You have reviewed all questions. You can now submit.' 
-                      : `Reviewed: ${reviewedCount}/${totalToReview} completed. Click "I Understand" for each question above.`
+                      ? '✅ Excellent! You have reviewed all mistake questions. You can now submit.' 
+                      : `Reviewed: ${reviewedCount}/${totalToReview} mistakes completed. Click "I Understand" for each mistake question above.`
                     }
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
@@ -1810,9 +1834,9 @@ function TakeExamContent() {
                         setReviewSubmitting(true);
                         try {
                           const finalReasons: Record<string, string> = { ...selectedReasons };
-                          const unselected = questionsToReview.filter(q => !finalReasons[q.globalIdx]);
+                          const unselected = mistakeQuestions.filter(q => !finalReasons[q.globalIdx]);
                           if (unselected.length > 0) {
-                            alert(`Please classify the error reason for all ${questionsToReview.length} questions before finalizing.`);
+                            alert(`Please classify the error reason for all ${mistakeQuestions.length} mistake questions before finalizing.`);
                             setReviewSubmitting(false);
                             return;
                           }
