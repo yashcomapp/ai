@@ -77,6 +77,10 @@ export function preprocessMathText(text: any): string {
   str = str.replace(/(^|[\s,;:(!/])\^\s*\\?circ\b/g, '$1{}^\\circ');
   str = str.replace(/(^|[\s,;:(!/])\^{\s*\\?circ\s*}/g, '$1{}^{\\circ}');
 
+  // Heal mismatched opening ( with closing \) or vice versa
+  str = str.replace(/(?<!\\)\(([^()\n]+?)\\\)/g, '\\($1\\)');
+  str = str.replace(/\\\(([^()\n]+?)(?<!\\)\)/g, '\\($1\\)');
+
   // Heal any corrupted nested delimiters inside superscripts/subscripts like ^{\(\circ\)} or _{...}
   str = str.replace(/([\^_]\{)\s*\\?\(\s*(\\?[a-zA-Z0-9]+)\s*\\?\)\s*(\})/g, '$1$2$3');
   str = str.replace(/\\?\(\s*\\circ\s*\\?\)/g, '\\circ');
@@ -126,7 +130,11 @@ export function preprocessMathText(text: any): string {
   str = str.replace(/(?<!\\)\(\[([^\]]+)\]\)/g, '\\([$1]\\)');
 
   // Identify parentheses enclosing math constructs (like \, ^, _, \frac, etc.) and convert them to inline math delimiters \( ... \)
-  str = str.replace(/(?<!\\)\(([^)]*?[\\^_][^)]*?)\)/g, '\\($1\\)');
+  str = str.replace(/(?<!\\)\(([^)]*?[\\^_][^)]*?)\)/g, (match, inner) => {
+    // If inner already contains math delimiters, strip raw inner \( and \) to avoid double wrapping
+    const cleaned = inner.replace(/\\\(|\\\)/g, '');
+    return `\\(${cleaned}\\)`;
+  });
 
   // Safely wrap any raw chemical formulas \ce{...} not yet enclosed in math delimiters
   str = str.replace(/(?<!\\)(?<!\()(\\ce\{(?:[^{}]|\{[^{}]*\})*\})/g, '\\($1\\)');
@@ -167,14 +175,35 @@ export function preprocessMathText(text: any): string {
     return `\\(${trimmed}\\)`;
   });
 
-  // 4. Restore all math blocks
-  mathBlocks.forEach((block, idx) => {
-    str = str.replace(`§§MATHBLOCK${idx}§§`, block);
-  });
+  // Helper to unwrap delimiters when nesting inside another math block
+  const unwrapDelimiters = (b: string) => {
+    if (!b || typeof b !== 'string') return '';
+    if (b.startsWith('\\(') && b.endsWith('\\)')) return b.slice(2, -2);
+    if (b.startsWith('\\[') && b.endsWith('\\]')) return b.slice(2, -2);
+    return b;
+  };
+
+  // Resolve placeholders inside mathBlocks themselves from newest to oldest (unwrapping nested delimiters)
+  for (let i = mathBlocks.length - 1; i >= 0; i--) {
+    for (let j = 0; j < mathBlocks.length; j++) {
+      if (i !== j && mathBlocks[i].includes(`§§MATHBLOCK${j}§§`)) {
+        mathBlocks[i] = mathBlocks[i].split(`§§MATHBLOCK${j}§§`).join(unwrapDelimiters(mathBlocks[j]));
+      }
+    }
+  }
+
+  // 4. Restore all math blocks repeatedly until all placeholders are fully resolved
+  let mathPasses = 0;
+  while (str.includes('§§MATHBLOCK') && mathPasses < 10) {
+    mathPasses++;
+    for (let idx = mathBlocks.length - 1; idx >= 0; idx--) {
+      str = str.split(`§§MATHBLOCK${idx}§§`).join(mathBlocks[idx]);
+    }
+  }
 
   // 5. Restore all preserved SVG/HTML blocks
   preservedHtmlBlocks.forEach((block, idx) => {
-    str = str.replace(`§§HTMLBLOCK${idx}§§`, block);
+    str = str.split(`§§HTMLBLOCK${idx}§§`).join(block);
   });
 
   // Clean up any remaining nested math delimiters: \(...\(...\)... -> \(...\)
