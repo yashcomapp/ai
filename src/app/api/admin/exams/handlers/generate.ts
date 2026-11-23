@@ -744,8 +744,15 @@ export async function GET(req: NextRequest) {
         console.warn('Chapter questions aggregation error bypassed:', countErr);
       }
 
-      SYLLABUS_DOC_CACHE.set(docId || cacheKey, { data: subjectData, timestamp: Date.now() });
-      if (docSnap && docSnap.id) SYLLABUS_DOC_CACHE.set(docSnap.id, { data: subjectData, timestamp: Date.now() });
+      SYLLABUS_DOC_CACHE.set(cacheKey, { data: subjectData, timestamp: Date.now() });
+      if (docId) {
+        SYLLABUS_DOC_CACHE.set(`${docId}_${activeVault}`, { data: subjectData, timestamp: Date.now() });
+        SYLLABUS_DOC_CACHE.set(docId, { data: subjectData, timestamp: Date.now() });
+      }
+      if (docSnap && docSnap.id) {
+        SYLLABUS_DOC_CACHE.set(`${docSnap.id}_${activeVault}`, { data: subjectData, timestamp: Date.now() });
+        SYLLABUS_DOC_CACHE.set(docSnap.id, { data: subjectData, timestamp: Date.now() });
+      }
       return NextResponse.json(subjectData);
     }
 

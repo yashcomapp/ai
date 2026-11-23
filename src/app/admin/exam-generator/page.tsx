@@ -171,6 +171,8 @@ interface SelectedTopic {
   topicNumber: string;
 }
 
+const CLIENT_CHAPTERS_CACHE = new Map<string, { chapters: any[]; topics: any[]; timestamp: number }>();
+
 export default function AdminExamGeneratorPage() {
   const { firebaseUser, logout } = useAuth();
   const router = useRouter();
@@ -401,7 +403,19 @@ export default function AdminExamGeneratorPage() {
     const subjectsChanged = prevSubsKeyRef.current !== newSubsKey;
     prevSubsKeyRef.current = newSubsKey;
 
-    if (subjectsChanged) {
+    const activeVault = (currentTemplate?.examCategory === 'foundation' || currentTemplate?.examCategory === 'mock') ? 'foundation' : 'exam';
+    const clientCacheKey = `${selectedBoard}_${selectedClass}_${newSubsKey}_${activeVault}`;
+    const cachedEntry = CLIENT_CHAPTERS_CACHE.get(clientCacheKey);
+
+    if (cachedEntry && (Date.now() - cachedEntry.timestamp < 300000)) {
+      setAvailableChapters(cachedEntry.chapters);
+      setAvailableTopics(cachedEntry.topics);
+      if (subjectsChanged) {
+        setGeneratedQuestions([]);
+        setShortfalls([]);
+        setAvailablePool([]);
+      }
+    } else if (subjectsChanged) {
       resetChaptersTopics();
     }
 
@@ -586,6 +600,7 @@ export default function AdminExamGeneratorPage() {
 
         setAvailableChapters(allChaptersList);
         setAvailableTopics(allTopicsList);
+        CLIENT_CHAPTERS_CACHE.set(clientCacheKey, { chapters: allChaptersList, topics: allTopicsList, timestamp: Date.now() });
 
         // Reconcile and deduplicate selectedTopics against live allTopicsList
         setSelectedTopics(prev => {
@@ -609,6 +624,7 @@ export default function AdminExamGeneratorPage() {
 
   const handleRefreshSyllabusCounts = async () => {
     if (selectedSubjects.size === 0) return;
+    CLIENT_CHAPTERS_CACHE.clear();
     setIsRefreshingCounts(true);
     try {
       await triggerLoadChapters(selectedSubjects);
