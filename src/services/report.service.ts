@@ -86,14 +86,20 @@ export class ReportService {
         const rollFallback = rawDigits.length >= 2 ? `Roll #${parseInt(rawDigits.slice(-3), 10)}` : 'Student';
 
         let studentDisplayName = data.studentName 
-          || (data.name && !data.name.startsWith('ST-') ? data.name : '') 
-          || studentMeta?.name 
-          || (studentMeta?.rollNumber ? `Roll #${studentMeta.rollNumber}` : rollFallback);
+          || (data.name && !data.name.startsWith('ST-') && !data.name.startsWith('TEMP-') ? data.name : '') 
+          || (studentMeta?.name && !studentMeta.name.startsWith('ST-') && !studentMeta.name.startsWith('TEMP-') ? studentMeta.name : '')
+          || 'Student';
 
-        // SSOT Invariant Rule B: Never display raw ST-YYYY-XXXXXX in user-facing UI
-        if (studentDisplayName.startsWith('ST-')) {
-          studentDisplayName = studentMeta?.name || (studentMeta?.rollNumber ? `Roll #${studentMeta.rollNumber}` : rollFallback);
+        // SSOT Invariant Rule B: Never display raw internal codes (ST-YYYY-XXXXXX or TEMP-*) in user-facing UI
+        if (studentDisplayName.startsWith('ST-') || studentDisplayName.startsWith('TEMP-') || studentDisplayName.includes('TEMP-')) {
+          studentDisplayName = (studentMeta?.name && !studentMeta.name.startsWith('ST-') && !studentMeta.name.startsWith('TEMP-'))
+            ? studentMeta.name
+            : 'Student';
         }
+
+        const cleanRollNumber = (studentMeta?.rollNumber && !studentMeta.rollNumber.startsWith('TEMP-') && !studentMeta.rollNumber.startsWith('ST-'))
+          ? studentMeta.rollNumber
+          : '';
 
         const title = data.examTitle || data.title || data.examName || data.examCode || 'Practice Attempt';
         const isPractice = title.toLowerCase().includes('practice') || data.attemptType === 'practice' || !data.examId;
@@ -106,7 +112,7 @@ export class ReportService {
           id: doc.id,
           ...data,
           studentName: studentDisplayName,
-          rollNumber: studentMeta?.rollNumber || '',
+          rollNumber: cleanRollNumber,
           className: studentMeta?.className || '',
           examTitle: title,
           reviewedByActor: evaluatorDisplay,

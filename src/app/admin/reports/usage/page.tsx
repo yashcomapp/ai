@@ -318,13 +318,13 @@ export default function SystemHealthAuditPage() {
                           <td style={{ padding: '6px 8px', fontWeight: 600, color: 'var(--text)' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                               <span>
-                                {log.studentName && !log.studentName.startsWith('ST-') 
+                                {log.studentName && !log.studentName.startsWith('ST-') && !log.studentName.startsWith('TEMP-')
                                   ? log.studentName 
-                                  : (log.rollNumber ? `Roll #${log.rollNumber}` : (log.studentCode ? `Roll #${parseInt(log.studentCode.replace(/[^0-9]/g, '').slice(-3) || '0', 10) || '—'}` : 'Student'))}
+                                  : 'Student'}
                               </span>
-                              {log.rollNumber && (
+                              {log.className && (
                                 <span style={{ fontSize: '9.5px', color: 'var(--text-muted)', background: 'var(--bg-soft, rgba(255,255,255,0.06))', padding: '1px 5px', borderRadius: '4px' }}>
-                                  #{log.rollNumber}
+                                  {log.className.startsWith('Class') ? log.className : `Class ${log.className}`}
                                 </span>
                               )}
                             </div>
