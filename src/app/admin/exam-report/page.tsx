@@ -958,6 +958,157 @@ function ExamReportContent() {
       container.style.pointerEvents = 'none';
       container.style.opacity = '1';
 
+      // 1. Analyze Tolebaji (Blind Guessing), Rushed Paper, and Penalty Trap Metrics
+      const studentAnalytics = sortedRoster.map(a => {
+        const stats = getAttemptStats(a);
+        const studentObj = students.find(s => s.studentCode === a.studentCode);
+        const rawName = (studentObj?.name && !studentObj.name.startsWith('ST-'))
+          ? studentObj.name
+          : ((a.studentName && !a.studentName.startsWith('ST-')) ? a.studentName : (studentObj?.name || 'Student'));
+        const displayName = formatReportStudentName(rawName);
+        const ratio = stats.correctCount > 0 
+          ? (stats.wrongCount / stats.correctCount) 
+          : (stats.wrongCount > 0 ? stats.wrongCount : 0);
+        const ratioText = ratio.toFixed(1);
+        const timeTakenSec = getReviewTimeTaken(a);
+        const timeTakenMins = (timeTakenSec / 60).toFixed(1);
+
+        return {
+          attempt: a,
+          stats,
+          displayName,
+          ratio,
+          ratioText,
+          timeTakenSec,
+          timeTakenMins,
+          isPenaltyTrap: stats.wrongCount > stats.correctCount || (stats.accuracy < 50 && stats.wrongCount >= 5),
+          isHighGamble: stats.isHighGamble || ratio >= 1.3
+        };
+      });
+
+      // Find Most Blind Guessed (सर्वाधिक टोलेबाजी) student
+      const tolebajiCandidates = [...studentAnalytics].filter(s => s.stats.wrongCount >= 5);
+      tolebajiCandidates.sort((a, b) => {
+        if (b.ratio !== a.ratio) return b.ratio - a.ratio;
+        return b.stats.wrongCount - a.stats.wrongCount;
+      });
+      const mostBlindGuessed = tolebajiCandidates.length > 0 ? tolebajiCandidates[0] : null;
+
+      // Find Most Rushed Paper (सबसे ज्यादा हड़बड़ी में पेपर हल किया)
+      const rushedCandidates = [...studentAnalytics].filter(s => s.stats.wrongCount >= 5 && s.timeTakenSec > 0);
+      rushedCandidates.sort((a, b) => {
+        if (a.timeTakenSec !== b.timeTakenSec) return a.timeTakenSec - b.timeTakenSec;
+        return b.stats.wrongCount - a.stats.wrongCount;
+      });
+      const mostRushed = rushedCandidates.length > 0 ? rushedCandidates[0] : null;
+
+      // Penalty trap students list (sorted by ratio desc)
+      const penaltyTrapList = studentAnalytics
+        .filter(s => s.isPenaltyTrap && s.stats.wrongCount >= 5)
+        .sort((a, b) => b.ratio - a.ratio);
+
+      // Construct Top Hindi Critical Highlights Banner
+      let topHindiAlertHtml = '';
+      if (mostBlindGuessed || mostRushed || penaltyTrapList.length > 0) {
+        topHindiAlertHtml = `
+          <!-- Critical Exam Insights Banner (Hindi Alert with Tolebaji & Penalty Ratio) -->
+          <div style="margin-bottom: 22px; padding: 18px 20px; background: #fff7ed; border: 1.8px solid #fdba74; border-left: 6px solid #ea580c; border-radius: 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans Devanagari', 'Mangal', 'Segoe UI Devanagari', sans-serif;">
+            
+            <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1.5px solid #fed7aa; padding-bottom: 10px; margin-bottom: 14px;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 22px; line-height: 1;">🚨</span>
+                <span style="color: #9a3412; font-size: 16px; font-weight: 900; letter-spacing: -0.2px;">
+                  परीक्षा विश्लेषण एवं सतर्कता सूचना (Exam Critical Analysis & Alert)
+                </span>
+              </div>
+              <span style="background: #ea580c; color: #ffffff; font-size: 11px; font-weight: 900; padding: 3px 10px; border-radius: 999px; text-transform: uppercase; letter-spacing: 0.5px;">
+                Negative Marking Impact
+              </span>
+            </div>
+
+            <!-- Top 2 Callout Cards: Most Blind Guessed & Most Rushed Paper -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">
+              
+              <!-- Card 1: Most Blind Guessed (सर्वाधिक टोलेबाजी) -->
+              <div style="background: #ffffff; border: 1.5px solid #fca5a5; border-radius: 10px; padding: 12px 16px; box-shadow: 0 2px 6px rgba(239, 68, 68, 0.08);">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+                  <span style="font-size: 13.5px; font-weight: 900; color: #991b1b;">🎲 सर्वाधिक टोलेबाजी (अंदाजे उत्तर)</span>
+                  <span style="font-size: 10.5px; font-weight: 800; background: #fee2e2; color: #991b1b; padding: 2px 7px; border-radius: 4px; border: 1px solid #fca5a5;">Most Blind Guessed</span>
+                </div>
+                ${mostBlindGuessed ? `
+                  <div style="font-size: 16px; font-weight: 900; color: #0f172a; margin-bottom: 4px;">
+                    👤 ${mostBlindGuessed.displayName}
+                  </div>
+                  <div style="font-size: 12.5px; color: #475569; font-weight: 700; margin-bottom: 4px;">
+                    • <strong>${mostBlindGuessed.stats.correctCount} Correct</strong> vs <strong style="color: #b91c1c;">${mostBlindGuessed.stats.wrongCount} Incorrect</strong>
+                  </div>
+                  <div style="font-size: 13px; color: #991b1b; font-weight: 900; background: #fef2f2; padding: 4px 8px; border-radius: 6px; border: 1px solid #fecaca; display: inline-block;">
+                    🔴 गलत उत्तर सही से <strong>${mostBlindGuessed.ratioText} गुना</strong> ज्यादा! (${mostBlindGuessed.ratioText}x Errors)
+                  </div>
+                  <div style="font-size: 11.5px; color: #7f1d1d; font-weight: 700; margin-top: 4px;">
+                    ➔ <strong style="color:#b91c1c;">-${mostBlindGuessed.stats.penaltyLost} Marks</strong> penalty loss
+                  </div>
+                ` : `
+                  <div style="font-size: 13px; color: #047857; font-weight: 800;">
+                    ✓ किसी भी छात्र ने अत्यधिक टोलेबाजी नहीं की।
+                  </div>
+                `}
+              </div>
+
+              <!-- Card 2: Most Rushed Paper (सबसे ज्यादा हड़बड़ी में पेपर हल किया) -->
+              <div style="background: #ffffff; border: 1.5px solid #fdba74; border-radius: 10px; padding: 12px 16px; box-shadow: 0 2px 6px rgba(234, 88, 12, 0.08);">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+                  <span style="font-size: 13.5px; font-weight: 900; color: #9a3412;">⚡ सबसे ज्यादा हड़बड़ी में पेपर हल किया</span>
+                  <span style="font-size: 10.5px; font-weight: 800; background: #ffedd5; color: #9a3412; padding: 2px 7px; border-radius: 4px; border: 1px solid #fed7aa;">Most Rushed Paper</span>
+                </div>
+                ${mostRushed ? `
+                  <div style="font-size: 16px; font-weight: 900; color: #0f172a; margin-bottom: 4px;">
+                    👤 ${mostRushed.displayName}
+                  </div>
+                  <div style="font-size: 12.5px; color: #475569; font-weight: 700; margin-bottom: 4px;">
+                    • Finished in only <strong>${mostRushed.timeTakenMins} mins</strong> (${mostRushed.stats.avgPaceSec}s/Q)!
+                  </div>
+                  <div style="font-size: 12.5px; color: #475569; font-weight: 700; margin-bottom: 4px;">
+                    • <strong>${mostRushed.stats.correctCount} Correct</strong> vs <strong style="color: #b91c1c;">${mostRushed.stats.wrongCount} Incorrect</strong>
+                  </div>
+                  <div style="font-size: 13px; color: #c2410c; font-weight: 900; background: #fff7ed; padding: 4px 8px; border-radius: 6px; border: 1px solid #fed7aa; display: inline-block;">
+                    🔴 गलत उत्तर सही से <strong>${mostRushed.ratioText} गुना</strong> ज्यादा! (${mostRushed.stats.wrongCount} mistakes)
+                  </div>
+                ` : `
+                  <div style="font-size: 13px; color: #047857; font-weight: 800;">
+                    ✓ सभी छात्रों ने पर्याप्त समय लेकर पेपर हल किया।
+                  </div>
+                `}
+              </div>
+
+            </div>
+
+            <!-- List of Penalty Trap Victims -->
+            ${penaltyTrapList.length > 0 ? `
+              <div style="background: #ffffff; border: 1.5px solid #fed7aa; border-radius: 10px; padding: 12px 16px;">
+                <div style="font-size: 13.5px; font-weight: 900; color: #9a3412; margin-bottom: 8px;">
+                  ⚠️ नेगेटिव मार्किंग के जाल में फंसे छात्र (Penalty Trap — गलत उत्तर सही से ज्यादा):
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px;">
+                  ${penaltyTrapList.map(s => `
+                    <div style="font-size: 12.5px; color: #1e293b; font-weight: 700; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px dashed #fed7aa; padding-bottom: 4px;">
+                      <span>• <strong style="color: #0f172a;">${s.displayName}</strong>: ${s.stats.correctCount}C vs <span style="color:#b91c1c;">${s.stats.wrongCount}W</span></span>
+                      <span style="font-weight: 900; color: #b91c1c;">
+                        ➔ ${s.ratioText} गुना ज्यादा गलतियां! <span style="color: #7f1d1d; font-size: 11px;">(-${s.stats.penaltyLost}m)</span>
+                      </span>
+                    </div>
+                  `).join('')}
+                </div>
+                <div style="margin-top: 10px; font-size: 12px; color: #7c2d12; font-weight: 700; line-height: 1.5; border-top: 1px solid #fed7aa; padding-top: 8px;">
+                  🎯 <strong>टोलेबाजी का गंभीर नुकसान (Tolebaji Impact):</strong> इन छात्रों के गलत उत्तर, सही उत्तरों से १.१ से २ गुना अधिक रहे, जिससे सही प्रश्नों से कमाए गए अंक भी नेगेटिव मार्किंग में कट गए।
+                </div>
+              </div>
+            ` : ''}
+
+          </div>
+        `;
+      }
+
       // Build roster rows with crisp, high-contrast typography and first+last name formatting
       const rowsHtml = sortedRoster.map((a, idx) => {
         const stats = getAttemptStats(a);
@@ -1088,6 +1239,9 @@ function ExamReportContent() {
             </div>
           </div>
 
+          <!-- Top Critical Exam Insights Alert Banner (Hindi) -->
+          ${topHindiAlertHtml}
+
           <!-- Table with Executive Dark Navy Header for Maximum Legibility -->
           <table style="width: 100%; border-collapse: collapse; border: 1.5px solid #cbd5e1; border-radius: 10px; overflow: hidden;">
             <thead>
@@ -1109,30 +1263,6 @@ function ExamReportContent() {
 
           <!-- Absent Box -->
           ${absentHtml}
-
-          <!-- Educational Insight Banner (Hindi / Marathi) - High Contrast Bullet List -->
-          <div style="margin-top: 20px; padding: 16px 20px; background: #f8fafc; border: 1.5px solid #cbd5e1; border-left: 5px solid #0284c7; border-radius: 10px;">
-            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
-              <span style="font-size: 20px; line-height: 1;">💡</span>
-              <strong style="color: #0f172a; font-size: 14.5px; font-weight: 900; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans Devanagari', 'Mangal', sans-serif;">
-                परीक्षा विश्लेषण एवं महत्त्वाचे नियम (Important Exam Insights):
-              </strong>
-            </div>
-            <ul style="margin: 0; padding-left: 20px; color: #1e293b; font-size: 13px; line-height: 1.75; font-weight: 600; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans Devanagari', 'Mangal', sans-serif;">
-              <li style="margin-bottom: 6px;">
-                <strong style="color: #0f172a;">📌 टोले मारणे (अंदाजे तुक्के लावणे) पूर्णपणे टाळा:</strong> प्रत्येक चुकीच्या उत्तराला <strong>-25% (१ गुण)</strong> नेगेटिव्ह मार्किंग आहे. टोले मारल्यास बरोबर उत्तरांचे कष्टाचे गुणही वजा होतात.
-              </li>
-              <li style="margin-bottom: 6px;">
-                <strong style="color: #0f172a;">📌 प्रश्न न आल्यास सोडून देणे (Unattempted) अधिक हिताचे:</strong> अंदाज लावून टोले मारण्यापेक्षा प्रश्न अनुत्तरित सोडल्यास कोणतेही गुण वजा होत नाहीत (Zero Penalty).
-              </li>
-              <li style="margin-bottom: 6px;">
-                <strong style="color: #0f172a;">📌 त्रुटींचे वेळेवर पुनरावलोकन (Review & Learn):</strong> परीक्षा केवळ गुणांसाठी नसून स्वतःच्या संकल्पनांमधील त्रुटी समजून घेण्यासाठी आहे.
-              </li>
-              <li>
-                <strong style="color: #0f172a;">📌 खरी समज आणि सातत्य (True Conceptual Learning):</strong> परीक्षेनंतर चुकलेल्या प्रश्नांचे योग्य स्पष्टीकरण समजून घेणे म्हणजेच खरी शैक्षणिक प्रगती.
-              </li>
-            </ul>
-          </div>
 
           <!-- Footer -->
           <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px; font-size: 11.5px; color: #475569; border-top: 1.5px solid #e2e8f0; padding-top: 12px;">
