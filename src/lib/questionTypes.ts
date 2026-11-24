@@ -20,6 +20,62 @@ export function isQuestionQuarantined(q: any): boolean {
   return q.isQuarantined === true || q.status === 'quarantined' || q.flaggedDefective === true;
 }
 
+/**
+ * Sanitizes a question object for delivery to student exam clients.
+ * Strips all server-side evaluation answers, solutions, explanations, numerical target values,
+ * and option-level correctness indicators (e.g. `isCorrect`) so that DevTools/Network inspection
+ * cannot reveal any answer keys.
+ */
+export function sanitizeQuestionForStudent(q: any): any {
+  if (!q || typeof q !== 'object') return q;
+  const {
+    correctAnswer,
+    correctAnswers,
+    correctOption,
+    correct_answer,
+    answer,
+    explanation,
+    explanationText,
+    solution,
+    solutionText,
+    solutionSteps,
+    steps,
+    answerLines,
+    markingScheme,
+    rubric,
+    numericalValue,
+    tolerance,
+    evalCriteria,
+    modelAnswer,
+    isCorrect,
+    ...safeQ
+  } = q;
+
+  if (Array.isArray(safeQ.options)) {
+    safeQ.options = safeQ.options.map((opt: any) => {
+      if (opt && typeof opt === 'object') {
+        const { isCorrect, is_correct, correct, isAnswer, score, ...cleanOpt } = opt;
+        return cleanOpt;
+      }
+      return opt;
+    });
+  }
+
+  if (Array.isArray(safeQ.subQuestions)) {
+    safeQ.subQuestions = safeQ.subQuestions.map(sanitizeQuestionForStudent);
+  }
+
+  return safeQ;
+}
+
+/**
+ * Sanitizes an array of questions for delivery to student exam clients.
+ */
+export function sanitizeQuestionsForStudent(questions: any[]): any[] {
+  if (!Array.isArray(questions)) return [];
+  return questions.map(sanitizeQuestionForStudent);
+}
+
 export const DEFAULT_ASSERTION_REASON_OPTIONS: string[] = [
   'Both Assertion (A) and Reason (R) are true, and Reason (R) is the correct explanation of Assertion (A).',
   'Both Assertion (A) and Reason (R) are true, but Reason (R) is NOT the correct explanation of Assertion (A).',

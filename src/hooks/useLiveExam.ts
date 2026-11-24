@@ -180,22 +180,83 @@ export function useLiveExam({
       }
     };
 
+    const preventContextMenu = (e: MouseEvent) => {
+      if (examType === 'practice') return;
+      e.preventDefault();
+      e.stopPropagation();
+    };
+
+    const preventShortcuts = (e: KeyboardEvent) => {
+      if (examType === 'practice') return;
+      const isCmd = e.ctrlKey || e.metaKey;
+      const key = e.key.toLowerCase();
+
+      // Intercept DevTools shortcuts: F12, Ctrl+Shift+I/J/C/K/E, Ctrl+U
+      if (
+        e.key === 'F12' ||
+        (isCmd && e.shiftKey && ['i', 'j', 'c', 'k', 'e'].includes(key)) ||
+        (isCmd && ['u', 's', 'p'].includes(key))
+      ) {
+        e.preventDefault();
+        e.stopPropagation();
+        recordViolation('devtools-attempt');
+        return;
+      }
+
+      // Intercept clipboard operations
+      if (isCmd && ['c', 'v', 'x'].includes(key)) {
+        e.preventDefault();
+        e.stopPropagation();
+        return;
+      }
+    };
+
+    const preventClipboard = (e: ClipboardEvent) => {
+      if (examType === 'practice') return;
+      e.preventDefault();
+      e.stopPropagation();
+    };
+
+    // DevTools docked dimension monitor
+    const checkDevTools = () => {
+      if (examType === 'practice') return;
+      const threshold = 160;
+      const widthDiff = window.outerWidth - window.innerWidth > threshold;
+      const heightDiff = window.outerHeight - window.innerHeight > threshold;
+      if (widthDiff || heightDiff) {
+        recordViolation('devtools-open');
+      }
+    };
+
+    const devToolsInterval = setInterval(checkDevTools, 2000);
+
     document.addEventListener('visibilitychange', handleVisibilityChange);
     window.addEventListener('blur', handleBlur);
     window.addEventListener('focus', handleFocus);
     document.addEventListener('fullscreenchange', handleFullscreenChange);
     document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    document.addEventListener('contextmenu', preventContextMenu, true);
+    window.addEventListener('keydown', preventShortcuts, true);
+    document.addEventListener('copy', preventClipboard, true);
+    document.addEventListener('cut', preventClipboard, true);
+    document.addEventListener('paste', preventClipboard, true);
 
     if (!liveSessionActiveRef.current) {
       initLiveProctoringSession(activeStreamRef.current).catch(err => console.warn('Live proctoring init error:', err));
     }
 
     return () => {
+      clearInterval(devToolsInterval);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('blur', handleBlur);
       window.removeEventListener('focus', handleFocus);
       document.removeEventListener('fullscreenchange', handleFullscreenChange);
       document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('contextmenu', preventContextMenu, true);
+      window.removeEventListener('keydown', preventShortcuts, true);
+      document.removeEventListener('copy', preventClipboard, true);
+      document.removeEventListener('cut', preventClipboard, true);
+      document.removeEventListener('paste', preventClipboard, true);
     };
   }, [started, examId, studentCode, examType]);
 

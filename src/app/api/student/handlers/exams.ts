@@ -5,7 +5,7 @@ import { verifyRole, verifyAnyRole, isStudentLimited } from '@/lib/auth';
 import { ExamRepository } from '@/repositories/exam.repository';
 import { ExamService, isAssignmentApplicableToStudent } from '@/services/exam.service';
 import { AttemptService } from '@/services/attempt.service';
-import { deriveTopicCodeFromQuestionCode, evaluateQuestionAnswer } from '@/lib/questionTypes';
+import { deriveTopicCodeFromQuestionCode, evaluateQuestionAnswer, sanitizeQuestionsForStudent } from '@/lib/questionTypes';
 import { invalidateCache } from '@/lib/firebase/cache';
 import { ExamReviewService } from '@/services/examReview.service';
 import { parseDateInput, getMidnightIST } from '@/lib/dateUtils';
@@ -136,11 +136,8 @@ export async function GET(req: NextRequest) {
       rawQuestions = Array.from(new Set(Array.from(questionMap.values())));
     }
 
-    // Strip correct answers to prevent client-side cheating inspection
-    const secureQuestions = rawQuestions.map((q: any) => {
-      const { correctAnswer, correctAnswers, explanation, ...secureQ } = q;
-      return secureQ;
-    });
+    // Strip correct answers, solutions, and option-level correctness to prevent client-side inspection
+    const secureQuestions = sanitizeQuestionsForStudent(rawQuestions);
 
     let topicName = null;
     const firstQCode = secureQuestions[0]?.questionCode || '';

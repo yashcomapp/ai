@@ -5,6 +5,7 @@ import { verifyRole, verifyAnyRole, isStudentLimited } from '@/lib/auth';
 import { ExamService, isAssignmentApplicableToStudent } from '@/services/exam.service';
 import { cleanSubjectiveExamName } from '@/lib/studentDb';
 import { invalidateCache } from '@/lib/firebase/cache';
+import { sanitizeQuestionsForStudent } from '@/lib/questionTypes';
 
 async function getAttemptQuestions(attempt: any, exam: any): Promise<any[]> {
   if (attempt && Array.isArray(attempt.questionSnapshot) && attempt.questionSnapshot.length > 0) {
@@ -104,10 +105,7 @@ export async function GET(req: NextRequest) {
       }
       const examData = examSnap.data()!;
       const rawQuestions = await getAttemptQuestions(null, examData);
-      const questions = rawQuestions.map(q => {
-        const { solution, answerLines, steps, ...safeQuestion } = q;
-        return safeQuestion;
-      });
+      const questions = sanitizeQuestionsForStudent(rawQuestions);
       const durationSeconds = (Number(examData.totalTime) || (Number(examData.totalMarks) * 2) || 60) * 60;
       return NextResponse.json({
         status: 'active',
@@ -449,11 +447,7 @@ export async function GET(req: NextRequest) {
 
     // Retrieve questions and strip solution details for security
     const rawQuestions = await getAttemptQuestions(inProgressAttempt, examData);
-    const questions = rawQuestions.map(q => {
-      // Clean solution, answerLines, and steps
-      const { solution, answerLines, steps, ...safeQuestion } = q;
-      return safeQuestion;
-    });
+    const questions = sanitizeQuestionsForStudent(rawQuestions);
 
     const cleanExamData = {
       id: examSnap.id,

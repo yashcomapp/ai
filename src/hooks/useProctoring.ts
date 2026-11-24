@@ -475,18 +475,39 @@ export function useProctoring({
     const preventContextMenu = (e: MouseEvent) => {
       if (lockdownContextMenu) {
         e.preventDefault();
+        e.stopPropagation();
       }
     };
 
     const preventShortcuts = (e: KeyboardEvent) => {
       if (!lockdownShortcuts) return;
       const isCmd = e.ctrlKey || e.metaKey;
-      if (isCmd && ['c', 'v', 'x', 'p', 's'].includes(e.key.toLowerCase())) {
+      const key = e.key.toLowerCase();
+
+      // Intercept DevTools shortcuts: F12, Ctrl+Shift+I/J/C/K/E, Ctrl+U
+      if (
+        e.key === 'F12' ||
+        (isCmd && e.shiftKey && ['i', 'j', 'c', 'k', 'e'].includes(key)) ||
+        (isCmd && ['u', 's', 'p'].includes(key))
+      ) {
         e.preventDefault();
-        alert('🚨 Copying, pasting, cutting, printing, and saving are strictly disabled during this exam.');
+        e.stopPropagation();
+        triggerTabSwitchViolation('DevTools or inspection shortcut attempted');
+        return;
       }
-      if (e.key === 'F12') {
+
+      // Intercept clipboard operations
+      if (isCmd && ['c', 'v', 'x'].includes(key)) {
         e.preventDefault();
+        e.stopPropagation();
+        return;
+      }
+    };
+
+    const preventClipboard = (e: ClipboardEvent) => {
+      if (lockdownShortcuts) {
+        e.preventDefault();
+        e.stopPropagation();
       }
     };
 
@@ -503,6 +524,9 @@ export function useProctoring({
     }
     if (lockdownShortcuts) {
       document.addEventListener('keydown', preventShortcuts);
+      document.addEventListener('copy', preventClipboard);
+      document.addEventListener('cut', preventClipboard);
+      document.addEventListener('paste', preventClipboard);
     }
 
     return () => {
@@ -512,6 +536,9 @@ export function useProctoring({
       window.removeEventListener('focus', handleFocus);
       document.removeEventListener('contextmenu', preventContextMenu);
       document.removeEventListener('keydown', preventShortcuts);
+      document.removeEventListener('copy', preventClipboard);
+      document.removeEventListener('cut', preventClipboard);
+      document.removeEventListener('paste', preventClipboard);
     };
   }, [enabled, lockdownShortcuts, lockdownContextMenu, lockdownWindowFocus, lockdownFullscreen, triggerTabSwitchViolation]);
 

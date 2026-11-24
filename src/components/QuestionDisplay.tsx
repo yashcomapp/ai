@@ -1252,6 +1252,10 @@ export const QuestionDisplay: React.FC<QuestionDisplayProps> = React.memo(({
   return (
     <div
       className={`question-display-root ${className}`.trim()}
+      onContextMenu={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+      }}
       style={{
         width: '100%',
         position: 'relative',
