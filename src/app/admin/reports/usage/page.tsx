@@ -40,11 +40,14 @@ export default function SystemHealthAuditPage() {
     return () => { isMounted = false; };
   }, [firebaseUser, getUsageReport]);
 
-  const usageStats = data?.usageStats || {
+  const usageStats = data?.stats || data?.usageStats || {
     totalUsers: 0,
     totalExams: 0,
     totalQuestions: 0,
-    totalAttempts: 0
+    totalAttempts: 0,
+    totalEvaluations: 0,
+    parentReviews: 0,
+    studentReviews: 0
   };
 
   const evaluations: any[] = data?.evaluations || [];
@@ -149,7 +152,7 @@ export default function SystemHealthAuditPage() {
                   Registered Profiles
                 </div>
                 <div style={{ fontSize: '20px', fontWeight: 800, color: 'var(--accent)' }}>
-                  {usageStats.totalUsers}
+                  {Number(usageStats.totalUsers || 0).toLocaleString()}
                 </div>
                 <div style={{ fontSize: '10.5px', color: 'var(--text-muted)', marginTop: '2px' }}>
                   Active students and linked accounts
@@ -167,14 +170,32 @@ export default function SystemHealthAuditPage() {
                   Question Bank Pool
                 </div>
                 <div style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text)' }}>
-                  {usageStats.totalQuestions}
+                  {Number(usageStats.totalQuestions || 0).toLocaleString()}
                 </div>
                 <div style={{ fontSize: '10.5px', color: 'var(--text-muted)', marginTop: '2px' }}>
                   Curriculum-mapped items
                 </div>
               </div>
 
-              {/* Card 3: Exam Submissions */}
+              {/* Card 3: Conducted Exams */}
+              <div style={{
+                background: 'var(--surface)',
+                border: '1px solid var(--border-light)',
+                borderRadius: '8px',
+                padding: '10px 12px'
+              }}>
+                <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '2px' }}>
+                  Conducted Exams
+                </div>
+                <div style={{ fontSize: '20px', fontWeight: 800, color: '#38bdf8' }}>
+                  {Number(usageStats.totalExams || 0).toLocaleString()}
+                </div>
+                <div style={{ fontSize: '10.5px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                  Curriculum & benchmark tests
+                </div>
+              </div>
+
+              {/* Card 4: Evaluated Submissions */}
               <div style={{
                 background: 'var(--surface)',
                 border: '1px solid var(--border-light)',
@@ -185,35 +206,57 @@ export default function SystemHealthAuditPage() {
                   Evaluated Submissions
                 </div>
                 <div style={{ fontSize: '20px', fontWeight: 800, color: 'var(--success)' }}>
-                  {usageStats.totalAttempts}
+                  {Number((usageStats.totalEvaluations || usageStats.totalAttempts) || 0).toLocaleString()}
                 </div>
                 <div style={{ fontSize: '10.5px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                  Total graded exam & practice attempts
+                  Total graded exam & practice reviews
                 </div>
               </div>
+            </div>
 
-              {/* Card 4: Zero-Cost Cloud Guard */}
-              <div style={{
-                background: 'var(--surface)',
-                border: '1.5px solid rgba(34, 197, 94, 0.4)',
-                borderRadius: '8px',
-                padding: '10px 12px'
-              }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
-                  <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--success)' }}>
-                    Cloud Run & Firestore Cost
-                  </span>
-                  <span style={{ fontSize: '9.5px', fontWeight: 700, padding: '1px 5px', borderRadius: '4px', background: 'rgba(34, 197, 94, 0.15)', color: 'var(--success)' }}>
-                    100% Free Tier
-                  </span>
-                </div>
-                <div style={{ fontSize: '20px', fontWeight: 800, color: 'var(--success)' }}>
-                  ₹0.00
-                </div>
-                <div style={{ fontSize: '10.5px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                  Zero heavy real-time blobs • Under 10GB egress
+            {/* Google Cloud Infrastructure & Live Billing Notice */}
+            <div style={{
+              background: 'var(--surface)',
+              border: '1px solid var(--border-light)',
+              borderLeft: '4px solid #38bdf8',
+              borderRadius: '8px',
+              padding: '10px 14px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '10px'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '18px' }}>☁️</span>
+                <div>
+                  <div style={{ fontSize: '12.5px', fontWeight: 800, color: 'var(--text)' }}>
+                    Google Cloud Infrastructure & Billing
+                  </div>
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                    Project: <strong style={{ color: 'var(--text)' }}>ai-yashcom</strong> • Live Cloud Run compute, Artifact Registry image storage, and Firestore egress costs must be monitored directly in Google Cloud Console.
+                  </div>
                 </div>
               </div>
+              <a
+                href="https://console.cloud.google.com/billing"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  fontSize: '11px',
+                  fontWeight: 800,
+                  color: '#ffffff',
+                  background: 'var(--accent, #3b82f6)',
+                  padding: '5px 12px',
+                  borderRadius: '6px',
+                  textDecoration: 'none',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '5px'
+                }}
+              >
+                Open Google Cloud Billing ↗
+              </a>
             </div>
 
             {/* Forensic Submission Audit Trail */}

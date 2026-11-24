@@ -24,7 +24,8 @@ export class ReportService {
 
     const [
       usersCountSnap,
-      examsCountSnap,
+      objExamsCountSnap,
+      subjExamsCountSnap,
       questionsCountSnap,
       attemptsCountSnap,
       parentEvalsSnap,
@@ -34,7 +35,8 @@ export class ReportService {
       studentsSnap
     ] = await Promise.all([
       adminDb.collection('users').count().get(),
-      adminDb.collection('subjectiveExams').count().get(),
+      adminDb.collection('exams').count().get().catch(() => ({ data: () => ({ count: 0 }) } as any)),
+      adminDb.collection('subjectiveExams').count().get().catch(() => ({ data: () => ({ count: 0 }) } as any)),
       adminDb.collection('questions').count().get(),
       adminDb.collection('examAttempts').count().get(),
       adminDb.collection('evaluations').where('evaluatorType', '==', 'parent').count().get().catch(() => ({ data: () => ({ count: 0 }) } as any)),
@@ -114,17 +116,22 @@ export class ReportService {
       })
       .filter((e: any) => !isDemoUser(e));
 
+    const totalExams = (objExamsCountSnap.data()?.count || 0) + (subjExamsCountSnap.data()?.count || 0);
+
+    const statsData = {
+      totalUsers: usersCountSnap.data().count,
+      totalExams,
+      totalQuestions: questionsCountSnap.data().count,
+      totalAttempts: attemptsCountSnap.data().count,
+      totalEvaluations: totalEvalsSnap.data().count,
+      parentReviews,
+      studentReviews
+    };
+
     const result = {
       success: true,
-      stats: {
-        totalUsers: usersCountSnap.data().count,
-        totalExams: examsCountSnap.data().count,
-        totalQuestions: questionsCountSnap.data().count,
-        totalAttempts: attemptsCountSnap.data().count,
-        totalEvaluations: totalEvalsSnap.data().count,
-        parentReviews,
-        studentReviews
-      },
+      stats: statsData,
+      usageStats: statsData,
       evaluations
     };
 
