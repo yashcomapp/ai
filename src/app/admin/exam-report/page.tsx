@@ -1012,70 +1012,74 @@ function ExamReportContent() {
       if (mostBlindGuessed || mostRushed || penaltyTrapList.length > 0) {
         topHindiAlertHtml = `
           <!-- Critical Exam Insights Banner (Hindi Alert with Tolebaji & Penalty Ratio) -->
-          <div style="margin-bottom: 22px; padding: 18px 20px; background: #fff7ed; border: 1.8px solid #fdba74; border-left: 6px solid #ea580c; border-radius: 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans Devanagari', 'Mangal', 'Segoe UI Devanagari', sans-serif;">
+          <div style="margin-bottom: 14px; padding: 10px 14px; background: #fff7ed; border: 1.5px solid #fed7aa; border-left: 5px solid #ea580c; border-radius: 10px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans Devanagari', 'Mangal', 'Segoe UI Devanagari', sans-serif;">
             
-            <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1.5px solid #fed7aa; padding-bottom: 10px; margin-bottom: 14px;">
-              <div style="display: flex; align-items: center; gap: 8px;">
-                <span style="font-size: 22px; line-height: 1;">🚨</span>
-                <span style="color: #9a3412; font-size: 16px; font-weight: 900; letter-spacing: -0.2px;">
+            <!-- Compact Title Bar -->
+            <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #fed7aa; padding-bottom: 6px; margin-bottom: 8px;">
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <span style="font-size: 16px; line-height: 1;">🚨</span>
+                <span style="color: #9a3412; font-size: 13.5px; font-weight: 900; letter-spacing: -0.2px;">
                   परीक्षा विश्लेषण एवं सतर्कता सूचना (Exam Critical Analysis & Alert)
                 </span>
               </div>
-              <span style="background: #ea580c; color: #ffffff; font-size: 11px; font-weight: 900; padding: 3px 10px; border-radius: 999px; text-transform: uppercase; letter-spacing: 0.5px;">
+              <span style="background: #ea580c; color: #ffffff; font-size: 10px; font-weight: 900; padding: 2px 8px; border-radius: 999px; text-transform: uppercase; letter-spacing: 0.5px;">
                 Negative Marking Impact
               </span>
             </div>
 
-            <!-- Top 2 Callout Cards: Most Blind Guessed & Most Rushed Paper -->
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">
+            <!-- Top 2 Callout Cards: Each in exactly 3 rows (SS2 Compact Standard) -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 8px;">
               
               <!-- Card 1: Most Blind Guessed (सर्वाधिक टोलेबाजी) -->
-              <div style="background: #ffffff; border: 1.5px solid #fca5a5; border-radius: 10px; padding: 12px 16px; box-shadow: 0 2px 6px rgba(239, 68, 68, 0.08);">
-                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
-                  <span style="font-size: 13.5px; font-weight: 900; color: #991b1b;">🎲 सर्वाधिक टोलेबाजी (अंदाजे उत्तर)</span>
-                  <span style="font-size: 10.5px; font-weight: 800; background: #fee2e2; color: #991b1b; padding: 2px 7px; border-radius: 4px; border: 1px solid #fca5a5;">Most Blind Guessed</span>
-                </div>
+              <div style="background: #ffffff; border: 1px solid #fca5a5; border-radius: 8px; padding: 8px 12px; display: flex; flex-direction: column; gap: 4px; box-shadow: 0 1px 3px rgba(239, 68, 68, 0.06);">
                 ${mostBlindGuessed ? `
-                  <div style="font-size: 16px; font-weight: 900; color: #0f172a; margin-bottom: 4px;">
-                    👤 ${mostBlindGuessed.displayName}
+                  <!-- Row 1: Title & Student Name -->
+                  <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <div style="font-size: 12px; font-weight: 900; color: #991b1b;">
+                      🎲 सर्वाधिक टोलेबाजी: <span style="font-size: 14px; color: #0f172a;">${mostBlindGuessed.displayName}</span>
+                    </div>
+                    <span style="font-size: 9.5px; font-weight: 800; background: #fee2e2; color: #991b1b; padding: 1px 6px; border-radius: 4px; border: 1px solid #fca5a5;">Most Blind Guessed</span>
                   </div>
-                  <div style="font-size: 12.5px; color: #475569; font-weight: 700; margin-bottom: 4px;">
+
+                  <!-- Row 2: Exam Stats & Penalty Lost -->
+                  <div style="font-size: 11.5px; color: #475569; font-weight: 700;">
                     • <strong>${mostBlindGuessed.stats.correctCount} Correct</strong> vs <strong style="color: #b91c1c;">${mostBlindGuessed.stats.wrongCount} Incorrect</strong>
+                    <span style="color: #991b1b; margin-left: 8px; font-weight: 800;">(➔ -${mostBlindGuessed.stats.penaltyLost} Marks penalty loss)</span>
                   </div>
-                  <div style="font-size: 13px; color: #991b1b; font-weight: 900; background: #fef2f2; padding: 4px 8px; border-radius: 6px; border: 1px solid #fecaca; display: inline-block;">
-                    🔴 गलत उत्तर सही से <strong>${mostBlindGuessed.ratioText} गुना</strong> ज्यादा! (${mostBlindGuessed.ratioText}x Errors)
-                  </div>
-                  <div style="font-size: 11.5px; color: #7f1d1d; font-weight: 700; margin-top: 4px;">
-                    ➔ <strong style="color:#b91c1c;">-${mostBlindGuessed.stats.penaltyLost} Marks</strong> penalty loss
+
+                  <!-- Row 3: Ratio Highlight -->
+                  <div style="font-size: 12px; color: #991b1b; font-weight: 900; background: #fef2f2; padding: 2px 8px; border-radius: 5px; border: 1px solid #fecaca; display: inline-flex; align-items: center; gap: 4px; width: fit-content;">
+                    <span>🔴</span> गलत उत्तर सही से <strong>${mostBlindGuessed.ratioText} गुना</strong> ज्यादा! (${mostBlindGuessed.ratioText}x Errors)
                   </div>
                 ` : `
-                  <div style="font-size: 13px; color: #047857; font-weight: 800;">
+                  <div style="font-size: 12px; color: #047857; font-weight: 800; padding: 8px 0;">
                     ✓ किसी भी छात्र ने अत्यधिक टोलेबाजी नहीं की।
                   </div>
                 `}
               </div>
 
               <!-- Card 2: Most Rushed Paper (सबसे ज्यादा हड़बड़ी में पेपर हल किया) -->
-              <div style="background: #ffffff; border: 1.5px solid #fdba74; border-radius: 10px; padding: 12px 16px; box-shadow: 0 2px 6px rgba(234, 88, 12, 0.08);">
-                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
-                  <span style="font-size: 13.5px; font-weight: 900; color: #9a3412;">⚡ सबसे ज्यादा हड़बड़ी में पेपर हल किया</span>
-                  <span style="font-size: 10.5px; font-weight: 800; background: #ffedd5; color: #9a3412; padding: 2px 7px; border-radius: 4px; border: 1px solid #fed7aa;">Most Rushed Paper</span>
-                </div>
+              <div style="background: #ffffff; border: 1px solid #fdba74; border-radius: 8px; padding: 8px 12px; display: flex; flex-direction: column; gap: 4px; box-shadow: 0 1px 3px rgba(234, 88, 12, 0.06);">
                 ${mostRushed ? `
-                  <div style="font-size: 16px; font-weight: 900; color: #0f172a; margin-bottom: 4px;">
-                    👤 ${mostRushed.displayName}
+                  <!-- Row 1: Title & Student Name -->
+                  <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <div style="font-size: 12px; font-weight: 900; color: #9a3412;">
+                      ⚡ सबसे ज्यादा हड़बड़ी: <span style="font-size: 14px; color: #0f172a;">${mostRushed.displayName}</span>
+                    </div>
+                    <span style="font-size: 9.5px; font-weight: 800; background: #ffedd5; color: #9a3412; padding: 1px 6px; border-radius: 4px; border: 1px solid #fed7aa;">Most Rushed</span>
                   </div>
-                  <div style="font-size: 12.5px; color: #475569; font-weight: 700; margin-bottom: 4px;">
-                    • Finished in only <strong>${mostRushed.timeTakenMins} mins</strong> (${mostRushed.stats.avgPaceSec}s/Q)!
+
+                  <!-- Row 2: Time Taken & Exam Stats -->
+                  <div style="font-size: 11.5px; color: #475569; font-weight: 700;">
+                    • Finished in <strong>${mostRushed.timeTakenMins}m</strong> (${mostRushed.stats.avgPaceSec}s/Q) • <strong>${mostRushed.stats.correctCount}C</strong> vs <strong style="color: #b91c1c;">${mostRushed.stats.wrongCount}W</strong>
                   </div>
-                  <div style="font-size: 12.5px; color: #475569; font-weight: 700; margin-bottom: 4px;">
-                    • <strong>${mostRushed.stats.correctCount} Correct</strong> vs <strong style="color: #b91c1c;">${mostRushed.stats.wrongCount} Incorrect</strong>
-                  </div>
-                  <div style="font-size: 13px; color: #c2410c; font-weight: 900; background: #fff7ed; padding: 4px 8px; border-radius: 6px; border: 1px solid #fed7aa; display: inline-block;">
-                    🔴 गलत उत्तर सही से <strong>${mostRushed.ratioText} गुना</strong> ज्यादा! (${mostRushed.stats.wrongCount} mistakes)
+
+                  <!-- Row 3: Ratio Highlight -->
+                  <div style="font-size: 12px; color: #c2410c; font-weight: 900; background: #fff7ed; padding: 2px 8px; border-radius: 5px; border: 1px solid #fed7aa; display: inline-flex; align-items: center; gap: 4px; width: fit-content;">
+                    <span>🔴</span> गलत उत्तर सही से <strong>${mostRushed.ratioText} गुना</strong> ज्यादा! (${mostRushed.stats.wrongCount} mistakes)
                   </div>
                 ` : `
-                  <div style="font-size: 13px; color: #047857; font-weight: 800;">
+                  <div style="font-size: 12px; color: #047857; font-weight: 800; padding: 8px 0;">
                     ✓ सभी छात्रों ने पर्याप्त समय लेकर पेपर हल किया।
                   </div>
                 `}
@@ -1083,23 +1087,23 @@ function ExamReportContent() {
 
             </div>
 
-            <!-- List of Penalty Trap Victims -->
+            <!-- List of Penalty Trap Victims: Compact Layout with NO gap between name and comment (SS1) -->
             ${penaltyTrapList.length > 0 ? `
-              <div style="background: #ffffff; border: 1.5px solid #fed7aa; border-radius: 10px; padding: 12px 16px;">
-                <div style="font-size: 13.5px; font-weight: 900; color: #9a3412; margin-bottom: 8px;">
+              <div style="background: #ffffff; border: 1px solid #fed7aa; border-radius: 8px; padding: 8px 12px;">
+                <div style="font-size: 12.5px; font-weight: 900; color: #9a3412; margin-bottom: 6px;">
                   ⚠️ नेगेटिव मार्किंग के जाल में फंसे छात्र (Penalty Trap — गलत उत्तर सही से ज्यादा):
                 </div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px 16px;">
                   ${penaltyTrapList.map(s => `
-                    <div style="font-size: 12.5px; color: #1e293b; font-weight: 700; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px dashed #fed7aa; padding-bottom: 4px;">
-                      <span>• <strong style="color: #0f172a;">${s.displayName}</strong>: ${s.stats.correctCount}C vs <span style="color:#b91c1c;">${s.stats.wrongCount}W</span></span>
+                    <div style="font-size: 11.5px; color: #1e293b; font-weight: 700; display: flex; align-items: baseline; gap: 6px; border-bottom: 1px dashed #fed7aa; padding: 2px 0; white-space: nowrap;">
+                      <span>• <strong style="color: #0f172a;">${s.displayName}</strong> (${s.stats.correctCount}C vs <span style="color:#b91c1c;">${s.stats.wrongCount}W</span>):</span>
                       <span style="font-weight: 900; color: #b91c1c;">
-                        ➔ ${s.ratioText} गुना ज्यादा गलतियां! <span style="color: #7f1d1d; font-size: 11px;">(-${s.stats.penaltyLost}m)</span>
+                        ➔ ${s.ratioText} गुना ज्यादा गलतियां! <span style="color: #7f1d1d; font-size: 10.5px;">(-${s.stats.penaltyLost}m)</span>
                       </span>
                     </div>
                   `).join('')}
                 </div>
-                <div style="margin-top: 10px; font-size: 12px; color: #7c2d12; font-weight: 700; line-height: 1.5; border-top: 1px solid #fed7aa; padding-top: 8px;">
+                <div style="margin-top: 6px; font-size: 11px; color: #7c2d12; font-weight: 700; line-height: 1.4; border-top: 1px solid #fed7aa; padding-top: 5px;">
                   🎯 <strong>टोलेबाजी का गंभीर नुकसान (Tolebaji Impact):</strong> इन छात्रों के गलत उत्तर, सही उत्तरों से १.१ से २ गुना अधिक रहे, जिससे सही प्रश्नों से कमाए गए अंक भी नेगेटिव मार्किंग में कट गए।
                 </div>
               </div>
@@ -1215,27 +1219,32 @@ function ExamReportContent() {
             </div>
           </div>
 
-          <!-- KPI Summary Cards -->
-          <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 20px;">
-            <div style="background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 10px; padding: 12px 14px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
-              <div style="font-size: 26px; font-weight: 900; color: #0f172a; line-height: 1.1;">${totalAssigned}</div>
-              <div style="font-size: 11.5px; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.6px; margin-top: 4px;">Assigned</div>
+          <!-- KPI Summary: Single Compact Line (SS3 Standard) -->
+          <div style="display: flex; align-items: center; justify-content: space-around; background: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 7px 14px; margin-bottom: 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+            <div style="display: flex; align-items: baseline; gap: 5px;">
+              <span style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Assigned:</span>
+              <strong style="font-size: 15px; font-weight: 900; color: #0f172a;">${totalAssigned}</strong>
             </div>
-            <div style="background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 10px; padding: 12px 14px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
-              <div style="font-size: 26px; font-weight: 900; color: #047857; line-height: 1.1;">${sortedRoster.length}</div>
-              <div style="font-size: 11.5px; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.6px; margin-top: 4px;">Submitted</div>
+            <span style="color: #cbd5e1; font-weight: 300;">|</span>
+            <div style="display: flex; align-items: baseline; gap: 5px;">
+              <span style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Submitted:</span>
+              <strong style="font-size: 15px; font-weight: 900; color: #047857;">${sortedRoster.length}</strong>
             </div>
-            <div style="background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 10px; padding: 12px 14px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
-              <div style="font-size: 26px; font-weight: 900; color: ${notStartedStudents.length > 0 ? '#991b1b' : '#475569'}; line-height: 1.1;">${notStartedStudents.length}</div>
-              <div style="font-size: 11.5px; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.6px; margin-top: 4px;">Absent</div>
+            <span style="color: #cbd5e1; font-weight: 300;">|</span>
+            <div style="display: flex; align-items: baseline; gap: 5px;">
+              <span style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Absent:</span>
+              <strong style="font-size: 15px; font-weight: 900; color: ${notStartedStudents.length > 0 ? '#991b1b' : '#64748b'};">${notStartedStudents.length}</strong>
             </div>
-            <div style="background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 10px; padding: 12px 14px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
-              <div style="font-size: 26px; font-weight: 900; color: #047857; line-height: 1.1;">${maxScore}/${exam.totalMarks || 96}</div>
-              <div style="font-size: 11.5px; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.6px; margin-top: 4px;">Highest (${maxPct}%)</div>
+            <span style="color: #cbd5e1; font-weight: 300;">|</span>
+            <div style="display: flex; align-items: baseline; gap: 5px;">
+              <span style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Highest:</span>
+              <strong style="font-size: 15px; font-weight: 900; color: #047857;">${maxScore}/${exam.totalMarks || 96}</strong>
+              <span style="font-size: 12px; font-weight: 800; color: #047857;">(${maxPct}%)</span>
             </div>
-            <div style="background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 10px; padding: 12px 14px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
-              <div style="font-size: 26px; font-weight: 900; color: ${getDeepScoreColor(avgPct)}; line-height: 1.1;">${avgPct}%</div>
-              <div style="font-size: 11.5px; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.6px; margin-top: 4px;">Batch Average</div>
+            <span style="color: #cbd5e1; font-weight: 300;">|</span>
+            <div style="display: flex; align-items: baseline; gap: 5px;">
+              <span style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Batch Avg:</span>
+              <strong style="font-size: 15px; font-weight: 900; color: ${getDeepScoreColor(avgPct)};">${avgPct}%</strong>
             </div>
           </div>
 
