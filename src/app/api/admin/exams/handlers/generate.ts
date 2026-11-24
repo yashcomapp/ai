@@ -293,6 +293,11 @@ export async function GET(req: NextRequest) {
       const cleanClassVal = String(classVal).replace(/\D/g, '');
       const classVariations = Array.from(new Set([cleanClassVal, Number(cleanClassVal), classVal].filter(v => v !== undefined && v !== '')));
 
+      const bCode = getCanonicalBoardCode(subjectData.boardCode || subjectData.board || boardVal);
+      const cls = cleanClassVal;
+      const sCode = getCanonicalSubjectCode(bCode, cls, subjectCodeVal || subjectVal);
+      const canonicalTopicPrefix = `${bCode}-${cls}-${sCode}`;
+
       try {
 
         let questionsSnap: admin.firestore.QuerySnapshot | null = null;
@@ -380,8 +385,12 @@ export async function GET(req: NextRequest) {
             exam.isPractice === true;
           if (isPractice) return false;
 
-          const targetSubjCode = getCanonicalSubjectCode(bCode, cls, subjectCodeVal || subjectVal);
-          const examSubjCode = getCanonicalSubjectCode(exam.boardCode || exam.board || bCode, exam.class || cls, exam.subjectCode || exam.subject || (Array.isArray(exam.subjects) ? exam.subjects[0] : ''));
+          const targetSubjCode = sCode;
+          const examSubjCode = getCanonicalSubjectCode(
+            exam.boardCode || exam.board || bCode,
+            exam.class || cls,
+            exam.subjectCode || exam.subject || (Array.isArray(exam.subjects) ? exam.subjects[0] : '')
+          );
           if (examSubjCode !== targetSubjCode) return false;
 
           return true;
@@ -401,11 +410,6 @@ export async function GET(req: NextRequest) {
       } catch (examErr) {
         console.warn('Exams count query bypassed in generate handler:', examErr);
       }
-
-      const bCode = subjectData.boardCode || (String(subjectData.board || '').toUpperCase().includes('CBSE') ? 'CBSE' : 'MH');
-      const cls = String(subjectData.class || '');
-      const sCode = String(subjectData.subjectCode || '');
-      const canonicalTopicPrefix = `${bCode}-${cls}-${sCode}`;
 
       try {
         const chapters = Array.isArray(subjectData.chapters) ? subjectData.chapters : [];
@@ -532,7 +536,7 @@ export async function GET(req: NextRequest) {
               subtopics.forEach((sub: any) => {
                 if (!sub || typeof sub !== 'object') return;
                 const subNumStr = String(sub.number ?? '').trim();
-                const cleanSubCode = String(sub.subtopicCode || `${canonicalTopicPrefix}-${chapNumStr}-${subNumStr}`).trim();
+                const cleanSubCode = String(sub.subtopicCode || sub.topicCode || `${canonicalTopicPrefix}-${chapNumStr}-${subNumStr}`).trim();
                 const subTitle = String(sub.name || sub.title || '').trim();
                 const cleanSubTitle = cleanStringForMatch(subTitle);
 
