@@ -135,6 +135,38 @@ export function matchTopicCode(examTopicCodes: any, cleanCode: string, number: s
   });
 }
 
+export interface CurriculumRegistryEntry {
+  boardCode: 'CBSE' | 'MH';
+  boardName: 'CBSE' | 'Maharashtra Board';
+  classNum: '8' | '9' | '10';
+  subjectCode: string;
+  subjectName: string;
+  docId: string;
+}
+
+/**
+ * Master SSOT Registry of all 16 supported board/class/subject curriculum entities.
+ * Eliminates all naming ambiguity between display strings and internal database codes.
+ */
+export const CURRICULUM_REGISTRY: readonly CurriculumRegistryEntry[] = [
+  { boardCode: 'CBSE', boardName: 'CBSE', classNum: '8', subjectCode: 'CURI', subjectName: 'Curiosity Science', docId: 'cbse_8_curi' },
+  { boardCode: 'CBSE', boardName: 'CBSE', classNum: '8', subjectCode: 'MGP1', subjectName: 'Ganit Prakash Part 1', docId: 'cbse_8_mgp1' },
+  { boardCode: 'CBSE', boardName: 'CBSE', classNum: '8', subjectCode: 'MGP2', subjectName: 'Ganit Prakash Part 2', docId: 'cbse_8_mgp2' },
+  { boardCode: 'CBSE', boardName: 'CBSE', classNum: '9', subjectCode: 'MGM', subjectName: 'Mathematics (Ganita Manjari)', docId: 'cbse_9_mgm' },
+  { boardCode: 'CBSE', boardName: 'CBSE', classNum: '9', subjectCode: 'SCIE', subjectName: 'Science (Exploration)', docId: 'cbse_9_scie' },
+  { boardCode: 'CBSE', boardName: 'CBSE', classNum: '10', subjectCode: 'MATH', subjectName: 'Mathematics', docId: 'cbse_10_math' },
+  { boardCode: 'CBSE', boardName: 'CBSE', classNum: '10', subjectCode: 'SCI', subjectName: 'Science', docId: 'cbse_10_sci' },
+  { boardCode: 'MH', boardName: 'Maharashtra Board', classNum: '8', subjectCode: 'MTH', subjectName: 'Mathematics', docId: 'mh_8_mth' },
+  { boardCode: 'MH', boardName: 'Maharashtra Board', classNum: '8', subjectCode: 'SCI', subjectName: 'General Science', docId: 'mh_8_sci' },
+  { boardCode: 'MH', boardName: 'Maharashtra Board', classNum: '9', subjectCode: 'MTH1', subjectName: 'Mathematics Part - 1 (Algebra)', docId: 'mh_9_mth1' },
+  { boardCode: 'MH', boardName: 'Maharashtra Board', classNum: '9', subjectCode: 'MTH2', subjectName: 'Mathematics Part - 2 (Geometry)', docId: 'mh_9_mth2' },
+  { boardCode: 'MH', boardName: 'Maharashtra Board', classNum: '9', subjectCode: 'SCIT', subjectName: 'Science and Technology', docId: 'mh_9_scit' },
+  { boardCode: 'MH', boardName: 'Maharashtra Board', classNum: '10', subjectCode: 'MTH1', subjectName: 'Mathematics Part - 1 (Algebra)', docId: 'mh_10_mth1' },
+  { boardCode: 'MH', boardName: 'Maharashtra Board', classNum: '10', subjectCode: 'MTH2', subjectName: 'Mathematics Part - 2 (Geometry)', docId: 'mh_10_mth2' },
+  { boardCode: 'MH', boardName: 'Maharashtra Board', classNum: '10', subjectCode: 'SCIT1', subjectName: 'Science and Technology Part - 1', docId: 'mh_10_scit1' },
+  { boardCode: 'MH', boardName: 'Maharashtra Board', classNum: '10', subjectCode: 'SCIT2', subjectName: 'Science and Technology Part - 2', docId: 'mh_10_scit2' },
+] as const;
+
 /**
  * SSOT Canonical Board Code Standard (Rule 2L & 2R)
  */
@@ -218,6 +250,28 @@ export function getCanonicalSubjectCode(board: any, classNum: any, subjectNameOr
   }
 
   return 'MTH';
+}
+
+/**
+ * SSOT Canonical Subject Official Title Standard
+ */
+export function getCanonicalSubjectName(board: any, classNum: any, subjectNameOrCode: any): string {
+  const bCode = getCanonicalBoardCode(board);
+  const cls = getCanonicalClass(classNum);
+  const sCode = getCanonicalSubjectCode(board, classNum, subjectNameOrCode);
+  const entry = CURRICULUM_REGISTRY.find(e => e.boardCode === bCode && e.classNum === cls && e.subjectCode === sCode);
+  return entry?.subjectName || String(subjectNameOrCode || 'Mathematics');
+}
+
+/**
+ * SSOT Canonical Syllabus Document ID Standard (e.g. 'mh_10_scit1')
+ */
+export function getCanonicalSyllabusDocId(board: any, classNum: any, subjectNameOrCode: any): string {
+  const bCode = getCanonicalBoardCode(board);
+  const cls = getCanonicalClass(classNum);
+  const sCode = getCanonicalSubjectCode(board, classNum, subjectNameOrCode);
+  const entry = CURRICULUM_REGISTRY.find(e => e.boardCode === bCode && e.classNum === cls && e.subjectCode === sCode);
+  return entry?.docId || `${bCode.toLowerCase()}_${cls}_${sCode.toLowerCase()}`;
 }
 
 
@@ -340,11 +394,19 @@ export function buildSyllabusHierarchyFromDocs(docs: any[], includeChapters = fa
       // Strict SSOT (Rule 2.R): Index strictly by canonical boardCode ('CBSE' or 'MH')
       if (!subjectsMap[bCode]) subjectsMap[bCode] = {};
       if (!subjectsMap[bCode][cls]) subjectsMap[bCode][cls] = {};
-      subjectsMap[bCode][cls][subject] = {
+      const subjectPayload = {
         docId: doc.id || data.id,
         subjectCode,
+        subjectName: subject,
         ...(includeChapters ? { chapters: data.chapters || [] } : {})
       };
+      // Dual-index by BOTH human display name (e.g. 'Science and Technology Part - 1')
+      // AND canonical machine code (e.g. 'SCIT1') for 100% resilient SSOT resolution.
+      subjectsMap[bCode][cls][subject] = subjectPayload;
+      if (subjectCode) {
+        subjectsMap[bCode][cls][subjectCode] = subjectPayload;
+        subjectCodes[subjectCode] = subjectCode;
+      }
     }
   });
 

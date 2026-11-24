@@ -48,29 +48,31 @@ export async function GET(req: NextRequest) {
       const board = searchParams.get('board') || '';
       const classNum = searchParams.get('classNum') || '';
       const subject = searchParams.get('subject') || '';
+      const subjectCodeParam = searchParams.get('subjectCode') || '';
       const chapterNumbers = searchParams.get('chapterNumbers') ? searchParams.get('chapterNumbers')!.split(',').map(c => c.trim().replace(/^Ch\.?\s*/i, '')).filter(Boolean) : [];
       const topicNumbers = searchParams.get('topicNumbers') ? searchParams.get('topicNumbers')!.split(',') : [];
       const questionType = searchParams.get('questionType') || 'objective';
       const examCategory = searchParams.get('examCategory') || 'standard';
 
-      if (!board || !classNum || !subject) {
-        return NextResponse.json({ message: 'Missing parameters (board, classNum, subject).' }, { status: 400 });
+      if (!board || !classNum || (!subject && !subjectCodeParam)) {
+        return NextResponse.json({ message: 'Missing parameters (board, classNum, subject/subjectCode).' }, { status: 400 });
       }
 
-      const cleanClass = String(classNum).replace(/\D/g, '');
+      const canonicalBoard = getCanonicalBoardCode(board);
+      const cleanClass = getCanonicalClass(classNum);
       const classVariations = Array.from(new Set([cleanClass, Number(cleanClass), classNum].filter(v => v !== undefined && v !== '')));
-      const poolCacheKey = `${board}_${cleanClass}_${subject}_${chapterNumbers.slice().sort().join('|')}_${topicNumbers.slice().sort().join('|')}_${questionType}_${examCategory}`;
+
+      // Strict SSOT: Resolve canonical subject codes from either subject name or subjectCode
+      const rawSubjectInputs = `${subject},${subjectCodeParam}`.split(',').map(s => s.trim()).filter(Boolean);
+      const canonicalSubjectCodes = Array.from(new Set(
+        rawSubjectInputs.map(s => getCanonicalSubjectCode(canonicalBoard, cleanClass, s)).filter(Boolean)
+      ));
+
+      const poolCacheKey = `${canonicalBoard}_${cleanClass}_${canonicalSubjectCodes.slice().sort().join('|')}_${chapterNumbers.slice().sort().join('|')}_${topicNumbers.slice().sort().join('|')}_${questionType}_${examCategory}`;
       const cachedPool = POOL_CACHE.get(poolCacheKey);
       if (cachedPool && (Date.now() - cachedPool.timestamp < POOL_CACHE_TTL)) {
         return NextResponse.json(cachedPool.data);
       }
-
-      // Scoped Firestore query targeting class, boardCode, subjectCode, and chapterNumber (preventing full-table scans)
-      const canonicalBoard = getCanonicalBoardCode(board);
-      const searchSubjectRawList = subject.split(',').map(s => s.trim()).filter(Boolean);
-      const canonicalSubjectCodes = Array.from(new Set(
-        searchSubjectRawList.map(s => getCanonicalSubjectCode(canonicalBoard, cleanClass, s)).filter(Boolean)
-      ));
 
       let questionsQuery: FirebaseFirestore.Query = adminDb.collection('questions')
         .where('class', 'in', classVariations);
@@ -321,23 +323,9 @@ export async function GET(req: NextRequest) {
             const targetBCode = getCanonicalBoardCode(boardVal || subjectData.boardCode || subjectData.board);
             if (qBCode !== targetBCode) return null;
 
-            const s = String(q.subject || '').toLowerCase().trim();
-            const sc = String(q.subjectCode || '').toLowerCase().trim();
-            const targetSub = String(subjectVal || subjectData.subject || '').toLowerCase().trim();
-            const targetSubCode = String(subjectData.subjectCode || '').toLowerCase().trim();
-
-            if (sc && targetSubCode) {
-              const scCompat = sc === targetSubCode ||
-                (sc === 'math' && targetSubCode === 'mth') || (sc === 'mth' && targetSubCode === 'math') ||
-                (sc === 'sci' && targetSubCode === 'scit') || (sc === 'scit' && targetSubCode === 'sci');
-              if (!scCompat) return null;
-            }
-
-            const sMatch = (s && targetSub && (s === targetSub || s.includes(targetSub))) ||
-              (sc && targetSubCode && sc === targetSubCode) ||
-              (sc && targetSub && sc === targetSub) ||
-              (s && targetSubCode && s === targetSubCode);
-            if (!sMatch) return null;
+            const qSubjCode = getCanonicalSubjectCode(qBCode, q.class || cleanClassVal, q.subjectCode || (q.questionCode ? q.questionCode.split('-')[2] : '') || q.subject);
+            const targetSubjCode = getCanonicalSubjectCode(targetBCode, cleanClassVal, subjectCodeVal || subjectVal);
+            if (qSubjCode !== targetSubjCode) return null;
 
             let chNum = String(q.chapterNumber || q.chapter || '').replace(/^Ch\.?\s*/i, '').trim();
             const topNum = String(q.topicNumber || '').trim();
@@ -392,30 +380,9 @@ export async function GET(req: NextRequest) {
             exam.isPractice === true;
           if (isPractice) return false;
 
-          const eSc = String(exam.subjectCode || '').toLowerCase().trim();
-          const eSubj = String(exam.subject || '').toLowerCase().trim();
-          const eSubjects: string[] = Array.isArray(exam.subjects)
-            ? exam.subjects.map((s: any) => String(s || '').toLowerCase().trim()).filter(Boolean)
-            : [];
-
-          // 1. If exam has explicit subjectCode, it must be compatible with target subjectCode
-          if (eSc && scLower) {
-            const scMatch = eSc === scLower ||
-              (eSc === 'math' && scLower === 'mth') || (eSc === 'mth' && scLower === 'math') ||
-              (eSc === 'sci' && scLower === 'scit') || (eSc === 'scit' && scLower === 'sci');
-            if (!scMatch) return false;
-          }
-
-          // 2. If exam has explicit subject name or subjects array, it must not contradict target subject
-          if (subjLower && (eSubj || eSubjects.length > 0)) {
-            const subjMatch = (eSubj && (eSubj.includes(subjLower) || subjLower.includes(eSubj))) ||
-              eSubjects.some(s => s.includes(subjLower) || subjLower.includes(s));
-            if (!subjMatch && !eSc) return false;
-          }
-
-          // 3. If neither subjectCode nor subject matched target, reject
-          const hasAnySubjectInfo = Boolean(eSc || eSubj || eSubjects.length > 0);
-          if (!hasAnySubjectInfo && scLower) return false;
+          const targetSubjCode = getCanonicalSubjectCode(bCode, cls, subjectCodeVal || subjectVal);
+          const examSubjCode = getCanonicalSubjectCode(exam.boardCode || exam.board || bCode, exam.class || cls, exam.subjectCode || exam.subject || (Array.isArray(exam.subjects) ? exam.subjects[0] : ''));
+          if (examSubjCode !== targetSubjCode) return false;
 
           return true;
         };

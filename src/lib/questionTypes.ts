@@ -787,20 +787,22 @@ export function extractAssertionAndReason(q: any): { assertion: string; reason: 
   };
 }
 
-const CANONICAL_SUBJECT_NAMES: Record<string, string> = {
+export const CANONICAL_SUBJECT_NAMES: Record<string, string> = {
   // CBSE
-  'MGP1': 'Mathematics (Ganit Prakash 1)',
-  'CURI': 'Science (Curiosity)',
+  'MGP1': 'Ganit Prakash Part 1',
+  'MGP2': 'Ganit Prakash Part 2',
+  'CURI': 'Curiosity Science',
   'MGM': 'Mathematics (Ganita Manjari)',
   'SCIE': 'Science (Exploration)',
   'MATH': 'Mathematics',
   'SCI': 'Science',
   // Maharashtra Board
-  'MTH1': 'Mathematics Part 1 (Algebra)',
-  'MTH2': 'Mathematics Part 2 (Geometry)',
-  'SCIT': 'Science & Technology',
-  'SCIT1': 'Science & Technology Part 1',
-  'SCIT2': 'Science & Technology Part 2',
+  'MTH': 'Mathematics',
+  'MTH1': 'Mathematics Part - 1 (Algebra)',
+  'MTH2': 'Mathematics Part - 2 (Geometry)',
+  'SCIT': 'Science and Technology',
+  'SCIT1': 'Science and Technology Part - 1',
+  'SCIT2': 'Science and Technology Part - 2',
 };
 
 export function getCanonicalSubjectName(subjectCode?: string, topicCode?: string, chapterName?: string): string {
@@ -819,7 +821,7 @@ export function getCanonicalSubjectName(subjectCode?: string, topicCode?: string
       }
     }
   }
-  return subjectCode || 'Science & Technology';
+  return subjectCode || 'General';
 }
 
 export const QUESTION_TYPE_MAP: { [key: string]: { id: string; label: string; code: CanonicalQuestionType; category: 'objective' | 'subjective'; defaultMarks: number } } = {

@@ -37,7 +37,7 @@ export class QuestionRepository {
     let query: FirebaseFirestore.Query = this.collection;
 
     const bCode = filters?.boardCode || (filters?.board ? getCanonicalBoardCode(filters.board) : '');
-    const sCode = filters?.subjectCode || (filters?.subject ? getCanonicalSubjectCode(filters.subject, bCode, filters?.classNum) : '');
+    const sCode = filters?.subjectCode || (filters?.subject ? getCanonicalSubjectCode(bCode, filters?.classNum, filters.subject) : '');
 
     if (bCode) {
       query = query.where('boardCode', '==', bCode);

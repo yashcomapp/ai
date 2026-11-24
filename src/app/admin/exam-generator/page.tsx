@@ -899,6 +899,9 @@ export default function AdminExamGeneratorPage() {
     setFetchingPool(true);
     try {
       const allSubjects = Array.from(selectedSubjects).join(',');
+      const allSubjectCodes = Array.from(new Set(
+        Array.from(selectedSubjects).map(s => getCanonicalSubjectCode(selectedBoard, selectedClass, s)).filter(Boolean)
+      )).join(',');
       const selectedChapterNumbers = Array.from(new Set(selectedTopics.map(t => String(t.chapterNumber || '').replace(/^Ch\.?\s*/i, '')).filter(Boolean))).join(',');
       const topicNumbers = Array.from(new Set(
         selectedTopics.flatMap(t => [t.topicNumber, t.topicName, t.topicCode, t.topic].filter(Boolean))
@@ -906,7 +909,7 @@ export default function AdminExamGeneratorPage() {
       const examCategory = currentTemplate?.examCategory || 'standard';
 
       const idToken = await firebaseUser.getIdToken();
-      const res = await fetch(`/api/admin/exams/generate?action=fetchPool&board=${selectedBoard}&classNum=${selectedClass}&subject=${encodeURIComponent(allSubjects)}&chapterNumbers=${encodeURIComponent(selectedChapterNumbers)}&topicNumbers=${encodeURIComponent(topicNumbers)}&questionType=${questionType}&examCategory=${examCategory}`, {
+      const res = await fetch(`/api/admin/exams/generate?action=fetchPool&board=${selectedBoard}&classNum=${selectedClass}&subject=${encodeURIComponent(allSubjects)}&subjectCode=${encodeURIComponent(allSubjectCodes)}&chapterNumbers=${encodeURIComponent(selectedChapterNumbers)}&topicNumbers=${encodeURIComponent(topicNumbers)}&questionType=${questionType}&examCategory=${examCategory}`, {
         headers: {
           'Authorization': `Bearer ${idToken}`
         }

@@ -136,30 +136,9 @@ export async function GET(req: NextRequest) {
             exam.isPractice === true;
           if (isPractice) return false;
 
-          const eSc = String(exam.subjectCode || '').toLowerCase().trim();
-          const targetSc = String(subjectData.subjectCode || '').toLowerCase().trim();
-          if (eSc && targetSc) {
-            const scMatch = eSc === targetSc ||
-              (eSc === 'math' && targetSc === 'mth') || (eSc === 'mth' && targetSc === 'math') ||
-              (eSc === 'sci' && targetSc === 'scit') || (eSc === 'scit' && targetSc === 'sci');
-            if (!scMatch) return false;
-          }
-
-          const targetSubj = String(subjectData.subject || '').toLowerCase().trim();
-          if (targetSubj) {
-            const eSubj = String(exam.subject || '').toLowerCase().trim();
-            const eSubjects: string[] = Array.isArray(exam.subjects)
-              ? exam.subjects.map((s: any) => String(s || '').toLowerCase().trim()).filter(Boolean)
-              : [];
-            if (eSubj || eSubjects.length > 0) {
-              const subjMatch = (eSubj && (eSubj.includes(targetSubj) || targetSubj.includes(eSubj))) ||
-                eSubjects.some(s => s.includes(targetSubj) || targetSubj.includes(s));
-              if (!subjMatch && !eSc) return false;
-            }
-          }
-
-          const hasAnySubjectInfo = Boolean(eSc || exam.subject || (Array.isArray(exam.subjects) && exam.subjects.length > 0));
-          if (!hasAnySubjectInfo && targetSc) return false;
+          const targetSubjCode = getCanonicalSubjectCode(subjectData.boardCode || subjectData.board, subjectData.class, subjectData.subjectCode || subjectData.subject);
+          const examSubjCode = getCanonicalSubjectCode(exam.boardCode || exam.board || subjectData.boardCode || subjectData.board, exam.class || subjectData.class, exam.subjectCode || exam.subject || (Array.isArray(exam.subjects) ? exam.subjects[0] : ''));
+          if (examSubjCode !== targetSubjCode) return false;
 
           return true;
         };
