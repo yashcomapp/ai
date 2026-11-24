@@ -255,7 +255,9 @@ export class ExamService {
         continue;
       }
       const isApprovedByEval = evalMap.has(revDoc.id) || (data.examId && evalMap.has(data.examId));
-      if (isApprovedByEval || (isAutonomous && data.status === 'pending')) {
+      const hasCompletedReflection = Boolean(data.wrongAnswerReasons && Object.keys(data.wrongAnswerReasons).length > 0);
+      const isAwaitingParentOnly = data.status === 'pending';
+      if (isApprovedByEval || isAwaitingParentOnly || hasCompletedReflection || isAutonomous) {
         // Auto-heal status in Firestore
         revDoc.ref.update({ status: 'approved', updatedAt: new Date() }).catch(() => null);
       } else {

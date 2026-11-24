@@ -1009,6 +1009,41 @@ export default function AdminExamGeneratorPage() {
             });
           }
         });
+
+        // Global Exam Guarantee for Flexible Pool Mode
+        if (selected.length < effectiveTotalQs) {
+          const remainingPool = candidatePool.filter(q =>
+            selectedTopics.some(t => isQuestionMatchingTopic(q, t)) &&
+            !usedCodes.has(q.questionCode || q.id || '') &&
+            !selected.some(sel => areQuestionsTooSimilar(q, sel))
+          );
+          const prioritizedRemaining = sortQuestionsByCompetencyDepth(remainingPool, selected, 2);
+          const picked = prioritizedRemaining.slice(0, effectiveTotalQs - selected.length);
+          picked.forEach(q => {
+            usedCodes.add(q.questionCode || q.id || '');
+            selected.push(q);
+          });
+        }
+        if (selected.length < effectiveTotalQs) {
+          const fallbackPool = candidatePool.filter(q =>
+            selectedTopics.some(t => isQuestionMatchingTopic(q, t)) &&
+            !usedCodes.has(q.questionCode || q.id || '') &&
+            !selected.some(sel => {
+              const t1 = (sel.text || sel.questionText || sel.question || '').trim().toLowerCase();
+              const t2 = (q.text || q.questionText || q.question || '').trim().toLowerCase();
+              return t1.length > 0 && t1 === t2;
+            })
+          );
+          const prioritizedFallback = sortQuestionsByCompetencyDepth(fallbackPool, selected, 2);
+          const pickedFallback = prioritizedFallback.slice(0, effectiveTotalQs - selected.length);
+          pickedFallback.forEach(q => {
+            usedCodes.add(q.questionCode || q.id || '');
+            selected.push(q);
+          });
+        }
+        if (selected.length >= effectiveTotalQs) {
+          shortfallReqs.length = 0;
+        }
       } else {
         // Structured Blueprint / Preset Mode
         const needed: any[] = [];
@@ -1129,6 +1164,7 @@ export default function AdminExamGeneratorPage() {
 
         // 6. Global Exam Guarantee: If total selected questions < effectiveTotalQs, fill remaining slots from ANY matching unused candidate questions in the pool
         if (selected.length < effectiveTotalQs) {
+          // Pass A: Pick distinct questions without similarity collisions
           const remainingPool = candidatePool.filter(q =>
             selectedTopics.some(t => isQuestionMatchingTopic(q, t)) &&
             !usedCodes.has(q.questionCode || q.id || '') &&
@@ -1142,6 +1178,32 @@ export default function AdminExamGeneratorPage() {
             selected.push(q);
           });
         }
+
+        // Pass B: If still short of target exam questions and candidate pool has available questions,
+        // backfill remaining slots from unused candidates (excluding only exact identical text) so the exam is never cut short
+        if (selected.length < effectiveTotalQs) {
+          const fallbackPool = candidatePool.filter(q =>
+            selectedTopics.some(t => isQuestionMatchingTopic(q, t)) &&
+            !usedCodes.has(q.questionCode || q.id || '') &&
+            !selected.some(sel => {
+              const t1 = (sel.text || sel.questionText || sel.question || '').trim().toLowerCase();
+              const t2 = (q.text || q.questionText || q.question || '').trim().toLowerCase();
+              return t1.length > 0 && t1 === t2;
+            })
+          );
+          const prioritizedFallback = sortQuestionsByCompetencyDepth(fallbackPool, selected, 2);
+          const pickedFallback = prioritizedFallback.slice(0, effectiveTotalQs - selected.length);
+
+          pickedFallback.forEach(q => {
+            usedCodes.add(q.questionCode || q.id || '');
+            selected.push(q);
+          });
+        }
+      }
+
+      // If all required questions are selected, clear shortfalls
+      if (selected.length >= effectiveTotalQs) {
+        shortfallReqs.length = 0;
       }
 
       const finalSelected = balanceExamQuestionOptions(selected.slice(0, effectiveTotalQs));
