@@ -3,6 +3,7 @@ export interface ProctoringViolations {
   multipleFaces: number;
   lookingAway: number;
   headMovement: number;
+  cellPhone?: number;
 }
 
 export interface QuestionDetail {

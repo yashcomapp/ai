@@ -307,6 +307,9 @@ function TakeExamContent() {
         setProctoringViolations(prev => ({ ...prev, lookingAway: prev.lookingAway + 1 }));
       } else if (type === 'movement') {
         setProctoringViolations(prev => ({ ...prev, headMovement: prev.headMovement + 1 }));
+      } else if (type === 'cell_phone') {
+        setProctoringViolations(prev => ({ ...prev, cellPhone: (prev.cellPhone || 0) + 1 }));
+        setActiveViolationWarning('⚠️ Secondary mobile device / camera detected! Please remove all external devices immediately.');
       }
     }
   });
@@ -459,7 +462,8 @@ function TakeExamContent() {
                 noFace: Number(pv?.noFace) || 0,
                 multipleFaces: Number(pv?.multipleFaces) || 0,
                 lookingAway: Number(pv?.lookingAway) || 0,
-                headMovement: Number(pv?.headMovement) || 0
+                headMovement: Number(pv?.headMovement) || 0,
+                cellPhone: Number(pv?.cellPhone) || 0
               });
               setLoading(false);
               return;

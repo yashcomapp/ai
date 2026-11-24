@@ -18,11 +18,13 @@ export interface ProctoringViolationsInput {
   multipleFacesCount?: number;
   lookingAwayCount?: number;
   headMovementCount?: number;
+  cellPhoneCount?: number;
   proctoringViolations?: {
     noFace?: number;
     multipleFaces?: number;
     lookingAway?: number;
     headMovement?: number;
+    cellPhone?: number;
     [key: string]: any;
   };
   [key: string]: any;
@@ -33,6 +35,7 @@ export interface ProctoringViolationsInput {
  * Penalties:
  * - Tab Switch: -10 pts
  * - Multiple Faces: -15 pts
+ * - Secondary Device / Phone: -20 pts
  * - No Face: -10 pts
  * - Looking Away: -5 pts
  * - Excessive Head Movement: -5 pts
@@ -47,8 +50,9 @@ export function calculateProctoringIntegrityScore(input: ProctoringViolationsInp
   const multiFaceV = Number(input.multipleFacesCount ?? pv.multipleFaces ?? 0);
   const lookAwayV = Number(input.lookingAwayCount ?? pv.lookingAway ?? 0);
   const headMoveV = Number(input.headMovementCount ?? pv.headMovement ?? 0);
+  const cellPhoneV = Number(input.cellPhoneCount ?? pv.cellPhone ?? 0);
 
-  const penalty = (tabV * 10) + (multiFaceV * 15) + (noFaceV * 10) + (lookAwayV * 5) + (headMoveV * 5);
+  const penalty = (tabV * 10) + (multiFaceV * 15) + (cellPhoneV * 20) + (noFaceV * 10) + (lookAwayV * 5) + (headMoveV * 5);
   return Math.max(0, Math.min(100, Math.round(100 - penalty)));
 }
 

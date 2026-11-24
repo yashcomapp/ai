@@ -53,7 +53,8 @@ export function useLiveExam({
     noFace: 0,
     multipleFaces: 0,
     lookingAway: 0,
-    headMovement: 0
+    headMovement: 0,
+    cellPhone: 0
   });
 
   const [cameraStatus, setCameraStatus] = useState('');
@@ -278,6 +279,7 @@ export function useLiveExam({
     multipleFaces: number;
     lookingAway: number;
     headMovement: number;
+    cellPhone: number;
   }>({
     qIdx: 0,
     ansCount: 0,
@@ -285,7 +287,8 @@ export function useLiveExam({
     noFace: 0,
     multipleFaces: 0,
     lookingAway: 0,
-    headMovement: 0
+    headMovement: 0,
+    cellPhone: 0
   });
 
   // Listen to RTDB proctor presence: ONLY stream live exam metrics to Firestore when an admin is actively watching
@@ -461,7 +464,8 @@ export function useLiveExam({
         (proctoringViolations.noFace || 0) > prev.noFace ||
         (proctoringViolations.multipleFaces || 0) > prev.multipleFaces ||
         (proctoringViolations.lookingAway || 0) > prev.lookingAway ||
-        (proctoringViolations.headMovement || 0) > prev.headMovement;
+        (proctoringViolations.headMovement || 0) > prev.headMovement ||
+        (proctoringViolations.cellPhone || 0) > (prev.cellPhone || 0);
 
       prevMetricsRef.current = {
         qIdx: currentQuestionIndex ?? 0,
@@ -470,7 +474,8 @@ export function useLiveExam({
         noFace: proctoringViolations.noFace || 0,
         multipleFaces: proctoringViolations.multipleFaces || 0,
         lookingAway: proctoringViolations.lookingAway || 0,
-        headMovement: proctoringViolations.headMovement || 0
+        headMovement: proctoringViolations.headMovement || 0,
+        cellPhone: proctoringViolations.cellPhone || 0
       };
 
       queueLiveProctoringSession({
@@ -482,6 +487,7 @@ export function useLiveExam({
           multipleFacesCount: proctoringViolations.multipleFaces,
           lookingAwayCount: proctoringViolations.lookingAway,
           headMovementCount: proctoringViolations.headMovement,
+          cellPhoneCount: proctoringViolations.cellPhone,
           awayTimeTotal
         }
       }, isUrgent);

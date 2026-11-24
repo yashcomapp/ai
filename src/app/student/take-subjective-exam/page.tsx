@@ -214,6 +214,9 @@ function TakeSubjectiveExamContent() {
         setProctoringViolations(prev => ({ ...prev, lookingAway: prev.lookingAway + 1 }));
       } else if (type === 'movement') {
         setProctoringViolations(prev => ({ ...prev, headMovement: prev.headMovement + 1 }));
+      } else if (type === 'cell_phone') {
+        setProctoringViolations(prev => ({ ...prev, cellPhone: (prev.cellPhone || 0) + 1 }));
+        setActiveViolationWarning('⚠️ Secondary mobile device / camera detected! Please remove all external devices immediately.');
       }
     }
   });
@@ -784,6 +787,7 @@ function TakeSubjectiveExamContent() {
                   <QuestionDisplay
                     question={q}
                     mode="stem-only"
+                    watermarkText={`${user?.name || firebaseUser?.displayName || 'Student'} • ${user?.studentCode || ''} • Protected Exam`}
                     style={{ fontSize: '15px', color: 'var(--text)', lineHeight: 1.6 }}
                   />
                 </div>

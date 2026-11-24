@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { calculateHeadPose, checkLookingAway, checkExcessiveMovement, HeadPose, PROCTOR_THRESHOLDS } from '@/utils/headPose';
+import { calculateHeadPose, checkLookingAway, checkExcessiveMovement, assessSecondaryDeviceRisk, HeadPose, PROCTOR_THRESHOLDS } from '@/utils/headPose';
+import { detectSecondaryDevice } from '@/lib/deviceDetector';
 
 export interface ProctoringSnapshot {
   id: string;
   timestamp: string; // ISO string
-  type: 'random_check' | 'movement' | 'gaze' | 'multiple_faces' | 'no_face' | 'initial_check';
+  type: 'random_check' | 'movement' | 'gaze' | 'multiple_faces' | 'no_face' | 'initial_check' | 'cell_phone';
   reason: string;
   imageBase64: string; // JPEG data URL
   imageData?: string; // Compatibility alias for UI consumers
@@ -43,7 +44,7 @@ interface ProctoringConfig {
   cleanupLiveExam: () => void;
 
   // Custom Callbacks
-  onViolation?: (type: 'gaze' | 'no_face' | 'movement' | 'multiple_faces' | 'tab_switch', details: string, screenshotDataUrl?: string | null) => void;
+  onViolation?: (type: 'gaze' | 'no_face' | 'movement' | 'multiple_faces' | 'tab_switch' | 'cell_phone', details: string, screenshotDataUrl?: string | null) => void;
   onSnapshotCaptured?: (snapshot: ProctoringSnapshot) => void;
   onStatusChange?: (status: string, statusClass: 'success' | 'warning' | 'error') => void;
   isNumerical?: boolean;
@@ -101,6 +102,9 @@ export function useProctoring({
   
   const lastNoFaceLogRef = useRef<number>(0);
   const lastMultipleLogRef = useRef<number>(0);
+  const lastPhoneDetectLogRef = useRef<number>(0);
+  const lastPhoneInferenceRef = useRef<number>(0);
+  const isPhoneInferenceBusyRef = useRef<boolean>(false);
 
   const isNumericalRef = useRef(isNumerical);
   useEffect(() => {
@@ -202,10 +206,12 @@ export function useProctoring({
       if (!chinDownStartRef.current) {
         chinDownStartRef.current = now;
       }
-      const chinDebounce = isNumericalRef.current ? 5000 : 4000;
-      if (now - chinDownStartRef.current > chinDebounce) {
-        onViolation?.('gaze', 'Chin-down / desk gaze detected (possible second screen)', null);
-        takeSnapshot('gaze', 'Chin-down / desk gaze detected (possible second screen)');
+      const chinDuration = now - chinDownStartRef.current;
+      const deviceRisk = assessSecondaryDeviceRisk(currentPose, landmarks, chinDuration, isNumericalRef.current);
+
+      if (deviceRisk.isSuspicious) {
+        onViolation?.('cell_phone', deviceRisk.reason, null);
+        takeSnapshot('cell_phone', deviceRisk.reason);
         chinDownStartRef.current = now + 12000; // throttle 12s before next capture
       }
     } else {
@@ -378,6 +384,31 @@ export function useProctoring({
             }
           }
         }
+
+        // Secondary Device (Cell Phone) AI Object Inference loop (every 2.5s)
+        if (now - lastPhoneInferenceRef.current >= 2500 && !isPhoneInferenceBusyRef.current) {
+          if (videoRef.current && videoRef.current.readyState >= 2 && videoRef.current.videoWidth > 0) {
+            lastPhoneInferenceRef.current = now;
+            isPhoneInferenceBusyRef.current = true;
+            detectSecondaryDevice(videoRef.current)
+              .then(result => {
+                if (result.hasPhone) {
+                  const nowDetect = Date.now();
+                  if (nowDetect - lastPhoneDetectLogRef.current > 8000) {
+                    lastPhoneDetectLogRef.current = nowDetect;
+                    const confidencePct = Math.round(result.score * 100);
+                    onViolation?.('cell_phone', `Secondary mobile device detected (${confidencePct}% confidence)`, null);
+                    takeSnapshot('cell_phone', `Secondary mobile device detected (${confidencePct}% confidence)`);
+                  }
+                }
+              })
+              .catch(err => console.warn('[proctoring] Device detection error:', err))
+              .finally(() => {
+                isPhoneInferenceBusyRef.current = false;
+              });
+          }
+        }
+
         requestAnimationFrame(tick);
       };
       requestAnimationFrame(tick);

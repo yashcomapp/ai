@@ -599,6 +599,8 @@ export interface QuestionDisplayProps {
 
   /** Anti-OCR camera-resistant student watermark */
   watermarkText?: string;
+  /** Automatically append a live dynamic timestamp (e.g. "24/11/2026, 10:29 AM") to watermark tiles */
+  watermarkDynamicTime?: boolean;
 
   /** Optional nested children rendered between stem and options (e.g. stats bar) */
   children?: React.ReactNode;
@@ -638,6 +640,7 @@ export const QuestionDisplay: React.FC<QuestionDisplayProps> = React.memo(({
   hideExplanation = false,
   explanationLabel,
   watermarkText,
+  watermarkDynamicTime = true,
   children,
   className = '',
   style
@@ -652,6 +655,40 @@ export const QuestionDisplay: React.FC<QuestionDisplayProps> = React.memo(({
       title: 'Figure Inspection'
     });
   }, []);
+
+  // Real-Time Dynamic Timestamp for Watermark (updates every 30 seconds)
+  const [currentTimestampStr, setCurrentTimestampStr] = useState<string>('');
+  useEffect(() => {
+    if (!watermarkText || !watermarkDynamicTime) return;
+    const updateTime = () => {
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString('en-IN', {
+        timeZone: 'Asia/Kolkata',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true
+      });
+      const dateStr = now.toLocaleDateString('en-GB', {
+        timeZone: 'Asia/Kolkata',
+        day: '2-digit',
+        month: 'short'
+      });
+      setCurrentTimestampStr(`${dateStr} ${timeStr}`);
+    };
+    updateTime();
+    const interval = setInterval(updateTime, 10000); // 10s precision
+    return () => clearInterval(interval);
+  }, [watermarkText, watermarkDynamicTime]);
+
+  // Combined Watermark Text
+  const effectiveWatermark = useMemo(() => {
+    if (!watermarkText) return '';
+    if (watermarkDynamicTime && currentTimestampStr) {
+      return `${watermarkText} • ${currentTimestampStr}`;
+    }
+    return watermarkText;
+  }, [watermarkText, watermarkDynamicTime, currentTimestampStr]);
 
   // Resolve properties with fallback hierarchy
   const qText = text ?? question?.text ?? question?.questionText ?? '';
@@ -1265,7 +1302,7 @@ export const QuestionDisplay: React.FC<QuestionDisplayProps> = React.memo(({
       }}
     >
       {/* Anti-OCR Camera-Resistant Moiré & Identity Watermark */}
-      {watermarkText && (
+      {effectiveWatermark && (
         <div
           aria-hidden="true"
           style={{
@@ -1311,7 +1348,7 @@ export const QuestionDisplay: React.FC<QuestionDisplayProps> = React.memo(({
           >
             {Array.from({ length: 48 }).map((_, i) => (
               <span key={i} style={{ whiteSpace: 'nowrap' }}>
-                {watermarkText}
+                {effectiveWatermark}
               </span>
             ))}
           </div>
