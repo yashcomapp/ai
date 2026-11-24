@@ -10,7 +10,7 @@ import { smartJsonParse, robustParseAIJson, cleanStringForMatch, toCanonicalQues
 import { SyllabusSelector } from '@/components/SyllabusSelector';
 import { useSyllabusSelector } from '@/hooks/useSyllabusSelector';
 import { QuestionDisplay, RichMathText } from '@/components/QuestionDisplay';
-import { distributeCountsByWeight, buildObjectiveSchema, isSameTopic, getCanonicalBoardCode } from '@/lib/syllabusUtils';
+import { distributeCountsByWeight, buildObjectiveSchema, isSameTopic, getCanonicalBoardCode, getCanonicalSubjectCode, getCanonicalClass } from '@/lib/syllabusUtils';
 import { areQuestionsTooSimilar } from '@/lib/questionSimilarity';
 import { Template } from '@/types/exam.types';
 import { Question } from '@/types/question.types';
@@ -491,6 +491,7 @@ export default function AdminExamGeneratorPage() {
 
             instantTopicsList.push({
               subject: chItem.subject,
+              subjectCode: chItem.chapter?.subjectCode || getCanonicalSubjectCode(selectedBoard, selectedClass, chItem.subject),
               chapterName: chItem.chapterName,
               chapterNumber: chItem.chapterNumber,
               topic: label,
@@ -580,6 +581,7 @@ export default function AdminExamGeneratorPage() {
                 : (isObj ? (t.subjectiveCount || 0) : 0);
               allTopicsList.push({
                 subject: chItem.subject,
+                subjectCode: chItem.chapter?.subjectCode || getCanonicalSubjectCode(selectedBoard, selectedClass, chItem.subject),
                 chapterName: chItem.chapterName,
                 chapterNumber: chItem.chapterNumber,
                 topic: label,
@@ -727,13 +729,12 @@ export default function AdminExamGeneratorPage() {
     }
 
     // Strict Subject Guardrail: Question and Topic MUST belong to the same subject!
-    const qSubjCode = String(q.subjectCode || (q.questionCode ? q.questionCode.split('-')[2] : '')).toLowerCase().trim();
-    const tSubjCode = String(t.subjectCode || (t.topicCode ? t.topicCode.split('-')[2] : '')).toLowerCase().trim();
-    if (qSubjCode && tSubjCode) {
-      const isCompat = qSubjCode === tSubjCode ||
-        (qSubjCode === 'math' && tSubjCode === 'mth') || (qSubjCode === 'mth' && tSubjCode === 'math') ||
-        (qSubjCode === 'sci' && tSubjCode === 'scit') || (qSubjCode === 'scit' && tSubjCode === 'sci');
-      if (!isCompat) return false;
+    const qBoard = getCanonicalBoardCode(q.boardCode || q.board || selectedBoard);
+    const qCls = getCanonicalClass(q.class || selectedClass);
+    const qSubjCode = getCanonicalSubjectCode(qBoard, qCls, q.subjectCode || (q.questionCode ? q.questionCode.split('-')[2] : '') || q.subject);
+    const tSubjCode = getCanonicalSubjectCode(selectedBoard, selectedClass, t.subjectCode || (t.topicCode ? t.topicCode.split('-')[2] : '') || t.subject);
+    if (qSubjCode && tSubjCode && qSubjCode !== tSubjCode) {
+      return false;
     }
 
     const qTopNum = String(q.topicNumber || '').trim();
@@ -753,8 +754,8 @@ export default function AdminExamGeneratorPage() {
     const normTTopCode = normalizeCode(tTopCode);
     const normQCode = normalizeCode(qCode);
 
-    // Exact topic code match
-    if (tTopCode && (normQTopCode === normTTopCode || normQTopCode.endsWith(`-${normTTopCode}`) || normQCode.includes(`-${normTTopCode}-`))) return true;
+    // Exact topic code match or hierarchical prefix match
+    if (tTopCode && (normQTopCode === normTTopCode || normQTopCode.endsWith(`-${normTTopCode}`) || normQTopCode.startsWith(`${normTTopCode}.`) || normTTopCode.startsWith(`${normQTopCode}.`) || normQCode.includes(`-${normTTopCode}-`))) return true;
 
     // Exact topic number match or parent/child hierarchy (e.g. 4.3 matches 4.3.1, or 4.3.1 matches 4.3)
     if (tTopNum && (qTopNum === tTopNum || qTopNum.startsWith(`${tTopNum}.`) || tTopNum.startsWith(`${qTopNum}.`))) return true;

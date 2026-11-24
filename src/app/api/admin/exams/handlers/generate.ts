@@ -161,17 +161,15 @@ export async function GET(req: NextRequest) {
             if (qBCode !== targetBCode) return false;
           }
 
-          const s = String(q.subject || '').toLowerCase();
-          const sc = String(q.subjectCode || '').toLowerCase();
-
-          const sMatch = searchSubjects.length === 0 || searchSubjects.some(subLower => {
-            if (!subLower) return false;
-            if (s && (s === subLower || s.includes(subLower) || subLower.includes(s))) return true;
-            if (sc && (sc === subLower || (sc === 'math' && subLower === 'mth') || (sc === 'mth' && subLower === 'math') || (sc === 'sci' && subLower === 'scit') || (sc === 'scit' && subLower === 'sci'))) return true;
+          // Strict Canonical Subject Match SSOT (Rule 2.R & 2.L):
+          // Match questions strictly by canonical subjectCode derived from syllabusUtils SSOT
+          const qBoardCode = getCanonicalBoardCode(q.boardCode || q.board || board);
+          const qClass = getCanonicalClass(q.class || cleanClass);
+          const qSubjCode = getCanonicalSubjectCode(qBoardCode, qClass, q.subjectCode || (q.questionCode ? q.questionCode.split('-')[2] : '') || q.subject);
+          
+          if (canonicalSubjectCodes.length > 0 && !canonicalSubjectCodes.includes(qSubjCode)) {
             return false;
-          });
-
-          if (!sMatch) return false;
+          }
 
           const qCanonicalType = toCanonicalQuestionType(q.type);
           const typeMatch = questionType === 'subjective'
@@ -223,9 +221,9 @@ export async function GET(req: NextRequest) {
             // Subtopic code suffix / exact match
             if (normQSubCode && (normQSubCode === normTNum || normQSubCode.endsWith(`-${normTNum}`) || normQSubCode.endsWith(`.${normTNum}`))) return true;
 
-            // Parent/child prefix matching (e.g. searching 11.1.1 matches parent 11.1, or 11.1 matches 11.1.1)
+            // Parent/child prefix matching (e.g. searching 11.1 matches 11.1.1, or 11.1.1 matches 11.1)
             if (qTopNum && (qTopNum.startsWith(`${tNum}.`) || tNum.startsWith(`${qTopNum}.`))) return true;
-            if (normQTopCode && (normTNum.startsWith(`${normQTopCode}.`) || normTNum.startsWith(`${normQTopCode}-`))) return true;
+            if (normQTopCode && (normQTopCode.startsWith(`${normTNum}.`) || normQTopCode.startsWith(`${normTNum}-`) || normTNum.startsWith(`${normQTopCode}.`) || normTNum.startsWith(`${normQTopCode}-`))) return true;
 
             // Name / Title / ConceptTag match
             if (qTopicName && (qTopicName === tLower || cleanStringForMatch(qTopicName) === cleanStringForMatch(tLower))) return true;
