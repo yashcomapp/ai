@@ -138,7 +138,7 @@ export async function GET(req: NextRequest) {
 
     const isPracticeLimitReached = !isTeacherAssigned && !isRevisionMode && (completedPractices >= 2 || practiceQuestionsAttempted >= 12);
 
-        // 0. Exam Reflection Gate: If student has an uncompleted exam reflection, gate practice until reflected!
+    // 0. Exam Reflection Gate: If student has an uncompleted exam reflection, gate practice until reflected!
     const pendingExamSnap = await adminDb.collection('reviews')
       .where('studentCode', '==', studentCode)
       .where('status', '==', 'student_review')
@@ -147,14 +147,39 @@ export async function GET(req: NextRequest) {
       .catch(() => ({ empty: true, docs: [] } as any));
 
     if (!pendingExamSnap.empty) {
-      const pendingExam = pendingExamSnap.docs[0].data();
-      return NextResponse.json({
-        locked: true,
-        lockType: 'exam_reflection_required',
-        examId: pendingExam.examId || pendingExamSnap.docs[0].id,
-        examName: pendingExam.examName || 'Scheduled Exam',
-        message: `You have an incomplete mistake reflection for "${pendingExam.examName || 'Scheduled Exam'}". Please reflect on your exam errors before starting remedial practice.`
-      }, { status: 200 });
+      const pendingDoc = pendingExamSnap.docs[0];
+      const pendingExam = pendingDoc.data();
+      const examRefDocId = pendingExam.examId || pendingDoc.id;
+
+      // Check if student has ALREADY submitted their reflection in reviews or examReviews!
+      const hasReasons = pendingExam.wrongAnswerReasons && Object.keys(pendingExam.wrongAnswerReasons).length > 0;
+      const hasReviewedAt = Boolean(pendingExam.studentReviewedAt);
+
+      let examReviewCompleted = hasReasons || hasReviewedAt;
+      if (!examReviewCompleted) {
+        const sCodeUpper = (studentCode || '').trim().toUpperCase();
+        const examReviewDoc = await adminDb.collection('examReviews').doc(`${sCodeUpper}_${examRefDocId}`).get().catch(() => null);
+        if (examReviewDoc && examReviewDoc.exists) {
+          examReviewCompleted = true;
+        }
+      }
+
+      if (examReviewCompleted) {
+        // Auto-heal: student already submitted reflection! Unblock immediately
+        const isAuto = getStudentMode(student.userData) === 'autonomous';
+        await pendingDoc.ref.update({
+          status: isAuto ? 'approved' : 'pending',
+          autoHealedAt: new Date()
+        }).catch(() => null);
+      } else {
+        return NextResponse.json({
+          locked: true,
+          lockType: 'exam_reflection_required',
+          examId: examRefDocId,
+          examName: pendingExam.examName || 'Scheduled Exam',
+          message: `You have an incomplete mistake reflection for "${pendingExam.examName || 'Scheduled Exam'}". Please reflect on your exam errors before starting remedial practice.`
+        }, { status: 200 });
+      }
     }
 
     // 0. Lever 1: Autonomous Student Generative Reflection Gate

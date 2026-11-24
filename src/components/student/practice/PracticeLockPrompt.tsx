@@ -93,7 +93,7 @@ export function PracticeLockPrompt({
             <button className="btn btn-secondary" onClick={() => router.push('/student')} style={{ flex: 1 }}>
               🏠 Dashboard
             </button>
-            <button className="btn btn-primary" onClick={() => router.push('/student')} style={{ flex: 1.5, fontWeight: 700 }}>
+            <button className="btn btn-primary" onClick={() => router.push(`/student?openReflection=${encodeURIComponent(topicCode || '')}`)} style={{ flex: 1.5, fontWeight: 700 }}>
               📝 Go to Dashboard &amp; Reflect
             </button>
           </div>

@@ -324,6 +324,23 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
   const resultsSummary = activeData?.resultsSummary;
   const peerReviews = activeData?.peerReviews || { count: 0, firstExamId: null };
   const pendingSelfReviews: any[] = (activeData as any)?.pendingSelfReviews || [];
+
+  // Handle openReflection URL parameter to automatically pop open reflection modal
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const urlParams = new URLSearchParams(window.location.search);
+    const openRef = urlParams.get('openReflection');
+    if (openRef && pendingSelfReviews.length > 0) {
+      const match = pendingSelfReviews.find((r: any) => 
+        r.examId === openRef || 
+        r.id === openRef || 
+        (r.examName || '').toLowerCase().includes(openRef.toLowerCase())
+      ) || pendingSelfReviews[0];
+      if (match) {
+        setActiveReflectionExam({ examId: match.examId, examName: match.examName });
+      }
+    }
+  }, [pendingSelfReviews]);
   const pendingAbsences: any[] = (activeData as any)?.pendingAbsences || [];
   const activeSrsDue: any[] = (activeData as any)?.srsDueTopics || [];
   const rawExams = activeData?.exams || { pendingObjectiveExams: [], scheduledObjectiveExams: [], pendingSubjectiveExams: [], scheduledSubjectiveExams: [], dailyHomePractices: [], studyChips: [] };

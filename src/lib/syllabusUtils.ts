@@ -400,12 +400,10 @@ export function buildSyllabusHierarchyFromDocs(docs: any[], includeChapters = fa
         subjectName: subject,
         ...(includeChapters ? { chapters: data.chapters || [] } : {})
       };
-      // Dual-index by BOTH human display name (e.g. 'Science and Technology Part - 1')
-      // AND canonical machine code (e.g. 'SCIT1') for 100% resilient SSOT resolution.
+      // Single canonical entry indexed strictly by official Subject Name (Rule 2.R)
       subjectsMap[bCode][cls][subject] = subjectPayload;
       if (subjectCode) {
-        subjectsMap[bCode][cls][subjectCode] = subjectPayload;
-        subjectCodes[subjectCode] = subjectCode;
+        subjectCodes[subject] = subjectCode;
       }
     }
   });
