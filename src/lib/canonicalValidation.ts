@@ -409,4 +409,69 @@ export function assertCanonicalQuestionPayload(questionData: any): void {
       throw new Error(`[CANONICAL BARRIER VIOLATION] ONE numerical question must provide numericalValue or numerical correctAnswer.`);
     }
   }
+
+  // 5. Strict Anti-Placeholder & Anti-Synthetic Filler Barrier (Rule 2.T)
+  assertNoPlaceholderQuestion(questionData);
+}
+
+/**
+ * Strict Anti-Placeholder & Synthetic Filler Invariant (Rule 2.T)
+ * Completely rejects any question that contains generic repetitive templates,
+ * synthetic variant tags, robotic options, or filler solutions.
+ */
+export function assertNoPlaceholderQuestion(questionData: any): void {
+  if (!questionData || typeof questionData !== 'object') return;
+
+  const text = String(questionData.text || questionData.questionText || questionData.question || '').trim();
+
+  // 1. Text Pattern Barriers
+  const FORBIDDEN_TEXT_PATTERNS = [
+    /evaluate\s+.*variant\s+\d+/i,
+    /for topic\s+.*,\s+evaluate/i,
+    /evaluate\s+(science|math|physics|chemical|biological|taxonomic|property|concept|geometric|mensuration)\s+variant/i,
+    /evaluate\s+problem\s+variant/i,
+    /\bvariant\s+\d+\b/i,
+    /lorem\s+ipsum/i,
+    /^sample\s+question/i,
+    /^placeholder/i,
+    /^test\s+question/i,
+    /evaluate\s+science\s+concept/i
+  ];
+
+  for (const pattern of FORBIDDEN_TEXT_PATTERNS) {
+    if (pattern.test(text)) {
+      throw new Error(`[CANONICAL BARRIER VIOLATION] Question contains forbidden placeholder text pattern matching ${pattern}: "${text.slice(0, 80)}..."`);
+    }
+  }
+
+  // 2. Options Pattern Barriers
+  const opts = Array.isArray(questionData.options) ? questionData.options : [];
+  const optTexts = opts.map((opt: any) => {
+    const s = typeof opt === 'object' && opt ? (opt.text || opt.value || '') : String(opt || '');
+    return s.trim().toLowerCase();
+  });
+
+  const FORBIDDEN_OPT_STRINGS = [
+    'fundamental scientific property',
+    'undefined condition',
+    'negligible quantity',
+    'zero value'
+  ];
+
+  const matchedForbiddenOpts = optTexts.filter((ot: string) => FORBIDDEN_OPT_STRINGS.includes(ot));
+  if (matchedForbiddenOpts.length >= 2) {
+    throw new Error(`[CANONICAL BARRIER VIOLATION] Question contains forbidden synthetic filler options: [${matchedForbiddenOpts.join(', ')}].`);
+  }
+
+  for (const optStr of optTexts) {
+    if (/^option\s+[a-d]$/i.test(optStr) || /^variant\s+\d+/i.test(optStr) || /placeholder/i.test(optStr)) {
+      throw new Error(`[CANONICAL BARRIER VIOLATION] Option contains forbidden placeholder text: "${optStr}".`);
+    }
+  }
+
+  // 3. Solution Pattern Barriers
+  const sol = String(questionData.solution || questionData.explanation || '').trim().toLowerCase();
+  if (sol.includes('conceptual deduction confirms scientific validity') && sol.includes('principle is valid')) {
+    throw new Error(`[CANONICAL BARRIER VIOLATION] Solution contains forbidden synthetic boilerplate text.`);
+  }
 }

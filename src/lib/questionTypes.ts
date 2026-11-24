@@ -1649,7 +1649,7 @@ export function validateQuestion(q: any, questionType: 'objective' | 'subjective
   const textStr = String(q.text || '');
   const solStr = String(q.solution || '');
 
-  // 1. Check for synthetic placeholder patterns in question text or solution
+  // 1. Check for synthetic placeholder patterns in question text, options, or solution
   const forbiddenPatterns = [
     /\[cite[:\s\d]/i,
     /Option\s+[A-D]\s*\(/i,
@@ -1660,7 +1660,17 @@ export function validateQuestion(q: any, questionType: 'objective' | 'subjective
     /Calculate the resultant value when/i,
     /Given primary variable\s*=/i,
     /Given secondary parameter\s*=/i,
-    /Option\s+[A-D]$/i
+    /Option\s+[A-D]$/i,
+    /evaluate\s+.*variant\s+\d+/i,
+    /for topic\s+.*,\s+evaluate/i,
+    /evaluate\s+(science|math|physics|chemical|biological|taxonomic|property|concept|geometric|mensuration)\s+variant/i,
+    /evaluate\s+problem\s+variant/i,
+    /\bvariant\s+\d+\b/i,
+    /fundamental scientific property/i,
+    /undefined condition/i,
+    /negligible quantity/i,
+    /conceptual deduction confirms scientific validity/i,
+    /principle is valid\b/i
   ];
 
   for (const pat of forbiddenPatterns) {
