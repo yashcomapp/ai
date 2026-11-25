@@ -562,7 +562,22 @@ function ExamReportContent() {
 
         // Option votes tracking
         if (isActuallyAttempted && stat.options) {
-          const selected = parseAnswerList(qd.userAnswer);
+          const isMultiQ = isMultipleChoiceType(stat.type);
+          const rawAns = qd.rawAnswer !== undefined && qd.rawAnswer !== null && String(qd.rawAnswer).trim() !== '' ? qd.rawAnswer : null;
+          let selected: string[];
+          if (rawAns !== null) {
+            selected = isMultiQ ? parseAnswerList(rawAns) : [String(rawAns).trim()];
+          } else {
+            const fullAns = String(qd.userAnswer ?? '').trim();
+            const fullClean = cleanStringForMatch(fullAns);
+            const matchesWholeOption = Array.isArray(stat.options) && stat.options.some((opt: any) => {
+              const optCode = getRawOptionKey(opt);
+              const optText = getRawOptionText(opt);
+              return optCode === fullAns || optText === fullAns || String(opt) === fullAns ||
+                (fullClean && (cleanStringForMatch(optText) === fullClean || cleanStringForMatch(optCode) === fullClean));
+            });
+            selected = (!isMultiQ || matchesWholeOption) ? (fullAns ? [fullAns] : []) : parseAnswerList(qd.userAnswer);
+          }
           selected.forEach(ans => {
             const answerStr = String(ans).trim();
             if (!answerStr) return;
