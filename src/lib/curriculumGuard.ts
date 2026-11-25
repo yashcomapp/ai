@@ -31,13 +31,16 @@ const QUALITATIVE_TOPIC_PATTERNS = [
   /useful\s+and\s+harmful/i
 ];
 
-// Specific known qualitative chapter codes (e.g. MH-9-SCIT Chapter 6, 7, 8, 9, 10, 17)
+// Specific known qualitative chapter codes (no numerical objective questions)
 const QUALITATIVE_CHAPTER_CODES = new Set([
   'MH-9-SCIT-6',   // Classification of Plants
   'MH-9-SCIT-7',   // Energy Flow in an Ecosystem
   'MH-9-SCIT-8',   // Useful and Harmful Microbes
   'MH-9-SCIT-9',   // Environmental Management
   'MH-9-SCIT-10',  // ICT: The New Direction of Progress
+  'MH-9-SCIT-14',  // Substances in Common Use
+  'MH-9-SCIT-15',  // Life Processes in Living Organisms
+  'MH-9-SCIT-16',  // Heredity and Variation
   'MH-9-SCIT-17',  // Introduction to Biotechnology
   'MH-8-SCI-1',    // Living World and Classification of Microbes
   'MH-8-SCI-2',    // Health and Diseases
@@ -47,10 +50,16 @@ const QUALITATIVE_CHAPTER_CODES = new Set([
   'MH-8-SCI-10',   // Cell and Cell Organelles
   'MH-8-SCI-17',   // Man-made Materials
   'MH-8-SCI-18',   // Ecosystems
-  'CBSE-8-CURI-5', // Curiosity: Reproduction in Animals / Microorganisms
   'MH-10-SCIT1-9', // Carbon Compounds (no numerical objective questions)
+  'MH-10-SCIT2-1', // Heredity and Evolution
+  'MH-10-SCIT2-2', // Life Processes in Living Organisms Part - 1
+  'MH-10-SCIT2-3', // Life Processes in Living Organisms Part - 2
+  'MH-10-SCIT2-4', // Environmental Management
+  'MH-10-SCIT2-6', // Animal Classification
   'MH-10-SCIT2-7', // Introduction to Microbiology
-  'MH-10-SCIT2-8'  // Cell Biology and Biotechnology
+  'MH-10-SCIT2-8', // Cell Biology and Biotechnology
+  'MH-10-SCIT2-9', // Social Health
+  'MH-10-SCIT2-10' // Disaster Management
 ]);
 
 // Prohibited university, engineering, or medical degree level keywords
