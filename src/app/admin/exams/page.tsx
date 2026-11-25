@@ -16,7 +16,7 @@ import { toISTDateTimeLocalInput, formatDateDMY, parseDateInput, getDateKeyIST, 
 import ObjectiveTab from '@/components/admin/exams/ObjectiveTab';
 import SubjectiveTab from '@/components/admin/exams/SubjectiveTab';
 import { isExamAssigned, Exam, Assignment, Batch, Student } from '@/components/admin/exams/types';
-import { sortBatchesAscending } from '@/lib/batchUtils';
+import { sortBatchesAscending, getBatchClassNumber } from '@/lib/batchUtils';
 import {
   getNormExamDuration,
   getExamSubject,
@@ -507,26 +507,55 @@ export default function AdminExamsPage() {
   // Create Assignment Action
   const handleOpenAssign = (exam: Exam, type: 'objective' | 'subjective') => {
     const normDuration = getNormExamDuration(exam, type);
+    const isClassroomSubj = type === 'subjective' && exam.mode === 'classroom';
+    const initialDuration = isClassroomSubj ? (normDuration || 60) : normDuration;
+    const morningTimes = getMorningTestTimes(initialDuration);
+
+    // Default-select batch(es) matching the exam's class (and board if disambiguated)
+    const examClassStr = getExamClass(exam, assignments, batches);
+    const examClassNum = parseInt(examClassStr, 10);
+    let defaultBatchIds: string[] = [];
+    if (!isNaN(examClassNum) && examClassNum > 0) {
+      const classBatches = batches.filter(b => getBatchClassNumber(b) === examClassNum);
+      if (classBatches.length > 1) {
+        const rawBoard = String(
+          (exam as any).board ||
+          (exam.name || '').match(/\b(CBSE|MH)\b/i)?.[1] ||
+          (Array.isArray(exam.topicCodes) ? exam.topicCodes.join(' ').match(/\b(CBSE|MH)\b/i)?.[1] : '') ||
+          ''
+        ).toUpperCase();
+        if (rawBoard === 'CBSE' || rawBoard === 'MH') {
+          const boardRegex = rawBoard === 'MH' ? /\b(MH|MAHARASHTRA)\b/i : /\bCBSE\b/i;
+          const boardMatches = classBatches.filter(b => boardRegex.test(String(b.board || '')) || boardRegex.test(String(b.name || '')));
+          defaultBatchIds = (boardMatches.length > 0 ? boardMatches : classBatches).map(b => b.id);
+        } else {
+          defaultBatchIds = classBatches.map(b => b.id);
+        }
+      } else {
+        defaultBatchIds = classBatches.map(b => b.id);
+      }
+    }
+
     setAssignModal({
       show: true,
       type,
       examId: exam.id,
       examName: exam.name,
       targetType: 'batch',
-      selectedBatches: new Set(),
+      selectedBatches: new Set(defaultBatchIds),
       selectedStudents: new Set(),
-      openMode: 'immediate',
-      startAtStr: '',
-      endAtStr: '',
+      openMode: 'scheduled',
+      startAtStr: morningTimes.startStr,
+      endAtStr: morningTimes.endStr,
       attemptLimit: 1,
-      lateEntryRestriction: false,
+      lateEntryRestriction: true,
       normDuration,
       overrideDuration: false,
       examDuration: normDuration,
       examMode: exam.mode === 'classroom' ? 'classroom' : 'home',
       classroomDuration: normDuration || 60,
       classroomTimePerQ: 5,
-      isMorningTest: false,
+      isMorningTest: true,
       isEveningTest: false
     });
   };

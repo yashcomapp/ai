@@ -967,7 +967,7 @@ export async function GET(req: NextRequest) {
     const objAssignments: any[] = [];
     objAssignDocs.forEach((doc: any) => {
       const data = doc.data();
-      if (data.status && data.status !== 'active' && data.status !== 'draft') return;
+      if (data.status && data.status !== 'active' && data.status !== 'draft' && data.status !== 'disabled') return;
       objAssignments.push({
         id: doc.id,
         examId: data.examId,
@@ -989,7 +989,7 @@ export async function GET(req: NextRequest) {
     const subjAssignments: any[] = [];
     subjAssignDocs.forEach((doc: any) => {
       const data = doc.data();
-      if (data.status && data.status !== 'active' && data.status !== 'draft') return;
+      if (data.status && data.status !== 'active' && data.status !== 'draft' && data.status !== 'disabled') return;
       subjAssignments.push({
         id: doc.id,
         examId: data.examId,
@@ -1475,6 +1475,10 @@ export async function PUT(req: NextRequest) {
       lateEntryRestriction: lateEntryRestriction === true || (lateEntryRestriction !== false && is6amOr9pmSlot(updatedStart)),
       updatedAt: admin.firestore.FieldValue.serverTimestamp()
     };
+
+    if (assignData.status === 'disabled') {
+      updates.status = 'active';
+    }
 
     if (examDuration) {
       updates.examDuration = Number(examDuration);

@@ -374,17 +374,20 @@ export function getBirthdatePassword(dobStr?: string): string {
 }
 
 /**
- * Calculates tomorrow 6:00 AM start and end datetime-local strings based on duration.
+ * Calculates the coming morning 6:00 AM start and end datetime-local strings based on duration.
+ * If current time is already >= 06:00 today, advances to tomorrow 06:00.
  */
 export function getMorningTestTimes(durationMinutes: number): { startStr: string; endStr: string } {
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  const y = tomorrow.getFullYear();
-  const m = String(tomorrow.getMonth() + 1).padStart(2, '0');
-  const d = String(tomorrow.getDate()).padStart(2, '0');
+  const target = new Date();
+  if (target.getHours() >= 6) {
+    target.setDate(target.getDate() + 1);
+  }
+  const y = target.getFullYear();
+  const m = String(target.getMonth() + 1).padStart(2, '0');
+  const d = String(target.getDate()).padStart(2, '0');
   const startStr = `${y}-${m}-${d}T06:00`;
 
-  const endDate = new Date(tomorrow);
+  const endDate = new Date(target);
   endDate.setHours(6, durationMinutes || 30, 0, 0);
   const ey = endDate.getFullYear();
   const em = String(endDate.getMonth() + 1).padStart(2, '0');

@@ -172,7 +172,7 @@ export function TodayTomorrowExamsTable({
                       </td>
                       <td style={{ padding: '4px 6px', textAlign: 'right', whiteSpace: 'nowrap' }}>
                         <div style={{ display: 'flex', gap: '3px', justifyContent: 'flex-end', flexWrap: 'nowrap', whiteSpace: 'nowrap' }}>
-                          {activeAssign && activeAssign.openMode !== 'scheduled' && (
+                          {activeAssign && (activeAssign.openMode !== 'scheduled' || rawStatus === 'disabled') && (
                             <button
                               type="button"
                               className={`btn ${rawStatus === 'active' ? 'btn-secondary' : 'btn-primary'}`}
