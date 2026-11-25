@@ -48,6 +48,7 @@ const QUALITATIVE_CHAPTER_CODES = new Set([
   'MH-8-SCI-17',   // Man-made Materials
   'MH-8-SCI-18',   // Ecosystems
   'CBSE-8-CURI-5', // Curiosity: Reproduction in Animals / Microorganisms
+  'MH-10-SCIT1-9', // Carbon Compounds (no numerical objective questions)
   'MH-10-SCIT2-7', // Introduction to Microbiology
   'MH-10-SCIT2-8'  // Cell Biology and Biotechnology
 ]);

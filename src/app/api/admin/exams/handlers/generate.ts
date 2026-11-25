@@ -15,6 +15,7 @@ import {
 } from '@/lib/syllabusUtils';
 import { getCachedSyllabus, getCachedTemplates, invalidateCache } from '@/lib/firebase/cache';
 import { assertCanonicalExamPayload } from '@/lib/canonicalValidation';
+import { isTopicPurelyQualitative } from '@/lib/curriculumGuard';
 
 
 const INITIAL_METADATA_TTL = 300000; // 5 minutes
@@ -174,6 +175,9 @@ export async function GET(req: NextRequest) {
           }
 
           const qCanonicalType = toCanonicalQuestionType(q.type);
+          if (questionType !== 'subjective' && qCanonicalType === 'ONE' && isTopicPurelyQualitative(q.topicCode, q.chapterName || q.chapterTitle, q.subject)) {
+            return false;
+          }
           const typeMatch = questionType === 'subjective'
             ? CANONICAL_SUBJECTIVE_TYPES.includes(qCanonicalType)
             : CANONICAL_OBJECTIVE_TYPES.includes(qCanonicalType);

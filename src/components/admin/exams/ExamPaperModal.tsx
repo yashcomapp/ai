@@ -257,6 +257,11 @@ export default function ExamPaperModal({
                 <span style={{ padding: '2px 8px', borderRadius: '4px', background: 'rgba(255,255,255,0.08)', fontWeight: 600 }}>
                   D: {distribution.counts.D} ({Math.round((distribution.counts.D / distribution.objectiveCount) * 100)}%)
                 </span>
+                {distribution.counts.Other > 0 && (
+                  <span style={{ padding: '2px 8px', borderRadius: '4px', background: 'rgba(148,163,184,0.18)', fontWeight: 600, color: '#cbd5e1' }}>
+                    Other: {distribution.counts.Other} ({Math.round((distribution.counts.Other / distribution.objectiveCount) * 100)}%)
+                  </span>
+                )}
               </div>
             </div>
 
