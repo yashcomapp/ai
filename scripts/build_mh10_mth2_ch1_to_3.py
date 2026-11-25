@@ -385,8 +385,7 @@ def generate_mh10_mth2_ch1_to_3():
                     "Both triangles are similar to each other and to the parent triangle.",
                     v, diff)
             elif "2.1.2" in tc: # Theorem of Geometric Mean with SVG
-                ad = 4 + (k % 5)
-                db = 9 if ad % 2 == 0 else 16
+                ad, db = [(4, 9), (9, 16), (2, 8), (3, 12), (4, 16)][k % 5]
                 cd = int(math.sqrt(ad * db))
                 svg = get_geom_mean_svg(f"{ad}", f"{db}", "CD")
                 correct = f"\\(CD = {cd}\\text{{ cm}}\\)"
@@ -401,8 +400,7 @@ def generate_mh10_mth2_ch1_to_3():
                     f"Length of altitude \\(CD = {cd}\\text{{ cm}}\\).",
                     v, diff, req_fig=True)
             elif "2.2.1" in tc: # Statement and proof of Pythagoras with SVG
-                b = 3 + (k % 4) * 2
-                h = 4 + (k % 4) * 2
+                b, h = [(3, 4), (6, 8), (8, 15), (5, 12)][k % 4]
                 hyp = int(math.sqrt(b*b + h*h))
                 svg = get_pythagoras_svg(f"{b} cm", f"{h} cm", "AC")
                 correct = f"\\(AC = {hyp}\\text{{ cm}}\\)"
@@ -566,8 +564,7 @@ def generate_mh10_mth2_ch1_to_3():
                     "The line is tangent to the circle.",
                     v, diff)
             elif "3.3.1" in tc: # Tangent segments from external point are congruent
-                d = 13 + (k % 4)
-                r = 5
+                r, d = [(5, 13), (6, 10), (8, 17), (9, 15)][k % 4]
                 tangent_len = int(math.sqrt(d*d - r*r))
                 correct = f"\\(PA = PB = {tangent_len}\\text{{ cm}}\\)"
                 opts = [
@@ -769,9 +766,7 @@ def generate_mh10_mth2_ch1_to_3():
                     f"The angle is \\({ang}^\\circ\\).",
                     v, diff)
             elif "3.8.2" in tc: # Tangent-Secant segment theorem: PT^2 = PA * PB
-                pa = 4
-                ab = 5 + (k % 6)
-                pb = pa + ab
+                pa, pb = [(4, 9), (4, 16), (9, 16), (2, 8), (3, 12), (4, 25)][k % 6]
                 pt_sq = pa * pb
                 pt = int(math.sqrt(pt_sq))
                 correct = f"\\(PT = {pt}\\text{{ cm}}\\)"

@@ -255,8 +255,7 @@ def generate_mh10_mth2_ch4_to_7():
                     v, diff)
             # CHAPTER 5: COORDINATE GEOMETRY
             elif "5.1.1" in tc: # Distance from origin sqrt(x^2 + y^2)
-                x = 3 + (k % 4) * 2
-                y = 4 + (k % 4) * 2
+                x, y = [(3, 4), (6, 8), (8, 15), (5, 12)][k % 4]
                 d = int(math.sqrt(x*x + y*y))
                 correct = f"\\({d}\\text{{ units}}\\)"
                 opts = [correct, f"\\({d + 2}\\text{{ units}}\\)", f"\\({x + y}\\text{{ units}}\\)", f"\\({d * 2}\\text{{ units}}\\)"]
@@ -499,8 +498,7 @@ def generate_mh10_mth2_ch4_to_7():
                     f"Volume is \\({vol}\\text{{ cm}}^3\\) and TSA is \\({tsa}\\text{{ cm}}^2\\).",
                     v, diff)
             elif "7.1.2" in tc: # Slant height of cone: l = sqrt(r^2 + h^2)
-                r = 3 + (k % 4) * 2
-                h = 4 + (k % 4) * 2
+                r, h = [(3, 4), (6, 8), (8, 15), (5, 12)][k % 4]
                 l = int(math.sqrt(r*r + h*h))
                 correct = f"\\(l = {l}\\text{{ cm}}\\)"
                 opts = [correct, f"\\(l = {l + 2}\\text{{ cm}}\\)", f"\\(l = {r + h}\\text{{ cm}}\\)", f"\\(l = {l * 2}\\text{{ cm}}\\)"]
