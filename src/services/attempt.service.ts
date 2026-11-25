@@ -131,7 +131,7 @@ export class AttemptService {
         type: q.type || 'OSC',
         options: q.options || [],
         solution: q.solution || q.explanation || '',
-        userAnswer: isDisputed ? '[Reported / Disputed]' : userAnsText,
+        userAnswer: userAnsText,
         rawAnswer: isAttempted ? ans : '',
         isDisputed,
         correctAnswer: correctAnsText,
