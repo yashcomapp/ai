@@ -270,3 +270,14 @@
      - Execute production build verification (pm run build) cleanly prior to final deployment.
   4. **Proactive Transparency**:
      - If an infrastructure anomaly occurs (API idle stream timeout or server 503 capacity error), notify the user immediately rather than stalling silently in retry loops.
+
+### AA. Strict Root-Cause & Raw-Data-Preservation Invariant (Ban on Band-Aid Scripts)
+- **Rule**: Ad-hoc one-off Firestore mutation scripts (`scripts/*.js`) MUST NEVER be used as a band-aid or whack-a-mole substitute for fixing application bugs in `src/`.
+- **Key Invariants**:
+  1. **Root-Cause Fix in `src/` First**:
+     - Every bug in grading, Question Bank, exam reports, practice, or topic mastery MUST be fixed at its root cause inside the canonical `src/services/` or `src/lib/` SSOT pipeline so the platform handles it automatically going forward.
+  2. **Zero Destruction of Raw Student Data**:
+     - NEVER overwrite, replace, or discard original student responses (`userAnswer`, `rawAnswer`, `answers`) with placeholder strings (e.g., `'[Reported / Disputed]'`) during submission, dispute handling, or remediation.
+     - Dispute/exclusion states must be stored as non-destructive metadata (`isDisputed: true`) alongside the preserved raw student answer so re-grading remains 100% lossless and reversible.
+  3. **No Silent / Unrequested Bulk Data Patches**:
+     - Do not write or execute ad-hoc scripts that mutate live `reviews`, `examAttempts`, `questions`, or `studentTopicMastery` unless explicitly requested by the user for a specific historical data cleanup, and always pair any such cleanup with a pre-mutation snapshot (`scripts/db-backup.js`) plus the permanent `src/` fix.
