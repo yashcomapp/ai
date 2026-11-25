@@ -42,11 +42,12 @@ async function run() {
   qSnap.forEach(doc => {
     const q = doc.data();
     const txt = String(q.text || '');
-    if (txt.includes('Tangent to a Circle') && !txt.toLowerCase().includes('tangent')) {
+    const plainTxt = stripSvgWrapper(txt);
+    if (txt.includes('Tangent to a Circle') && !plainTxt.toLowerCase().includes('tangent')) {
       qBackups.push({ id: doc.id, data: q });
       qUpdates.push({
         ref: doc.ref,
-        text: stripSvgWrapper(txt)
+        text: plainTxt
       });
     }
   });
