@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase/admin';
 import { verifyRole } from '@/lib/auth';
 import * as admin from 'firebase-admin';
+import { isTopicPurelyQualitative } from '@/lib/curriculumGuard';
 
 export interface ConsistencyAnomaly {
   docId: string;
@@ -34,8 +35,19 @@ export function evaluateQuestionConsistency(q: any, docId: string): ConsistencyA
     return String(opt).trim();
   };
 
-  // 1. Check: Numerical Objective (ONE) where explanation calculates a number
+  // 1. Check: Numerical Objective (ONE) on purely qualitative chapter OR explanation mismatch
   if (type === 'ONE' || qCode.includes('-ONE-')) {
+    if (isTopicPurelyQualitative(q.topicCode || qCode, q.chapterName || q.chapterTitle, q.subject)) {
+      return {
+        docId,
+        qCode,
+        topicCode: q.topicCode || '',
+        type,
+        currentCorrectAnswer: cAns,
+        reason: `ONE numerical question is forbidden on purely qualitative chapter (${q.topicCode || qCode}). Convert to OSC.`,
+        confidence: 'HIGH'
+      };
+    }
     const numMatch = sol.match(/Correct\s+Answer\s+is\s+([0-9.]+)/i);
     if (numMatch) {
       const calcNum = parseFloat(numMatch[1]);

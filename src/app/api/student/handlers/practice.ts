@@ -12,6 +12,7 @@ import { MASTERY_THRESHOLDS } from '@/lib/dashboardMetrics';
 import { filterDistinctCandidates, areQuestionsTooSimilar } from '@/lib/questionSimilarity';
 import { getSrsMicroSetSize, selectSrsQuestions } from '@/lib/srsRotation';
 import { invalidateCache } from '@/lib/firebase/cache';
+import { isTopicPurelyQualitative } from '@/lib/curriculumGuard';
 
 
 async function getQuestionsByTopic(topicCode: string) {
@@ -296,10 +297,13 @@ export async function GET(req: NextRequest) {
     // 1.2 Fetch all questions for this topic (STRICTLY Canonical Objective Types: OSC, OMC, OAR, OTF, ONE, OFB)
     const rawTopicQuestions = await getQuestionsByTopic(topicCode);
 
-    // Filter out non-objective types, quarantined items, and malformed MCQs with <2 options (ONE & OFB have empty/custom options)
+    // Filter out non-objective types, quarantined items, qualitative ONE violations, and malformed MCQs with <2 options
     const validObjectiveQuestions = rawTopicQuestions.filter((q: any) => {
       if (!q.type || !isObjectiveType(q.type)) return false;
       if (isQuestionQuarantined(q)) return false;
+      if (q.type === 'ONE' && isTopicPurelyQualitative(q.topicCode || topicCode, q.chapterName || q.chapterTitle, q.subject)) {
+        return false;
+      }
       if (q.type !== 'ONE' && q.type !== 'OFB') {
         if (!Array.isArray(q.options) || q.options.length < 2) {
           return false;

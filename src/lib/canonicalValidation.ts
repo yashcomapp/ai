@@ -23,6 +23,7 @@
  */
 
 import { getCanonicalBoardCode } from './syllabusUtils';
+import { validateQuestionCurriculum } from './curriculumGuard';
 
 export const CANONICAL_BOARDS = ['CBSE', 'MH'] as const;
 export type CanonicalBoard = typeof CANONICAL_BOARDS[number];
@@ -403,10 +404,14 @@ export function assertCanonicalQuestionPayload(questionData: any): void {
     }
   }
 
-  // 4. ONE Numerical Invariant
+  // 4. ONE Numerical Invariant & Curriculum Guard (Rule 2.K / Qualitative Barrier)
   if (qType === 'ONE') {
     if (questionData.numericalValue === undefined && questionData.correctAnswer === undefined) {
       throw new Error(`[CANONICAL BARRIER VIOLATION] ONE numerical question must provide numericalValue or numerical correctAnswer.`);
+    }
+    const currValidation = validateQuestionCurriculum(questionData);
+    if (!currValidation.valid) {
+      throw new Error(`[CANONICAL BARRIER VIOLATION] ${currValidation.errors[0]}`);
     }
   }
 

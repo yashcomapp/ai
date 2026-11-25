@@ -33,33 +33,72 @@ const QUALITATIVE_TOPIC_PATTERNS = [
 
 // Specific known qualitative chapter codes (no numerical objective questions)
 const QUALITATIVE_CHAPTER_CODES = new Set([
-  'MH-9-SCIT-6',   // Classification of Plants
-  'MH-9-SCIT-7',   // Energy Flow in an Ecosystem
-  'MH-9-SCIT-8',   // Useful and Harmful Microbes
-  'MH-9-SCIT-9',   // Environmental Management
-  'MH-9-SCIT-10',  // ICT: The New Direction of Progress
-  'MH-9-SCIT-14',  // Substances in Common Use
-  'MH-9-SCIT-15',  // Life Processes in Living Organisms
-  'MH-9-SCIT-16',  // Heredity and Variation
-  'MH-9-SCIT-17',  // Introduction to Biotechnology
-  'MH-8-SCI-1',    // Living World and Classification of Microbes
-  'MH-8-SCI-2',    // Health and Diseases
-  'MH-8-SCI-7',    // Metals and Nonmetals (descriptive)
-  'MH-8-SCI-8',    // Pollution
-  'MH-8-SCI-9',    // Disaster Management
-  'MH-8-SCI-10',   // Cell and Cell Organelles
-  'MH-8-SCI-17',   // Man-made Materials
-  'MH-8-SCI-18',   // Ecosystems
-  'MH-10-SCIT1-9', // Carbon Compounds (no numerical objective questions)
-  'MH-10-SCIT2-1', // Heredity and Evolution
-  'MH-10-SCIT2-2', // Life Processes in Living Organisms Part - 1
-  'MH-10-SCIT2-3', // Life Processes in Living Organisms Part - 2
-  'MH-10-SCIT2-4', // Environmental Management
-  'MH-10-SCIT2-6', // Animal Classification
-  'MH-10-SCIT2-7', // Introduction to Microbiology
-  'MH-10-SCIT2-8', // Cell Biology and Biotechnology
-  'MH-10-SCIT2-9', // Social Health
-  'MH-10-SCIT2-10' // Disaster Management
+  // CBSE Class 8 Curiosity
+  'CBSE-8-CURI-1',  // Exploring the Investigative World of Science
+  'CBSE-8-CURI-2',  // The Invisible Living World: Beyond Our Naked Eye
+  'CBSE-8-CURI-3',  // Health: The Ultimate Treasure
+  'CBSE-8-CURI-7',  // Particulate Nature of Matter
+  'CBSE-8-CURI-8',  // Nature of Matter: Elements, Compounds, and Mixtures
+  'CBSE-8-CURI-12', // How Nature Works in Harmony
+  'CBSE-8-CURI-13', // Our Home: Earth, a Unique Life Sustaining Planet
+  // CBSE Class 9 Science
+  'CBSE-9-SCIE-1',  // Exploration: Entering the World of Secondary Science
+  'CBSE-9-SCIE-2',  // Cell: The Building Block of Life
+  'CBSE-9-SCIE-3',  // Tissues in Action
+  'CBSE-9-SCIE-5',  // Exploring Mixtures and their Separation
+  'CBSE-9-SCIE-11', // Reproduction: How Life Continues
+  'CBSE-9-SCIE-12', // Patterns in Life: Diversity and Classification
+  'CBSE-9-SCIE-13', // Earth as a System: Energy, Matter, and Life
+  // CBSE Class 10 Science
+  'CBSE-10-SCI-1',  // Chemical Reactions and Equations
+  'CBSE-10-SCI-2',  // Acids, Bases and Salts
+  'CBSE-10-SCI-3',  // Metals and Non-metals
+  'CBSE-10-SCI-4',  // Carbon and its Compounds
+  'CBSE-10-SCI-5',  // Life Processes
+  'CBSE-10-SCI-6',  // Control and Coordination
+  'CBSE-10-SCI-7',  // How do Organisms Reproduce?
+  'CBSE-10-SCI-8',  // Heredity and Evolution
+  'CBSE-10-SCI-13', // Our Environment
+  // MH Class 8 General Science
+  'MH-8-SCI-1',     // Living World and Classification of Microbes
+  'MH-8-SCI-2',     // Health and Diseases
+  'MH-8-SCI-7',     // Metals and Non-metals
+  'MH-8-SCI-8',     // Pollution
+  'MH-8-SCI-9',     // Disaster Management
+  'MH-8-SCI-10',    // Cell and Cell Organelles
+  'MH-8-SCI-11',    // Human Body and Organ System
+  'MH-8-SCI-12',    // Introduction to Acid and Base
+  'MH-8-SCI-17',    // Man-made Materials
+  'MH-8-SCI-18',    // Ecosystems
+  'MH-8-SCI-19',    // Life Cycle of Stars
+  // MH Class 9 Science & Technology
+  'MH-9-SCIT-5',    // Acids, Bases and Salts
+  'MH-9-SCIT-6',    // Classification of Plants
+  'MH-9-SCIT-7',    // Energy Flow in an Ecosystem
+  'MH-9-SCIT-8',    // Useful and Harmful Microbes
+  'MH-9-SCIT-9',    // Environmental Management
+  'MH-9-SCIT-10',   // Information Communication Technology (ICT)
+  'MH-9-SCIT-13',   // Carbon: An Important Element
+  'MH-9-SCIT-14',   // Substances in Common Use
+  'MH-9-SCIT-15',   // Life Processes in Living Organisms
+  'MH-9-SCIT-16',   // Heredity and Variation
+  'MH-9-SCIT-17',   // Introduction to Biotechnology
+  // MH Class 10 Science & Technology Part - 1
+  'MH-10-SCIT1-2',  // Periodic Classification of Elements
+  'MH-10-SCIT1-3',  // Chemical Reactions and Equations
+  'MH-10-SCIT1-8',  // Metallurgy
+  'MH-10-SCIT1-9',  // Carbon Compounds
+  // MH Class 10 Science & Technology Part - 2
+  'MH-10-SCIT2-1',  // Heredity and Evolution
+  'MH-10-SCIT2-2',  // Life Processes in Living Organisms Part - 1
+  'MH-10-SCIT2-3',  // Life Processes in Living Organisms Part - 2
+  'MH-10-SCIT2-4',  // Environmental Management
+  'MH-10-SCIT2-5',  // Towards Green Energy
+  'MH-10-SCIT2-6',  // Animal Classification
+  'MH-10-SCIT2-7',  // Introduction to Microbiology
+  'MH-10-SCIT2-8',  // Cell Biology and Biotechnology
+  'MH-10-SCIT2-9',  // Social Health
+  'MH-10-SCIT2-10'  // Disaster Management
 ]);
 
 // Prohibited university, engineering, or medical degree level keywords
