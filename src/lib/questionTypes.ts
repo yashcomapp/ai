@@ -1897,6 +1897,7 @@ export function cleanStringForMatch(s: any): string {
   if (s === undefined || s === null) return '';
   const stripped = stripCitations(s);
   return String(stripped)
+    .replace(/\{\{([^{}]+)\}\}/g, '{$1}')           // Collapse double-brace KaTeX wrappers {{x}} -> {x}
     .replace(/\\ce\{([^}]+)\}/g, '$1')
     .replace(/\\(?:text|mathrm|mathbf|mathit|mathsf|mathtt)\{([^}]+)\}/g, '$1')
     .replace(/\\\(|\\\)|\\\[|\\\]|\$+/g, '')       // Strip math delimiter wrappers
