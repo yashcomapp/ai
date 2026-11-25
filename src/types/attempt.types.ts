@@ -14,6 +14,8 @@ export interface QuestionDetail {
   type?: string;
   options?: any[];
   userAnswer: string;
+  rawAnswer?: any;
+  isDisputed?: boolean;
   correctAnswer: any;
   solution?: string;
   isAttempted: boolean;

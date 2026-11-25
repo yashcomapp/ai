@@ -7,6 +7,8 @@ import { AttemptRepository } from '@/repositories/attempt.repository';
 import { ProctoringViolations, QuestionDetail, ExamAttempt } from '@/types/attempt.types';
 import { deriveTopicCodeFromQuestionCode, isMultipleChoiceType, parseAnswerList, resolveOptionDisplayText, getOptionText, toCanonicalQuestionType, CANONICAL_OBJECTIVE_TYPES } from '@/lib/questionTypes';
 import { invalidateCache } from '@/lib/firebase/cache';
+import { ReportCacheManager } from '@/lib/reportCache';
+import { ChunkedBatch } from '@/lib/firebase/batch';
 import { getMidnightIST } from '@/lib/dateUtils';
 
 export class AttemptService {
@@ -130,6 +132,8 @@ export class AttemptService {
         options: q.options || [],
         solution: q.solution || q.explanation || '',
         userAnswer: isDisputed ? '[Reported / Disputed]' : userAnsText,
+        rawAnswer: isAttempted ? ans : '',
+        isDisputed,
         correctAnswer: correctAnsText,
         isAttempted: !!isAttempted,
         isCorrect: isCorrect,
@@ -521,5 +525,260 @@ export class AttemptService {
     } catch (e) {}
 
     return result;
+  }
+
+  /**
+   * Automatically re-grades and updates existing reviews, examAttempts, and topic mastery
+   * whenever a question in the Question Bank is edited.
+   */
+  static async regradeQuestionAcrossSubmissions(
+    questionDoc: any,
+    previousId?: string
+  ): Promise<{ updatedExams: number; updatedReviews: number; updatedAttempts: number }> {
+    const finalCode = String(questionDoc?.questionCode || '').trim();
+    if (!finalCode) return { updatedExams: 0, updatedReviews: 0, updatedAttempts: 0 };
+
+    const matchCodes = new Set<string>([finalCode]);
+    if (previousId && previousId !== finalCode) {
+      matchCodes.add(String(previousId).trim());
+    }
+    const matchCodesLower = new Set(Array.from(matchCodes).map(c => c.toLowerCase()));
+
+    // 1. Find all exams referencing this question via questionCodes
+    const examQueries = Array.from(matchCodes).map(code =>
+      adminDb.collection('exams').where('questionCodes', 'array-contains', code).get()
+    );
+    const examSnaps = await Promise.all(examQueries);
+    const examDocsMap = new Map<string, FirebaseFirestore.QueryDocumentSnapshot>();
+    examSnaps.forEach(snap => snap.docs.forEach(d => examDocsMap.set(d.id, d)));
+
+    if (examDocsMap.size === 0) {
+      return { updatedExams: 0, updatedReviews: 0, updatedAttempts: 0 };
+    }
+
+    const qType = questionDoc.type || 'OSC';
+    const isMultiple = isMultipleChoiceType(qType);
+    let canonicalCorrect: any = isMultiple
+      ? (Array.isArray(questionDoc.correctAnswers) && questionDoc.correctAnswers.length > 0
+          ? questionDoc.correctAnswers
+          : (Array.isArray(questionDoc.correctAnswer)
+              ? questionDoc.correctAnswer
+              : (questionDoc.correctAnswer ? parseAnswerList(questionDoc.correctAnswer) : [])))
+      : (questionDoc.correctAnswer !== undefined && questionDoc.correctAnswer !== null && questionDoc.correctAnswer !== ''
+          ? questionDoc.correctAnswer
+          : (Array.isArray(questionDoc.correctAnswers) && questionDoc.correctAnswers.length > 0 ? questionDoc.correctAnswers[0] : ''));
+
+    if (isMultiple && Array.isArray(questionDoc.options) && questionDoc.options.length > 0) {
+      const fromOpts = questionDoc.options
+        .map((opt: any, idx: number) => (opt && typeof opt === 'object' && (opt.isCorrect || opt.correct)) ? String.fromCharCode(65 + idx) : null)
+        .filter(Boolean);
+      if (fromOpts.length > 1 && (!Array.isArray(canonicalCorrect) || canonicalCorrect.length <= 1)) {
+        canonicalCorrect = fromOpts;
+      }
+    }
+
+    const correctAnsText = getOptionText(questionDoc, canonicalCorrect ?? '');
+    const isObj = !qType || CANONICAL_OBJECTIVE_TYPES.includes(toCanonicalQuestionType(qType));
+    const topicCode = questionDoc.topicCode || deriveTopicCodeFromQuestionCode(finalCode);
+
+    const batch = new ChunkedBatch(adminDb);
+    let updatedExams = 0;
+    let updatedReviews = 0;
+    let updatedAttempts = 0;
+    const studentsToRecalcMastery = new Set<string>();
+    const cachePatternsToInvalidate = new Set<string>();
+
+    for (const [examId, examSnap] of examDocsMap.entries()) {
+      const examData = examSnap.data() || {};
+      const examPos = Number(examData.positiveMarks);
+      const negativePerWrong = Number(examData.negativeMarks) || 0;
+      const qMarks = (isObj && examPos > 0) ? examPos : (questionDoc.marks || examPos || 4);
+
+      // Update exam document if questionCode was renamed or embedded questions exist
+      const examUpdates: Record<string, any> = {};
+      if (previousId && previousId !== finalCode && Array.isArray(examData.questionCodes)) {
+        examUpdates.questionCodes = examData.questionCodes.map((c: string) => (c === previousId ? finalCode : c));
+      }
+      if (Array.isArray(examData.questions)) {
+        let embeddedChanged = false;
+        const updatedEmbedded = examData.questions.map((eq: any) => {
+          const eqId = String(eq?.questionCode || eq?.id || '').trim().toLowerCase();
+          if (matchCodesLower.has(eqId)) {
+            embeddedChanged = true;
+            return {
+              ...eq,
+              id: finalCode,
+              questionCode: finalCode,
+              text: questionDoc.text,
+              type: qType,
+              options: questionDoc.options || [],
+              correctAnswer: questionDoc.correctAnswer,
+              correctAnswers: questionDoc.correctAnswers || [],
+              solution: questionDoc.solution || '',
+              marks: qMarks,
+            };
+          }
+          return eq;
+        });
+        if (embeddedChanged) examUpdates.questions = updatedEmbedded;
+      }
+      if (Object.keys(examUpdates).length > 0) {
+        examUpdates.updatedAt = admin.firestore.FieldValue.serverTimestamp();
+        batch.update(examSnap.ref, examUpdates);
+        updatedExams++;
+      }
+
+      // 2. Fetch and re-grade all reviews for this exam
+      const reviewsSnap = await adminDb.collection('reviews').where('examId', '==', examId).get();
+      if (reviewsSnap.empty) continue;
+
+      cachePatternsToInvalidate.add(examId);
+
+      for (const revDoc of reviewsSnap.docs) {
+        const revData = revDoc.data() || {};
+        const qDetails: any[] = Array.isArray(revData.questionDetails) ? revData.questionDetails : [];
+        let matchedThisReview = false;
+        let masteryRelevantChange = false;
+
+        const updatedDetails = qDetails.map((qd: any) => {
+          const qdIds = [qd.questionCode, qd.questionId, qd.id]
+            .filter(Boolean)
+            .map((v: any) => String(v).trim().toLowerCase());
+          if (!qdIds.some(v => matchCodesLower.has(v))) {
+            return qd;
+          }
+
+          matchedThisReview = true;
+          const prevIsCorrect = !!qd.isCorrect;
+          const prevIsDisputed = !!qd.isDisputed;
+
+          const hasRaw = qd.rawAnswer !== undefined && qd.rawAnswer !== null && String(qd.rawAnswer).trim() !== '';
+          const hasDisplayAns = qd.userAnswer && qd.userAnswer !== '[Reported / Disputed]' && String(qd.userAnswer).trim() !== '';
+          const ansToEval = hasRaw ? qd.rawAnswer : (hasDisplayAns ? qd.userAnswer : '');
+
+          let nextIsDisputed = prevIsDisputed;
+          let nextIsCorrect = false;
+          let nextUserAnswer = qd.userAnswer || '';
+          let nextMarks = qMarks;
+
+          if (prevIsDisputed && !hasRaw) {
+            // Legacy disputed question without preserved rawAnswer: keep excluded, refresh text/options/solution
+            nextIsDisputed = true;
+            nextIsCorrect = false;
+            nextMarks = 0;
+          } else {
+            nextIsDisputed = false;
+            if (ansToEval !== '' && ansToEval !== '[]' && ansToEval !== '{}') {
+              nextIsCorrect = EvaluationService.evaluate(qType, ansToEval, canonicalCorrect, questionDoc.options);
+              nextUserAnswer = hasRaw ? getOptionText(questionDoc, ansToEval) : qd.userAnswer;
+            } else {
+              nextIsCorrect = false;
+            }
+          }
+
+          if (prevIsCorrect !== nextIsCorrect || prevIsDisputed !== nextIsDisputed) {
+            masteryRelevantChange = true;
+          }
+
+          return {
+            ...qd,
+            id: finalCode,
+            questionId: finalCode,
+            questionCode: finalCode,
+            questionText: questionDoc.text || qd.questionText || '',
+            type: qType,
+            options: questionDoc.options || [],
+            solution: questionDoc.solution || '',
+            correctAnswer: correctAnsText,
+            userAnswer: nextUserAnswer,
+            isCorrect: nextIsCorrect,
+            isDisputed: nextIsDisputed,
+            marks: nextMarks,
+          };
+        });
+
+        if (!matchedThisReview) continue;
+
+        // Recompute review totals from updatedDetails
+        let newScore = 0;
+        let newTotalMarks = 0;
+        const newWrongAnswers: any[] = [];
+        const newUnattempted: any[] = [];
+
+        updatedDetails.forEach((qd: any, idx: number) => {
+          if (qd.isDisputed) return;
+          const m = Number(qd.marks) || qMarks;
+          newTotalMarks += m;
+          if (!qd.isAttempted) {
+            newUnattempted.push({ qIndex: idx, questionText: qd.questionText || '', correctAnswer: qd.correctAnswer });
+          } else if (qd.isCorrect) {
+            newScore += m;
+          } else {
+            if (negativePerWrong > 0) newScore -= negativePerWrong;
+            newWrongAnswers.push({
+              questionText: qd.questionText || '',
+              userAnswer: qd.userAnswer || '',
+              correctAnswer: qd.correctAnswer,
+            });
+          }
+        });
+
+        const newPercentage = newTotalMarks > 0 ? Math.max(0, Math.round((newScore / newTotalMarks) * 100)) : 0;
+
+        batch.update(revDoc.ref, {
+          questionDetails: updatedDetails,
+          score: newScore,
+          totalMarks: newTotalMarks,
+          percentage: newPercentage,
+          wrongAnswers: newWrongAnswers,
+          unattemptedQuestions: newUnattempted,
+          regradedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+        updatedReviews++;
+
+        const sCode = revData.studentCode;
+        if (sCode) {
+          cachePatternsToInvalidate.add(sCode);
+          if (masteryRelevantChange) {
+            studentsToRecalcMastery.add(sCode);
+          }
+          const attemptRef = adminDb.collection('examAttempts').doc(`${examId}_${sCode}`);
+          batch.set(attemptRef, {
+            score: newScore,
+            totalMarks: newTotalMarks,
+            percentage: newPercentage,
+            regradedAt: admin.firestore.FieldValue.serverTimestamp(),
+          }, { merge: true });
+          updatedAttempts++;
+        }
+      }
+    }
+
+    await batch.commit();
+
+    // 3. Recalculate studentTopicMastery for students whose correctness/dispute status changed
+    if (topicCode && studentsToRecalcMastery.size > 0) {
+      await Promise.all(
+        Array.from(studentsToRecalcMastery).map(sCode =>
+          MasteryService.recalculateOrPurgeTopicsForStudent({
+            studentCode: sCode,
+            excludedExamId: '__none__',
+            candidateTopicCodes: [topicCode],
+          }).catch(err => console.warn(`Mastery recalc failed for ${sCode}:`, err))
+        )
+      );
+    }
+
+    // 4. Invalidate report & dashboard caches
+    try {
+      invalidateCache('admin_dashboard_');
+      invalidateCache('topic-coverage');
+      for (const pattern of cachePatternsToInvalidate) {
+        invalidateCache(pattern);
+        await ReportCacheManager.invalidatePattern(pattern);
+      }
+    } catch (e) {}
+
+    return { updatedExams, updatedReviews, updatedAttempts };
   }
 }

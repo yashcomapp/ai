@@ -19,6 +19,7 @@ import {
 } from '@/lib/syllabusUtils';
 import { syncTopicCountsToSyllabus } from '@/lib/syllabusSync';
 import { assertCanonicalQuestionPayload } from '@/lib/canonicalValidation';
+import { AttemptService } from '@/services/attempt.service';
 
 
 export async function GET(req: NextRequest) {
@@ -689,7 +690,13 @@ export async function POST(req: NextRequest) {
     // Zero-lag SSOT sync for the topic in syllabus & syllabusTopicIndex
     await syncTopicCountsToSyllabus([topicCode]);
 
-    return NextResponse.json({ success: true, questionCode: finalCode });
+    // Automatically re-grade and update any existing reviews / examAttempts containing this question
+    let regradeResult = null;
+    if (id) {
+      regradeResult = await AttemptService.regradeQuestionAcrossSubmissions(questionDoc, id);
+    }
+
+    return NextResponse.json({ success: true, questionCode: finalCode, ...(regradeResult ? { regradeResult } : {}) });
 
   } catch (error: any) {
     console.error('API save question error:', error);
