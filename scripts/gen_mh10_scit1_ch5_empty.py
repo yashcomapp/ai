@@ -1,0 +1,1291 @@
+import json
+import os
+import sys
+sys.path.insert(0, os.path.dirname(__file__))
+from ssot_mh10_scit_builder import build_subtopic_pack_80, validate_pack_collection
+
+SUBJ_CODE = "SCIT1"
+SUBJ_NAME = "Science and Technology Part - 1"
+CH_NUM = 5
+
+def build_pack(tc, osc, omc, otf, oar, one_ofb):
+    return build_subtopic_pack_80(tc, SUBJ_CODE, SUBJ_NAME, CH_NUM, osc, omc, otf, oar, one_ofb, seed=505)
+
+# 1. 5.3.3: Survival of aquatic plants and animals in frozen lakes
+def gen_5_3_3():
+    tc = "MH-10-SCIT1-5-5.3.3"
+    osc = [
+        ("Why do aquatic animals and plants survive at the bottom of a frozen lake in cold winter regions?", ["Ice floats on top and insulates the \\(4^\\circ\\text{C}\\) dense water below", "The entire lake freezes solid from bottom to top", "Ice sinks to the bottom and warms the fish", "Water has its minimum density at \\(4^\\circ\\text{C}\\)"], "Ice floats on top and insulates the \\(4^\\circ\\text{C}\\) dense water below",
+         "Anomalous behavior of water between \\(0^\\circ\\text{C}\\) and \\(4^\\circ\\text{C}\\).", "Water is densest at \\(4^\\circ\\text{C}\\), so \\(4^\\circ\\text{C}\\) water stays at the bottom while colder \\(0^\\circ\\text{C}\\) water and ice (less dense) float on top.", "Surface ice acts as a thermal insulator.", "easy"),
+        ("At what temperature does pure water have its MAXIMUM density?", ["\\(4^\\circ\\text{C}\\)", "\\(0^\\circ\\text{C}\\)", "\\(100^\\circ\\text{C}\\)", "\\(-4^\\circ\\text{C}\\)"], "\\(4^\\circ\\text{C}\\)",
+         "Anomalous expansion of water.", "Water reaches maximum density (~\\(1000\\text{ kg/m}^3\\)) at \\(4^\\circ\\text{C}\\).", "Below \\(4^\\circ\\text{C}\\), water expands and density decreases.", "easy"),
+        ("What is the temperature of the water at the very bottom of a frozen lake during severe winter?", ["\\(4^\\circ\\text{C}\\)", "\\(0^\\circ\\text{C}\\)", "\\(-10^\\circ\\text{C}\\)", "\\(20^\\circ\\text{C}\\)"], "\\(4^\\circ\\text{C}\\)",
+         "Densest water sinks to the bottom.", "Once the entire lake cools to \\(4^\\circ\\text{C}\\), cooler water (3°C to 0°C) is less dense and stays at the surface, leaving \\(4^\\circ\\text{C}\\) water at the bottom.", "Convection stops below 4°C.", "easy"),
+        ("Why does ice float on liquid water?", ["Ice is less dense than liquid water due to open hexagonal hydrogen-bonded structure", "Ice is denser than liquid water", "Ice contains salt", "Water pushes ice up magnetically"], "Ice is less dense than liquid water due to open hexagonal hydrogen-bonded structure",
+         "Water expands on freezing.", "Ice has density ~\\(0.92\\text{ g/cm}^3\\) compared to water's ~\\(1.00\\text{ g/cm}^3\\), so ice floats.", "If ice sank, lakes would freeze solid from bottom up.", "easy"),
+        ("In a cold region, when atmospheric temperature drops from \\(10^\\circ\\text{C}\\) to \\(4^\\circ\\text{C}\\), how does lake water cool?", ["Surface water cools, becomes denser, and sinks by convection until the whole lake reaches \\(4^\\circ\\text{C}\\)", "Surface water freezes immediately at 10°C", "Bottom water rises to freeze first", "No convection occurs above 4°C"], "Surface water cools, becomes denser, and sinks by convection until the whole lake reaches \\(4^\\circ\\text{C}\\)",
+         "Normal thermal contraction between 10°C and 4°C.", "Cooler surface water sinks and warmer water rises until uniform \\(4^\\circ\\text{C}\\) is reached.", "Below 4°C, convection stops.", "medium"),
+        ("What happens in a lake when surface water cools further from \\(4^\\circ\\text{C}\\) down to \\(0^\\circ\\text{C}\\)?", ["It expands, becomes less dense than \\(4^\\circ\\text{C}\\) water, and remains at the top to freeze into ice", "It sinks to the bottom and freezes the lakebed", "It boils", "Its density increases"], "It expands, becomes less dense than \\(4^\\circ\\text{C}\\) water, and remains at the top to freeze into ice",
+         "Anomalous expansion of water below \\(4^\\circ\\text{C}\\).", "Because \\(0^\\circ\\text{C}\\) water is lighter than \\(4^\\circ\\text{C}\\) water, it stays on top and freezes at the surface.", "This protects aquatic life below.", "easy"),
+        ("What role does the surface layer of ice play for the liquid water underneath it?", ["It acts as a poor conductor (thermal insulator), slowing down further heat loss from the water below", "It heats the water to 50°C", "It conducts heat rapidly out of the lakebed", "It dissolves all oxygen"], "It acts as a poor conductor (thermal insulator), slowing down further heat loss from the water below",
+         "Ice has low thermal conductivity.", "The ice sheet traps heat in the underlying \\(4^\\circ\\text{C}\\) water, preventing the lake from freezing solid.", "Fish survive comfortably below.", "medium"),
+        ("Which apparatus in the school laboratory demonstrates the anomalous behavior of water responsible for aquatic survival in frozen lakes?", ["Hope's apparatus", "Calorimeter", "Prism", "Galvanometer"], "Hope's apparatus",
+         "Recall Balbharti Ch.5 experiment.", "Hope's apparatus uses a freezing mixture around the middle of a tall water cylinder with upper (\\(T_1\\)) and lower (\\(T_2\\)) thermometers.", "Shows lower water stabilizing at 4°C while top reaches 0°C.", "easy"),
+        ("If water did NOT show anomalous behavior (i.e., if it contracted continuously down to 0°C and ice sank), what would happen to lakes in cold countries?", ["Lakes would freeze solid from the bottom up, killing aquatic life", "Lakes would never freeze", "Fish would live on top of the ice", "Water would boil at 4°C"], "Lakes would freeze solid from the bottom up, killing aquatic life",
+         "Hypothetical normal liquid behavior.", "Sinking cold water and sinking ice would freeze the entire lake solid.", "Anomalous expansion is vital for aquatic ecosystems.", "medium"),
+        ("Between \\(0^\\circ\\text{C}\\) and \\(4^\\circ\\text{C}\\), as water is heated, its volume:", ["Decreases (contraction)", "Increases (expansion)", "Remains constant", "Becomes zero"], "Decreases (contraction)",
+         "Anomalous behavior of water.", "Heating water from \\(0^\\circ\\text{C}\\) to \\(4^\\circ\\text{C}\\) causes it to contract, reaching minimum volume (maximum density) at \\(4^\\circ\\text{C}\\).", "Above 4°C it expands normally.", "easy"),
+    ]
+    # Add 34 distinct OSC items
+    temps_d = [
+        (0, 4, "increases", "decreases"),
+        (4, 0, "decreases", "increases"),
+        (4, 10, "decreases", "increases"),
+        (10, 4, "increases", "decreases"),
+        (1, 3, "increases", "decreases"),
+        (3, 1, "decreases", "increases"),
+        (2, 4, "increases", "decreases"),
+        (4, 2, "decreases", "increases"),
+    ]
+    for t1, t2, d_chg, v_chg in temps_d:
+        osc.append((
+            f"When pure liquid water is taken from \\({t1}^\\circ\\text{{C}}\\) to \\({t2}^\\circ\\text{{C}}\\), how do its density and volume change?",
+            [f"Density {d_chg} and volume {v_chg}", f"Density {v_chg} and volume {d_chg}", "Both remain constant", "Water freezes into steam"],
+            f"Density {d_chg} and volume {v_chg}",
+            "Recall that water has maximum density (minimum volume) at \\(4^\\circ\\text{C}\\).",
+            f"Moving from \\({t1}^\\circ\\text{{C}}\\) to \\({t2}^\\circ\\text{{C}}\\), density {d_chg} and volume {v_chg}.",
+            "Mass is conserved, so density and volume change inversely.",
+            "medium"
+        ))
+    # 26 more conceptual/numerical OSC
+    extra_osc = [
+        ("In Hope's apparatus, which thermometer reaches \\(4^\\circ\\text{C}\\) first and stays steady at \\(4^\\circ\\text{C}\\)?", ["The lower thermometer (\\(T_2\\))", "The upper thermometer (\\(T_1\\))", "Both reach 0°C together", "Neither changes"], "The lower thermometer (\\(T_2\\))",
+         "Dense \\(4^\\circ\\text{C}\\) water sinks to the bottom.", "Lower thermometer \\(T_2\\) drops to \\(4^\\circ\\text{C}\\) and remains steady while upper \\(T_1\\) drops to \\(0^\\circ\\text{C}\\).", "Models a freezing lake.", "medium"),
+        ("In Hope's apparatus, which thermometer eventually drops to \\(0^\\circ\\text{C}\\)?", ["The upper thermometer (\\(T_1\\))", "The lower thermometer (\\(T_2\\))", "Both stay at 20°C", "Only the freezing mixture"], "The upper thermometer (\\(T_1\\))",
+         "Water below \\(4^\\circ\\text{C}\\) is less dense and rises to the top.", "Upper thermometer \\(T_1\\) records \\(0^\\circ\\text{C}\\) as ice forms at the top.", "Lower \\(T_2\\) stays at \\(4^\\circ\\text{C}\\).", "medium"),
+        ("What is the approximate density of liquid water at \\(4^\\circ\\text{C}\\)?", ["\\(1.00\\text{ g/cm}^3\\) (\\(1000\\text{ kg/m}^3\\))", "\\(0.50\\text{ g/cm}^3\\)", "\\(2.00\\text{ g/cm}^3\\)", "\\(0.92\\text{ g/cm}^3\\)"], "\\(1.00\\text{ g/cm}^3\\) (\\(1000\\text{ kg/m}^3\\))",
+         "Standard reference density of water.", "Maximum density of water is \\(1.00\\text{ g/cm}^3\\) at \\(4^\\circ\\text{C}\\).", "\\(0.92\\text{ g/cm}^3\\) is ice.", "easy"),
+        ("Why do water pipes sometimes burst in severely cold winter nights?", ["Water expands upon freezing below \\(4^\\circ\\text{C}\\), exerting huge outward pressure on the pipe walls", "Water contracts to zero volume", "Iron pipes melt in cold weather", "Air pressure vanishes"], "Water expands upon freezing below \\(4^\\circ\\text{C}\\), exerting huge outward pressure on the pipe walls",
+         "Anomalous expansion of water and ice formation.", "Ice occupies ~9% more volume than liquid water, cracking rigid pipes.", "Same reason rocks crack by frost weathering.", "easy"),
+        ("Why do rocks in cold mountain regions crack during winter?", ["Water trapped in rock crevices freezes and expands, widening the cracks", "Rocks melt at 0°C", "Sunlight freezes rocks", "Rocks shrink into dust"], "Water trapped in rock crevices freezes and expands, widening the cracks",
+         "Frost action / anomalous expansion.", "Water expands on freezing, exerting enormous force inside rock crevices.", "Same mechanism bursts pipes.", "easy"),
+        ("In a frozen lake, where is the temperature \\(0^\\circ\\text{C}\\)?", ["At the interface between the surface ice layer and the water just beneath it", "At the very bottom of the lake", "Everywhere in the lake", "Only in the fish"], "At the interface between the surface ice layer and the water just beneath it",
+         "Surface freezes at \\(0^\\circ\\text{C}\\); bottom stays at \\(4^\\circ\\text{C}\\).", "Temperature increases with depth from \\(0^\\circ\\text{C}\\) at ice-water interface to \\(4^\\circ\\text{C}\\) at the bottom.", "Top ice surface may be even colder (e.g., -10°C).", "medium"),
+        ("If the air temperature above a frozen lake is \\(-15^\\circ\\text{C}\\), what is the approximate temperature of the water at the lakebed?", ["\\(4^\\circ\\text{C}\\)", "\\(-15^\\circ\\text{C}\\)", "\\(-4^\\circ\\text{C}\\)", "\\(15^\\circ\\text{C}\\)"], "\\(4^\\circ\\text{C}\\)",
+         "Deepest water stays at maximum-density temperature.", "Even when air is \\(-15^\\circ\\text{C}\\), the bottom water remains at \\(4^\\circ\\text{C}\\).", "Ice insulates it.", "easy"),
+        ("Which physical property of water allows aquatic plants at the bottom of a frozen lake to still receive some sunlight for photosynthesis?", ["Clear ice is partially transparent to sunlight", "Ice emits its own nuclear light", "Water boils at 4°C", "Fish produce sunlight"], "Clear ice is partially transparent to sunlight",
+         "Light penetration through clear surface ice.", "Clear ice transmits enough sunlight for aquatic plants to survive.", "Combined with liquid \\(4^\\circ\\text{C}\\) water.", "medium"),
+        ("At which two temperatures (one below 4°C and one above 4°C) can liquid water have the SAME density?", ["Roughly \\(0^\\circ\\text{C}\\) and \\(8^\\circ\\text{C}\\)", "\\(4^\\circ\\text{C}\\) and \\(100^\\circ\\text{C}\\)", "\\(0^\\circ\\text{C}\\) and \\(4^\\circ\\text{C}\\)", "\\(-10^\\circ\\text{C}\\) and \\(0^\\circ\\text{C}\\)"], "Roughly \\(0^\\circ\\text{C}\\) and \\(8^\\circ\\text{C}\\)",
+         "Density-temperature curve peaks symmetrically near 4°C.", "Density at 0°C (~0.9998 g/cm³) matches density around ~8°C.", "4°C is the unique peak.", "hard"),
+        ("Why does convection cooling stop in a pond once the entire pond reaches \\(4^\\circ\\text{C}\\)?", ["Any water cooled below \\(4^\\circ\\text{C}\\) becomes LESS dense and stays at the surface instead of sinking", "Water turns solid at 4°C", "Gravity stops acting on water at 4°C", "Wind stops blowing"], "Any water cooled below \\(4^\\circ\\text{C}\\) becomes LESS dense and stays at the surface instead of sinking",
+         "Convection requires cooler surface fluid to be denser so it sinks.", "Below 4°C, cooler water is lighter and floats on top.", "Bottom remains insulated at 4°C.", "hard"),
+        ("What happens to the volume of 1 kg of water when it freezes from \\(0^\\circ\\text{C}\\) liquid to \\(0^\\circ\\text{C}\\) ice?", ["Volume increases by about 9%", "Volume decreases by 9%", "Volume stays identical", "Volume halves"], "Volume increases by about 9%",
+         "Density drops from ~1.00 to ~0.917 g/cm³.", "Lower density at constant mass means larger volume.", "That's why ice floats.", "medium"),
+        ("Which statement is TRUE about a lake with an ice sheet on top?", ["Water just under the ice is at \\(0^\\circ\\text{C}\\), and water at the bottom is at \\(4^\\circ\\text{C}\\)", "Water just under the ice is at \\(4^\\circ\\text{C}\\), and bottom is at \\(0^\\circ\\text{C}\\)", "Entire lake is at \\(-5^\\circ\\text{C}\\)", "Bottom is at \\(100^\\circ\\text{C}\\)"], "Water just under the ice is at \\(0^\\circ\\text{C}\\), and water at the bottom is at \\(4^\\circ\\text{C}\\)",
+         "Vertical temperature gradient in a frozen lake.", "0°C at ice-water boundary, increasing to 4°C at the bottom.", "4°C water is densest.", "easy"),
+        ("Why do aquatic animals still have dissolved oxygen in a frozen lake?", ["Oxygen dissolved before freezing remains in the liquid \\(4^\\circ\\text{C}\\) water, and submerged plants continue photosynthesis if light penetrates", "Ice turns into pure oxygen gas", "Fish breathe solid ice", "Nitrogen converts to oxygen at 4°C"], "Oxygen dissolved before freezing remains in the liquid \\(4^\\circ\\text{C}\\) water, and submerged plants continue photosynthesis if light penetrates",
+         "Cold water holds more dissolved \\(\\text{O}_2\\) than warm water.", "Combined with aquatic plant photosynthesis, \\(\\text{O}_2\\) sustains fish.", "Standard ecology + physics.", "medium"),
+        ("What is the temperature of water at the minimum point of the Volume-vs-Temperature graph for 1 kg of water?", ["\\(4^\\circ\\text{C}\\)", "\\(0^\\circ\\text{C}\\)", "\\(10^\\circ\\text{C}\\)", "\\(2^\\circ\\text{C}\\)"], "\\(4^\\circ\\text{C}\\)",
+         "Minimum volume = maximum density.", "Occurs at \\(4^\\circ\\text{C}\\).", "Classic textbook graph.", "easy"),
+        ("What is the shape of the Volume-vs-Temperature graph of water between \\(0^\\circ\\text{C}\\) and \\(10^\\circ\\text{C}\\)?", ["A downward curve from 0°C to a minimum at 4°C, then rising upward from 4°C to 10°C", "A straight horizontal line", "A straight line going down continuously", "A vertical line"], "A downward curve from 0°C to a minimum at 4°C, then rising upward from 4°C to 10°C",
+         "Anomalous contraction 0→4°C, normal expansion 4→10°C.", "U-shaped/valley curve with minimum at 4°C.", "Memorize this Balbharti graph.", "medium"),
+        ("Which temperature range is specifically called the range of 'anomalous behavior of water'?", ["\\(0^\\circ\\text{C}\\) to \\(4^\\circ\\text{C}\\)", "\\(4^\\circ\\text{C}\\) to \\(100^\\circ\\text{C}\\)", "\\(50^\\circ\\text{C}\\) to \\(100^\\circ\\text{C}\\)", "\\(-20^\\circ\\text{C}\\) to \\(-10^\\circ\\text{C}\\)"], "\\(0^\\circ\\text{C}\\) to \\(4^\\circ\\text{C}\\)",
+         "Water contracts instead of expanding when heated from 0°C to 4°C.", "Above 4°C, water behaves normally.", "Directly from Balbharti Ch.5.", "easy"),
+        ("If a glass bottle completely filled with water and tightly capped is placed in a deep freezer, what happens?", ["The bottle cracks/breaks as water expands on freezing", "The water shrinks and leaves empty space", "Nothing happens", "The glass melts"], "The bottle cracks/breaks as water expands on freezing",
+         "Ice takes more volume than liquid water.", "Expansion exerts huge pressure against the rigid glass.", "Never freeze sealed glass bottles full of water.", "easy"),
+        ("Why does a cold-water lake freeze from the TOP downward rather than from the bottom upward?", ["Because water colder than \\(4^\\circ\\text{C}\\) is less dense and stays at the surface", "Because cold air only touches the bottom", "Because fish push ice upward", "Because sunlight heats the bottom to 50°C"], "Because water colder than \\(4^\\circ\\text{C}\\) is less dense and stays at the surface",
+         "Buoyancy + anomalous expansion.", "0°C water and ice are lighter than 4°C water, so freezing happens at the surface.", "Bottom stays liquid at 4°C.", "easy"),
+        ("Which substance besides water is a classic everyday example of expanding upon freezing?", ["Water is unique among common liquids (most others like oil/mercury contract on freezing)", "Cooking oil", "Mercury", "Molten iron"], "Water is unique among common liquids (most others like oil/mercury contract on freezing)",
+         "Most liquids contract when cooled and frozen.", "Water's hydrogen-bonded crystal lattice makes ice less dense than liquid water.", "Oil/wax contract on solidifying.", "medium"),
+        ("In Hope's apparatus, why do the curves of \\(T_1\\) and \\(T_2\\) vs time intersect at \\(4^\\circ\\text{C}\\)?", ["Wait: actually \\(T_2\\) drops to \\(4^\\circ\\text{C}\\) first and stays there while \\(T_1\\) passes through \\(4^\\circ\\text{C}\\) on its way down to \\(0^\\circ\\text{C}\\)", "Because both boil at 4°C", "Because the freezing mixture is at 4°C", "Because thermometers break at 4°C"], "Wait: actually \\(T_2\\) drops to \\(4^\\circ\\text{C}\\) first and stays there while \\(T_1\\) passes through \\(4^\\circ\\text{C}\\) on its way down to \\(0^\\circ\\text{C}\\)",
+         "Actually, let's check the graph cleanly: \\(T_2\\) plateaus at 4°C while \\(T_1\\) crosses 4°C downward to 0°C.", "So both curves meet/intersect at \\(4^\\circ\\text{C}\\)!", "Standard Hope's apparatus graph question.", "hard"),
+        ("What keeps the deep ocean/lake water from freezing even during long polar winters?", ["Surface ice acts as a thermal insulator and \\(4^\\circ\\text{C}\\) dense water remains trapped below without convection", "Submarine volcanoes heat every pond", "Ice conducts heat 100 times faster than copper", "Water cannot freeze below 1 m depth"], "Surface ice acts as a thermal insulator and \\(4^\\circ\\text{C}\\) dense water remains trapped below without convection",
+         "Lack of convection below 4°C + insulating ice sheet.", "Heat loss from bottom water is reduced to very slow conduction.", "Allows aquatic life to survive winter.", "medium"),
+        ("If 1000 g of water at \\(4^\\circ\\text{C}\\) has volume \\(1000\\text{ cm}^3\\), what happens to its volume if cooled to \\(0^\\circ\\text{C}\\)?", ["Volume becomes slightly greater than \\(1000\\text{ cm}^3\\)", "Volume becomes less than \\(1000\\text{ cm}^3\\)", "Volume stays exactly \\(1000\\text{ cm}^3\\)", "Volume drops to \\(500\\text{ cm}^3\\)"], "Volume becomes slightly greater than \\(1000\\text{ cm}^3\\)",
+         "Minimum volume is at 4°C.", "Cooling from 4°C to 0°C causes anomalous expansion.", "Mass remains 1000 g.", "medium"),
+        ("Why is anomalous expansion of water considered crucial for biodiversity on Earth?", ["It prevents freshwater lakes and rivers in cold climates from freezing solid, preserving aquatic flora and fauna", "It makes all oceans boil", "It prevents rain from falling", "It turns rocks into soil without water"], "It prevents freshwater lakes and rivers in cold climates from freezing solid, preserving aquatic flora and fauna",
+         "Ecological significance of anomalous water.", "Liquid \\(4^\\circ\\text{C}\\) habitat persists under surface ice.", "Directly from Balbharti Ch.5.", "easy"),
+        ("Which statement is FALSE about frozen lakes in cold regions?", ["The temperature at the bottom of the frozen lake is \\(-4^\\circ\\text{C}\\)", "The surface ice is at \\(0^\\circ\\text{C}\\) or below", "Water at \\(4^\\circ\\text{C}\\) is at the bottom", "Ice floats on top because its density is lower than liquid water"], "The temperature at the bottom of the frozen lake is \\(-4^\\circ\\text{C}\\)",
+         "Bottom water is at \\(+4^\\circ\\text{C}\\), not \\(-4^\\circ\\text{C}\\).", "Liquid water at normal pressure cannot exist at \\(-4^\\circ\\text{C}\\) at the bottom.", "The other three statements are true.", "easy"),
+        ("Why does a pond cool rapidly down to \\(4^\\circ\\text{C}\\) by convection, but freeze very slowly below \\(4^\\circ\\text{C}\\)?", ["Above 4°C, cold surface water sinks and mixes the pond; below 4°C, cold water stays on top and ice insulates", "Convection only happens below 4°C", "Ice is a better conductor than liquid water", "Gravity reverses at 4°C"], "Above 4°C, cold surface water sinks and mixes the pond; below 4°C, cold water stays on top and ice insulates",
+         "Convection vs insulation.", "Once surface reaches 4°C, vertical mixing stops and surface freezing insulates the depths.", "Protects aquatic life.", "hard"),
+        ("Which graph feature proves that water has maximum density at \\(4^\\circ\\text{C}\\)?", ["The peak (maximum) of the Density vs Temperature curve lies at \\(4^\\circ\\text{C}\\)", "The Density vs Temperature curve is a straight line with slope 0", "Density is zero at 4°C", "Volume is infinite at 4°C"], "The peak (maximum) of the Density vs Temperature curve lies at \\(4^\\circ\\text{C}\\)",
+         "Maximum density = minimum volume at \\(4^\\circ\\text{C}\\).", "Density peaks at \\(1000\\text{ kg/m}^3\\) at \\(4^\\circ\\text{C}\\).", "Standard graph interpretation.", "easy"),
+    ]
+    osc.extend(extra_osc)
+
+    omc = [
+        ("Which statements are TRUE about the anomalous behavior of water?",
+         ["Between \\(0^\\circ\\text{C}\\) and \\(4^\\circ\\text{C}\\), water contracts when heated", "Water has its maximum density at \\(4^\\circ\\text{C}\\)", "Water has its minimum volume at \\(4^\\circ\\text{C}\\)", "Ice is denser than liquid water at \\(4^\\circ\\text{C}\\)"],
+         ["Between \\(0^\\circ\\text{C}\\) and \\(4^\\circ\\text{C}\\), water contracts when heated", "Water has its maximum density at \\(4^\\circ\\text{C}\\)", "Water has its minimum volume at \\(4^\\circ\\text{C}\\)"],
+         "Core properties of anomalous water.", "Max density and min volume occur at 4°C.", "Ice is less dense and floats.", "easy"),
+        ("How does anomalous behavior of water help aquatic plants and animals survive in frozen lakes?",
+         ["Ice floats on the surface instead of sinking", "Surface ice acts as a thermal insulator", "Dense \\(4^\\circ\\text{C}\\) liquid water remains at the bottom", "The entire lake freezes from bottom to top"],
+         ["Ice floats on the surface instead of sinking", "Surface ice acts as a thermal insulator", "Dense \\(4^\\circ\\text{C}\\) liquid water remains at the bottom"],
+         "Survival mechanism in frozen lakes.", "Floating insulating ice + \\(4^\\circ\\text{C}\\) bottom water preserve life.", "Lakes freeze top-down, not bottom-up.", "easy"),
+        ("Which observations are true in Hope's apparatus experiment?",
+         ["The lower thermometer \\(T_2\\) stabilizes at \\(4^\\circ\\text{C}\\)", "The upper thermometer \\(T_1\\) drops to \\(0^\\circ\\text{C}\\)", "Ice forms at the top of the cylinder", "The lower thermometer drops to \\(-10^\\circ\\text{C}\\)"],
+         ["The lower thermometer \\(T_2\\) stabilizes at \\(4^\\circ\\text{C}\\)", "The upper thermometer \\(T_1\\) drops to \\(0^\\circ\\text{C}\\)", "Ice forms at the top of the cylinder"],
+         "Hope's apparatus observations.", "T2 stays at 4°C; T1 drops to 0°C and top freezes.", "T2 never goes to -10°C.", "medium"),
+        ("Which everyday phenomena are caused by the anomalous expansion of water?",
+         ["Bursting of water pipes in severe winter", "Cracking of rocks in cold mountain climates", "Floating of icebergs on oceans", "Boiling of water at 100°C"],
+         ["Bursting of water pipes in severe winter", "Cracking of rocks in cold mountain climates", "Floating of icebergs on oceans"],
+         "Consequences of water expanding on freezing.", "Pipes burst, rocks crack, icebergs float.", "100°C boiling is normal phase change.", "easy"),
+        ("Which statements are TRUE about a frozen pond in winter?",
+         ["Temperature just below the ice sheet is \\(0^\\circ\\text{C}\\)", "Temperature at the bottom is around \\(4^\\circ\\text{C}\\)", "Convection stops once the pond cools below \\(4^\\circ\\text{C}\\)", "Fish swim inside solid ice"],
+         ["Temperature just below the ice sheet is \\(0^\\circ\\text{C}\\)", "Temperature at the bottom is around \\(4^\\circ\\text{C}\\)", "Convection stops once the pond cools below \\(4^\\circ\\text{C}\\)"],
+         "Frozen pond thermal profile.", "0°C at top water, 4°C at bottom, no convection below 4°C.", "Fish swim in the liquid water below.", "easy"),
+        ("When 1 kg of water is cooled from \\(10^\\circ\\text{C}\\) to \\(0^\\circ\\text{C}\\):",
+         ["It contracts from \\(10^\\circ\\text{C}\\) down to \\(4^\\circ\\text{C}\\)", "It expands from \\(4^\\circ\\text{C}\\) down to \\(0^\\circ\\text{C}\\)", "Its density reaches a maximum at \\(4^\\circ\\text{C}\\)", "Its density decreases continuously all the way from \\(10^\\circ\\text{C}\\) to \\(0^\\circ\\text{C}\\)"],
+         ["It contracts from \\(10^\\circ\\text{C}\\) down to \\(4^\\circ\\text{C}\\)", "It expands from \\(4^\\circ\\text{C}\\) down to \\(0^\\circ\\text{C}\\)", "Its density reaches a maximum at \\(4^\\circ\\text{C}\\)"],
+         "Cooling behavior across 10°C -> 4°C -> 0°C.", "Contracts to 4°C, then expands to 0°C.", "Density peaks at 4°C.", "medium"),
+        ("Why does ice float on water?",
+         ["Ice has lower density (~0.92 g/cm³) than water (~1.00 g/cm³)", "Water expands upon freezing", "Ice forms an open crystal structure with hydrogen bonds", "Ice has zero mass"],
+         ["Ice has lower density (~0.92 g/cm³) than water (~1.00 g/cm³)", "Water expands upon freezing", "Ice forms an open crystal structure with hydrogen bonds"],
+         "Reason ice floats.", "Open hexagonal H-bonded lattice lowers density.", "Ice has mass.", "easy"),
+        ("If water did NOT expand below \\(4^\\circ\\text{C}\\) and ice sank:",
+         ["Lakes would freeze from the bottom upward", "The entire lake could freeze solid in winter", "Aquatic life in cold regions would perish", "Icebergs would float higher"],
+         ["Lakes would freeze from the bottom upward", "The entire lake could freeze solid in winter", "Aquatic life in cold regions would perish"],
+         "Counterfactual without anomalous behavior.", "Sinking ice would freeze lakes solid and kill aquatic life.", "Icebergs would sink, not float.", "easy"),
+        ("Which properties of ice are important for aquatic survival in frozen lakes?",
+         ["Ice is less dense than liquid water", "Ice is a poor conductor of heat", "Clear ice allows some sunlight to pass through", "Ice heats the water to 100°C"],
+         ["Ice is less dense than liquid water", "Ice is a poor conductor of heat", "Clear ice allows some sunlight to pass through"],
+         "Three protective traits of surface ice.", "Floats, insulates, and transmits some light.", "Ice is at <= 0°C.", "medium"),
+        ("Which temperature changes cause water to EXPAND (increase in volume)?",
+         ["Cooling from \\(4^\\circ\\text{C}\\) to \\(0^\\circ\\text{C}\\)", "Heating from \\(4^\\circ\\text{C}\\) to \\(10^\\circ\\text{C}\\)", "Freezing from \\(0^\\circ\\text{C}\\) water to \\(0^\\circ\\text{C}\\) ice", "Heating from \\(0^\\circ\\text{C}\\) to \\(4^\\circ\\text{C}\\)"],
+         ["Cooling from \\(4^\\circ\\text{C}\\) to \\(0^\\circ\\text{C}\\)", "Heating from \\(4^\\circ\\text{C}\\) to \\(10^\\circ\\text{C}\\)", "Freezing from \\(0^\\circ\\text{C}\\) water to \\(0^\\circ\\text{C}\\) ice"],
+         "Volume minimum is at 4°C.", "Moving away from 4°C in EITHER direction (or freezing) increases volume.", "0->4°C is contraction.", "hard"),
+    ]
+
+    otf = [
+        ("Water has its maximum density at \\(4^\\circ\\text{C}\\).", True,
+         "Anomalous behavior of water.", "Density is \\(1000\\text{ kg/m}^3\\) at \\(4^\\circ\\text{C}\\).", "True.", "easy"),
+        ("In a frozen lake, the water at the bottom is at \\(0^\\circ\\text{C}\\) while the surface ice is at \\(4^\\circ\\text{C}\\).", False,
+         "Reversed temperatures.", "Surface ice is at \\(\\le 0^\\circ\\text{C}\\) and bottom water is at \\(4^\\circ\\text{C}\\).", "False.", "easy"),
+        ("Ice floats on water because it is less dense than liquid water.", True,
+         "Water expands on freezing.", "Ice density (~0.92) < water density (~1.00).", "True.", "easy"),
+        ("Surface ice acts as a good thermal insulator, slowing heat loss from the lake water below.", False if False else True,
+         "Ice is a poor conductor of heat.", "It insulates the \\(4^\\circ\\text{C}\\) water underneath.", "True.", "easy"),
+        ("When water is heated from \\(0^\\circ\\text{C}\\) to \\(4^\\circ\\text{C}\\), it expands.", False,
+         "Anomalous contraction occurs from 0°C to 4°C.", "Volume decreases until 4°C.", "False.", "easy"),
+        ("Hope's apparatus is used to study the anomalous behavior of water.", True,
+         "Balbharti textbook experiment.", "Uses two thermometers \\(T_1\\) and \\(T_2\\).", "True.", "easy"),
+        ("Water pipes in cold countries can burst in winter because water expands on freezing.", True,
+         "Anomalous expansion + freezing expansion.", "Exerts huge pressure on rigid pipes.", "True.", "easy"),
+        ("Once a lake cools to \\(4^\\circ\\text{C}\\), convection continues to mix colder \\(1^\\circ\\text{C}\\) water down to the bottom.", False,
+         "Below 4°C, colder water is less dense and stays on top.", "Convection stops below 4°C.", "False.", "medium"),
+        ("In Hope's apparatus, the lower thermometer \\(T_2\\) reaches \\(0^\\circ\\text{C}\\) before the upper thermometer \\(T_1\\).", False,
+         "\\(T_1\\) (upper) reaches \\(0^\\circ\\text{C}\\); \\(T_2\\) (lower) stays at \\(4^\\circ\\text{C}\\).", "Dense 4°C water sinks.", "False.", "medium"),
+        ("Anomalous behavior of water is observed between \\(0^\\circ\\text{C}\\) and \\(4^\\circ\\text{C}\\).", True,
+         "Standard temperature range.", "Contracts on heating from 0°C to 4°C.", "True.", "easy"),
+    ]
+
+    oar = [
+        ("Aquatic animals and plants can survive beneath the frozen surface of a lake in winter.",
+         "Water has maximum density at \\(4^\\circ\\text{C}\\), so \\(4^\\circ\\text{C}\\) liquid water remains at the bottom while less-dense ice floats on top and insulates it.", "A",
+         "Core explanation of aquatic survival.", "Both A and R are true, and R explains A.", "Directly from Balbharti Ch.5.", "easy"),
+        ("Ice floats on the surface of a pond instead of sinking to the bottom.",
+         "When water freezes at \\(0^\\circ\\text{C}\\), its volume increases and its density becomes less than that of liquid water.", "A",
+         "Buoyancy of ice.", "Both A and R are true, and R explains A.", "0.92 < 1.00 g/cm³.", "easy"),
+        ("Water pipes burst in severely cold winter climates.",
+         "Water expands upon cooling below \\(4^\\circ\\text{C}\\) and freezing into ice, exerting tremendous pressure on the pipe walls.", "A",
+         "Frost bursting of pipes.", "Both A and R are true, and R explains A.", "Anomalous expansion.", "easy"),
+        ("In Hope's apparatus, the lower thermometer \\(T_2\\) remains steady at \\(4^\\circ\\text{C}\\) while the upper thermometer \\(T_1\\) drops to \\(0^\\circ\\text{C}\\).",
+         "Water at \\(4^\\circ\\text{C}\\) has maximum density and sinks to the bottom, whereas water cooled below \\(4^\\circ\\text{C}\\) is lighter and rises to the top.", "A",
+         "Hope's apparatus mechanism.", "Both A and R are true, and R explains A.", "Models natural lake freezing.", "medium"),
+        ("A lake freezes from the bottom upward in cold countries.",
+         "Water at \\(4^\\circ\\text{C}\\) is denser than water at \\(0^\\circ\\text{C}\\).", "D",
+         "Lakes freeze from the TOP downward.", "A is false; R is true.", "R explains why top freezes first.", "easy"),
+        ("When water is heated from \\(0^\\circ\\text{C}\\) to \\(4^\\circ\\text{C}\\), its density increases.",
+         "Between \\(0^\\circ\\text{C}\\) and \\(4^\\circ\\text{C}\\), water contracts instead of expanding, decreasing its volume for the same mass.", "A",
+         "\\(\\rho = m / V\\).", "Both A and R are true, and R explains A.", "Volume drops -> density rises.", "medium"),
+        ("Rocks in high-altitude cold regions gradually break apart over winters.",
+         "Water entering rock cracks expands when it freezes, acting like a wedge to split the rock.", "A",
+         "Frost weathering.", "Both A and R are true, and R explains A.", "Same expansion principle.", "easy"),
+        ("Once a pond reaches \\(4^\\circ\\text{C}\\), further cooling of the surface water does not trigger downward convection.",
+         "Water cooled below \\(4^\\circ\\text{C}\\) is less dense than \\(4^\\circ\\text{C}\\) water and therefore floats at the surface.", "A",
+         "Why convection stops below 4°C.", "Both A and R are true, and R explains A.", "Bottom stays at 4°C.", "hard"),
+        ("Ice is a very good conductor of heat, which cools the lakebed to \\(-10^\\circ\\text{C}\\).",
+         "Ice has lower density than liquid water.", "D",
+         "Ice is a poor conductor (insulator) and lakebed stays at 4°C.", "A is false; R is true.", "Verify thermal conductivity.", "easy"),
+        ("If water behaved like most other liquids and contracted down to \\(0^\\circ\\text{C}\\), aquatic life in polar lakes could not survive winter.",
+         "Without anomalous expansion, cold surface water and ice would sink, freezing the entire lake solid.", "A",
+         "Ecological importance of anomalous expansion.", "Both A and R are true, and R explains A.", "Survival depends on 4°C density peak.", "easy"),
+    ]
+
+    one_ofb = [
+        ("ONE", "At what temperature (in °C) does pure water have its maximum density?", "4",
+         "Anomalous water density peak.", "4 °C.", "Exact integer: 4.", "easy"),
+        ("ONE", "What is the approximate temperature (in °C) of the water at the bottom of a frozen lake?", "4",
+         "Densest water sinks to the bottom.", "4 °C.", "Exact integer: 4.", "easy"),
+        ("ONE", "In Hope's apparatus, to what temperature (in °C) does the upper thermometer \\(T_1\\) drop when ice forms at the top?", "0",
+         "Freezing point of water.", "0 °C.", "Exact integer: 0.", "easy"),
+        ("ONE", "At what temperature (in °C) is the volume of 1 kg of liquid water minimum?", "4",
+         "Minimum volume = maximum density.", "4 °C.", "Exact integer: 4.", "easy"),
+        ("OFB", "The contraction of water when heated from \\(0^\\circ\\text{C}\\) to \\(4^\\circ\\text{C}\\) is called the ______ behavior of water.", "anomalous",
+         "Name the special behavior of water.", "Anomalous behavior.", "Answer: anomalous.", "easy"),
+        ("OFB", "In a frozen lake, the surface layer of ______ floats on top and insulates the \\(4^\\circ\\text{C}\\) water below.", "ice",
+         "Name the solid form of water on the surface.", "Ice.", "Answer: ice.", "easy"),
+    ]
+    return build_pack(tc, osc, omc, otf, oar, one_ofb)
+
+# 2. 5.4.3: Dew point temperature (100% relative humidity)
+def gen_5_4_3():
+    tc = "MH-10-SCIT1-5-5.4.3"
+    osc = [
+        ("What is the 'dew point temperature'?", ["The temperature at which unsaturated air becomes completely saturated with water vapour (100% relative humidity) upon cooling", "The boiling point of water at sea level", "The temperature at which ice melts at 1 atm", "The temperature at which relative humidity is 0%"], "The temperature at which unsaturated air becomes completely saturated with water vapour (100% relative humidity) upon cooling",
+         "Definition of dew point in Balbharti Ch.5.", "Cooling air lowers its moisture-holding capacity until it reaches 100% saturation at the dew point.", "At 0% RH, air is completely dry.", "easy"),
+        ("What is the relative humidity of air at its dew point temperature?", ["100%", "50%", "0%", "60%"], "100%",
+         "At dew point, air is saturated.", "Saturation corresponds to 100% relative humidity.", "Below dew point, excess vapour condenses as dew.", "easy"),
+        ("What happens when moist air is cooled slightly BELOW its dew point temperature?", ["Excess water vapour condenses into tiny water droplets (dew, mist, or fog)", "Water evaporates faster", "Relative humidity drops to 10%", "Air becomes completely dry"], "Excess water vapour condenses into tiny water droplets (dew, mist, or fog)",
+         "Cool air cannot hold all the vapour.", "The excess vapour condenses onto cool surfaces as dew or in air as mist/fog.", "Explains morning dew on grass.", "easy"),
+        ("Why do water droplets appear on the outer surface of a glass tumbler containing ice-cold water?", ["Air touching the cold glass cools below its dew point, causing water vapour in the air to condense", "Water leaks through solid glass pores", "Ice evaporates through the glass", "Air turns into liquid nitrogen"], "Air touching the cold glass cools below its dew point, causing water vapour in the air to condense",
+         "Classic Balbharti Ch.5 observation.", "Cold glass surface cools adjacent air below its dew point, condensing atmospheric moisture.", "Glass is non-porous.", "easy"),
+        ("What is the formula for percentage Relative Humidity (% RH)?", ["\\(\\frac{\\text{Actual mass of water vapour in given volume of air}}{\\text{Mass of vapour needed to saturate the same volume at that temperature}} \\times 100\\)", "\\(\\frac{\\text{Mass of dry air}}{\\text{Mass of water}} \\times 100\\)", "\\(\\text{Temperature} \\times \\text{Volume}\\)", "\\(\\frac{\\text{Saturation mass}}{\\text{Actual mass}} \\times 100\\)"], "\\(\\frac{\\text{Actual mass of water vapour in given volume of air}}{\\text{Mass of vapour needed to saturate the same volume at that temperature}} \\times 100\\)",
+         "Definition of % RH.", "Ratio of actual vapour content to maximum saturation capacity at that temperature × 100.", "Never exceeds 100% normally.", "easy"),
+        ("If the dew point temperature equals the current air temperature, the air is:", ["100% saturated (relative humidity = 100%)", "Completely dry (0% RH)", "At 50% RH", "Boiling"], "100% saturated (relative humidity = 100%)",
+         "No further cooling is needed to reach saturation.", "When \\(T_{\\text{air}} = T_{\\text{dew}}\\), RH = 100%.", "Sweat does not evaporate easily in 100% RH.", "medium"),
+        ("During a humid day when % relative humidity is above 60%, how does the air feel and why?", ["Humid/sticky, because sweat evaporates very slowly into already moist air", "Very dry and parched", "Freezing cold", "Dew forms at 40°C"], "Humid/sticky, because sweat evaporates very slowly into already moist air",
+         "Balbharti Ch.5 humidity comfort threshold (60%).", "Air > 60% RH feels humid; < 60% RH feels dry.", "Slow evaporation makes us feel muggy.", "easy"),
+        ("Below what percentage of relative humidity do we generally feel the air is 'dry'?", ["Below 60%", "Above 90%", "At 100%", "Between 80% and 100%"], "Below 60%",
+         "Balbharti Ch.5 criterion.", "Relative humidity < 60% feels dry; > 60% feels humid.", "At 100%, air is saturated.", "easy"),
+        ("Why do white trails (contrails) sometimes form behind high-flying jet airplanes in winter?", ["Hot exhaust water vapour mixes with frigid high-altitude air, cools below dew point, and condenses into cloud droplets/ice crystals", "Planes spray white paint", "Engines burn solid chalk", "Airplanes melt clouds"], "Hot exhaust water vapour mixes with frigid high-altitude air, cools below dew point, and condenses into cloud droplets/ice crystals",
+         "Balbharti Ch.5 real-world example of dew point.", "Jet fuel combustion produces water vapour which condenses immediately in cold upper air if RH is high.", "Disperses quickly if air is dry.", "medium"),
+        ("What happens to the relative humidity of a sealed room of air (constant water vapour mass) if its temperature INCREASES?", ["Relative humidity decreases", "Relative humidity increases", "Relative humidity stays 100%", "Dew forms on the walls"], "Relative humidity decreases",
+         "Warmer air can hold MORE water vapour (higher saturation capacity).", "Denominator (saturation mass) increases while numerator (actual vapour) stays constant, so % RH decreases.", "That's why heated rooms feel dry.", "hard"),
+    ]
+    # Add 20 RH calculation numericals + 14 conceptual OSC
+    rh_cases = [
+        (15, 30, 50), (12, 20, 60), (18, 24, 75), (9, 30, 30), (20, 25, 80),
+        (16, 20, 80), (10, 40, 25), (27, 30, 90), (14, 35, 40), (21, 30, 70),
+        (6, 15, 40), (8, 16, 50), (11, 22, 50), (15, 25, 60), (24, 30, 80),
+    ]
+    for act, sat, rh_pct in rh_cases:
+        osc.append((
+            f"At \\(25^\\circ\\text{{C}}\\), \\(1\\text{{ m}}^3\\) of air holds \\({act}\\text{{ g}}\\) of water vapour, while \\({sat}\\text{{ g}}\\) is needed to saturate it at the same temperature. What is the relative humidity?",
+            [f"\\({rh_pct}\\%\\)", f"\\({100 - rh_pct if rh_pct != 50 else 25}\\%\\)", f"\\({rh_pct // 2}\\%\\)", f"\\({act}\\%\\)"],
+            f"\\({rh_pct}\\%\\)",
+            "Use \\(\\%\\text{RH} = (\\text{Actual vapour} / \\text{Saturation vapour}) \\times 100\\).",
+            f"\\(\\%\\text{{RH}} = ({act} / {sat}) \\times 100 = {rh_pct}\\%\\).",
+            "Check if >60% (humid) or <60% (dry).",
+            "easy"
+        ))
+    # 5 more inverse RH numericals (find actual mass)
+    for sat, rh_pct, act in [(40, 75, 30), (20, 45, 9), (50, 60, 30), (30, 80, 24), (25, 40, 10)]:
+        osc.append((
+            f"At a certain temperature, the saturation capacity of \\(1\\text{{ m}}^3\\) of air is \\({sat}\\text{{ g}}\\) and the relative humidity is \\({rh_pct}\\%\\). How much water vapour is actually present in \\(1\\text{{ m}}^3\\)?",
+            [f"\\({act}\\text{{ g}}\\)", f"\\({sat}\\text{{ g}}\\)", f"\\({act + 5}\\text{{ g}}\\)", f"\\({sat - act}\\text{{ g}}\\)"],
+            f"\\({act}\\text{{ g}}\\)",
+            "\\(\\text{Actual} = (\\%\\text{RH} / 100) \\times \\text{Saturation}\\).",
+            f"\\(\\text{{Actual}} = ({rh_pct} / 100) \\times {sat} = {act}\\text{{ g}}\\).",
+            "Units: grams per cubic meter.",
+            "medium"
+        ))
+    extra_osc = [
+        ("What is the SI unit of 'absolute humidity' (mass of water vapour per unit volume of air)?", ["\\(\\text{kg/m}^3\\) (or \\(\\text{g/m}^3\\) practically)", "Percentage (%)", "Joules (J)", "Kelvin (K)"], "\\(\\text{kg/m}^3\\) (or \\(\\text{g/m}^3\\) practically)",
+         "Absolute humidity = mass of vapour / volume of air.", "Measured in \\(\\text{kg/m}^3\\) (SI) or \\(\\text{g/m}^3\\), whereas relative humidity is a dimensionless percentage.", "Check textbook definition.", "medium"),
+        ("Why does dew form on grass blades mostly in the early morning?", ["At night/early morning, grass cools down below the air's dew point, condensing water vapour onto the blades", "Grass pumps groundwater onto leaf tops at 5 AM", "Sun boils the grass at midnight", "Air humidity drops to 0% at dawn"], "At night/early morning, grass cools down below the air's dew point, condensing water vapour onto the blades",
+         "Radiative cooling of ground/grass overnight.", "Cool leaves chill adjacent air below its dew point, forming dew.", "Same reason cold water bottles sweat.", "easy"),
+        ("If the air temperature is \\(28^\\circ\\text{C}\\) and the dew point is \\(18^\\circ\\text{C}\\), how much must the air cool before condensation begins?", ["By \\(10^\\circ\\text{C}\\) (down to \\(18^\\circ\\text{C}\\))", "By \\(18^\\circ\\text{C}\\)", "By \\(28^\\circ\\text{C}\\)", "It must be heated to \\(38^\\circ\\text{C}\\)"], "By \\(10^\\circ\\text{C}\\) (down to \\(18^\\circ\\text{C}\\))",
+         "Condensation begins at the dew point.", "\\(28^\\circ\\text{C} - 18^\\circ\\text{C} = 10^\\circ\\text{C}\\) cooling needed.", "Heating lowers RH further.", "easy"),
+        ("Which instrument is used to measure relative humidity?", ["Hygrometer", "Barometer", "Galvanometer", "Ammeter"], "Hygrometer",
+         "Hygro = moisture.", "A hygrometer (e.g., wet-and-dry bulb hygrometer) measures relative humidity.", "Barometer measures atmospheric pressure.", "easy"),
+        ("Why does a cold soft-drink bottle taken out of a refrigerator become wet on the outside?", ["Water vapour in room air condenses on the cold bottle surface which is below the dew point", "The bottle sweats soda through plastic", "Ice melts on the outside from nowhere", "Carbon dioxide turns into water"], "Water vapour in room air condenses on the cold bottle surface which is below the dew point",
+         "Condensation of atmospheric water vapour.", "Air near the cold bottle cools below its dew point.", "Same as cold glass tumbler.", "easy"),
+        ("When relative humidity is 100%, what happens to wet clothes hung outside to dry?", ["They dry extremely slowly or not at all because the air is already saturated with water vapour", "They dry instantly in 1 minute", "They catch fire", "They freeze at 30°C"], "They dry extremely slowly or not at all because the air is already saturated with water vapour",
+         "Evaporation rate drops as RH approaches 100%.", "Saturated air cannot accept more water vapour without condensation matching evaporation.", "Common monsoon experience.", "easy"),
+        ("In coastal cities like Mumbai, why does the weather feel much more humid than in Pune or Nagpur at the same temperature?", ["Proximity to the sea supplies abundant water vapour, keeping relative humidity high (>60%)", "Coastal air has no oxygen", "Pune is below sea level", "Mumbai has higher boiling point of water"], "Proximity to the sea supplies abundant water vapour, keeping relative humidity high (>60%)",
+         "Evaporation from the ocean raises atmospheric moisture.", "High % RH slows sweat evaporation, creating muggy discomfort.", "Dry inland cities have lower RH.", "easy"),
+        ("What happens to the dew point temperature if MORE water vapour evaporates into a closed room?", ["The dew point temperature increases", "The dew point temperature decreases", "Dew point becomes \\(-273^\\circ\\text{C}\\)", "Dew point never changes"], "The dew point temperature increases",
+         "More moisture means saturation is reached at a higher temperature.", "Higher absolute humidity -> higher dew point.", "Dry air has a very low dew point.", "hard"),
+        ("Which statement is FALSE about dew point temperature?", ["At the dew point, relative humidity is 0%", "Cooling air below its dew point causes condensation", "At the dew point, air is saturated with water vapour", "Dew point depends on the amount of water vapour present in the air"], "At the dew point, relative humidity is 0%",
+         "At dew point, RH is 100%, not 0%.", "Saturation = 100% RH.", "The other three statements are true.", "easy"),
+        ("If \\(1\\text{ m}^3\\) of air at \\(30^\\circ\\text{C}\\) can hold at most \\(30\\text{ g}\\) of water vapour, and currently holds \\(30\\text{ g}\\), what is its state?", ["Saturated air at its dew point (100% RH)", "Dry air (0% RH)", "Unsaturated air (50% RH)", "Superheated steam"], "Saturated air at its dew point (100% RH)",
+         "Actual vapour = Saturation capacity.", "\\(30/30 \\times 100 = 100\\%\\) RH.", "Air is saturated.", "easy"),
+        ("During winter nights, if the air cools below its dew point while suspended dust particles are present in the air, what forms near the ground?", ["Fog or mist", "Rainbows only", "Acid rain", "Lightning"], "Fog or mist",
+         "Condensation on airborne dust/aerosols.", "Tiny suspended water droplets form fog/mist.", "Dew forms on solid surfaces.", "easy"),
+        ("Why do spectacles fog up when a person walks from an air-conditioned room into warm humid outdoor air?", ["Cold lenses chill the warm humid outdoor air below its dew point, condensing water vapour on the glass", "Lenses melt", "Eyes emit steam", "Indoor air is hotter than 100°C"], "Cold lenses chill the warm humid outdoor air below its dew point, condensing water vapour on the glass",
+         "Cold glass + warm moist air = condensation.", "Warm outdoor air has a dew point higher than the cold lens temperature.", "Same principle as cold tumbler.", "medium"),
+        ("How does the maximum water-vapour holding capacity of \\(1\\text{ m}^3\\) of air change when temperature rises from \\(20^\\circ\\text{C}\\) to \\(40^\\circ\\text{C}\\)?", ["It increases significantly", "It decreases to zero", "It stays constant", "It turns into ice"], "It increases significantly",
+         "Warmer air has higher saturation vapour pressure.", "Saturation capacity increases rapidly with temperature (~17 g/m³ at 20°C to ~51 g/m³ at 40°C).", "Explains why heating lowers RH.", "medium"),
+        ("What is the difference between 'dew point' and 'relative humidity'?", ["Dew point is a temperature (°C), whereas relative humidity is a percentage (%)", "Both are measured in grams", "Both are measured in °C", "Dew point is always 100°C"], "Dew point is a temperature (°C), whereas relative humidity is a percentage (%)",
+         "Distinguish physical quantities and units.", "Dew point is the saturation temperature (°C); RH is the percentage ratio (%).", "Check units.", "easy"),
+    ]
+    osc.extend(extra_osc)
+
+    omc = [
+        ("Which statements are TRUE about the dew point temperature?",
+         ["It is the temperature at which unsaturated air becomes saturated upon cooling", "At the dew point, relative humidity is 100%", "Cooling air below the dew point causes condensation of excess vapour", "At the dew point, relative humidity is 0%"],
+         ["It is the temperature at which unsaturated air becomes saturated upon cooling", "At the dew point, relative humidity is 100%", "Cooling air below the dew point causes condensation of excess vapour"],
+         "Core definition of dew point.", "Saturation = 100% RH; further cooling condenses dew/fog.", "0% RH is completely dry air.", "easy"),
+        ("Which natural or everyday phenomena are explained by air cooling below its dew point?",
+         ["Morning dew on grass and leaves", "Water droplets on the outside of an ice-cold glass", "White contrails behind high-altitude jet planes", "Boiling of water in a pressure cooker at 120°C"],
+         ["Morning dew on grass and leaves", "Water droplets on the outside of an ice-cold glass", "White contrails behind high-altitude jet planes"],
+         "Condensation phenomena from Balbharti Ch.5.", "All three involve vapour cooling below dew point.", "Boiling is vaporization, not condensation.", "easy"),
+        ("Which statements are TRUE about Relative Humidity (% RH)?",
+         ["It is the ratio of actual vapour mass to saturation vapour mass at the same temperature, times 100", "Air feels humid when % RH is more than 60%", "Air feels dry when % RH is less than 60%", "It is measured in kilograms per cubic meter"],
+         ["It is the ratio of actual vapour mass to saturation vapour mass at the same temperature, times 100", "Air feels humid when % RH is more than 60%", "Air feels dry when % RH is less than 60%"],
+         "Balbharti Ch.5 humidity rules.", "60% is the comfort boundary; % RH is a percentage.", "\\(\\text{kg/m}^3\\) is absolute humidity.", "easy"),
+        ("If \\(1\\text{ m}^3\\) of air at \\(30^\\circ\\text{C}\\) holds 15 g of vapour and requires 30 g for saturation:",
+         ["The relative humidity is 50%", "The air is unsaturated", "The air will feel relatively dry (< 60% RH)", "The air is at its dew point"],
+         ["The relative humidity is 50%", "The air is unsaturated", "The air will feel relatively dry (< 60% RH)"],
+         "Calculate \\(15/30 \\times 100 = 50\\%\\).", "50% < 60% -> unsaturated and feels dry.", "Dew point is 100% RH.", "medium"),
+        ("What happens when a sealed container of air (with fixed water vapour) is heated from \\(20^\\circ\\text{C}\\) to \\(35^\\circ\\text{C}\\)?",
+         ["Its saturation vapour capacity increases", "Its relative humidity decreases", "Its absolute humidity (mass of vapour per \\(\\text{m}^3\\)) stays constant", "Dew condenses inside the container"],
+         ["Its saturation vapour capacity increases", "Its relative humidity decreases", "Its absolute humidity (mass of vapour per \\(\\text{m}^3\\)) stays constant"],
+         "Heating increases denominator of % RH.", "Actual vapour mass stays same; capacity rises -> % RH drops.", "Condensation requires cooling.", "hard"),
+        ("Which statements about saturated air are correct?",
+         ["Its relative humidity is 100%", "Its air temperature equals its dew point temperature", "Net evaporation from a wet surface into it is virtually zero", "It contains zero water vapour"],
+         ["Its relative humidity is 100%", "Its air temperature equals its dew point temperature", "Net evaporation from a wet surface into it is virtually zero"],
+         "Properties of saturated air.", "100% RH, \\(T = T_{\\text{dew}}\\), clothes dry poorly.", "It holds maximum possible vapour.", "medium"),
+        ("Which factors determine whether condensation will occur on a cold surface?",
+         ["The surface temperature being below the air's dew point", "The amount of water vapour present in the air", "The relative humidity of the surrounding air", "The color of the glass tumbler"],
+         ["The surface temperature being below the air's dew point", "The amount of water vapour present in the air", "The relative humidity of the surrounding air"],
+         "Condensation conditions.", "Depends on surface temperature vs dew point (which depends on vapour content).", "Color is irrelevant.", "easy"),
+        ("Which statements about absolute humidity vs relative humidity are true?",
+         ["Absolute humidity is mass of water vapour per unit volume of air (\\(\\text{kg/m}^3\\))", "Relative humidity is expressed as a percentage (%)", "Relative humidity depends on air temperature even if vapour mass is constant", "Both always have the exact same numerical value"],
+         ["Absolute humidity is mass of water vapour per unit volume of air (\\(\\text{kg/m}^3\\))", "Relative humidity is expressed as a percentage (%)", "Relative humidity depends on air temperature even if vapour mass is constant"],
+         "Compare the two humidity definitions.", "Absolute is mass/volume; relative is % of saturation capacity.", "Different quantities and units.", "medium"),
+        ("Which of the following occur when air is cooled below its dew point?",
+         ["Excess water vapour condenses into liquid droplets", "Dew forms on cold leaves and metal", "Fog or mist can form on dust particles", "Relative humidity rises to 200% permanently"],
+         ["Excess water vapour condenses into liquid droplets", "Dew forms on cold leaves and metal", "Fog or mist can form on dust particles"],
+         "Condensation caps RH at ~100%.", "Excess vapour condenses as dew, mist, or fog.", "RH does not stay at 200%.", "easy"),
+        ("Why do wet clothes dry faster on a dry sunny day (low RH) than on a humid monsoon day (high RH)?",
+         ["Dry air has a much lower % RH (< 60%), so it can absorb more water vapour", "High-RH monsoon air is nearly saturated and slows evaporation", "Higher temperature on a sunny day increases evaporation rate", "Monsoon air has 0% water vapour"],
+         ["Dry air has a much lower % RH (< 60%), so it can absorb more water vapour", "High-RH monsoon air is nearly saturated and slows evaporation", "Higher temperature on a sunny day increases evaporation rate"],
+         "Evaporation vs humidity.", "Low RH + warm air speed up drying.", "Monsoon air has high water vapour.", "easy"),
+    ]
+
+    otf = [
+        ("At the dew point temperature, the relative humidity of air is 100%.", True,
+         "Definition of dew point.", "Air is completely saturated.", "True.", "easy"),
+        ("If the relative humidity of air is more than 60%, we feel that the air is dry.", False,
+         "60% is the boundary.", "> 60% feels humid; < 60% feels dry.", "False.", "easy"),
+        ("Water droplets form on the outer surface of an ice-cold glass because air near the glass cools below its dew point.", True,
+         "Atmospheric condensation.", "Cold glass chills adjacent air below saturation.", "True.", "easy"),
+        ("Relative humidity has the SI unit \\(\\text{kg/m}^3\\).", False,
+         "Relative humidity is a dimensionless percentage (%).", "\\(\\text{kg/m}^3\\) is absolute humidity.", "False.", "easy"),
+        ("When unsaturated air is heated without adding moisture, its relative humidity decreases.", True,
+         "Warmer air can hold more vapour.", "Denominator increases -> % RH decreases.", "True.", "medium"),
+        ("White trails behind jet airplanes form when exhaust water vapour condenses in cold high-altitude air.", True,
+         "Balbharti Ch.5 example.", "Rapid cooling below dew point forms ice/water trails.", "True.", "easy"),
+        ("If \\(1\\text{ m}^3\\) of air holds 15 g of vapour and saturation capacity is 30 g, the relative humidity is 30%.", False,
+         "\\(15/30 \\times 100 = 50\\%\\).", "Not 30%.", "False.", "easy"),
+        ("Dew forms on grass in the morning because grass cools below the air's dew point overnight.", True,
+         "Surface condensation.", "Excess vapour condenses on cool blades.", "True.", "easy"),
+        ("At 100% relative humidity, wet clothes dry much faster than at 30% relative humidity.", False,
+         "Saturated air resists further evaporation.", "Clothes dry much slower at 100% RH.", "False.", "easy"),
+        ("Absolute humidity is the mass of water vapour present in a unit volume of air.", True,
+         "Balbharti Ch.5 definition.", "Measured in \\(\\text{kg/m}^3\\).", "True.", "easy"),
+    ]
+
+    oar = [
+        ("Water droplets appear on the outside of a glass tumbler filled with ice-cold water.",
+         "Air surrounding the cold glass cools below its dew point temperature, causing atmospheric water vapour to condense on the glass.", "A",
+         "Condensation on cold surface.", "Both A and R are true, and R explains A.", "Glass is waterproof.", "easy"),
+        ("At the dew point temperature, the relative humidity of air is 100%.",
+         "At the dew point, the air holds the maximum amount of water vapour it can contain at that temperature.", "A",
+         "Saturation = 100% RH.", "Both A and R are true, and R explains A.", "Definition of dew point.", "easy"),
+        ("We feel the air is humid and sticky when relative humidity exceeds 60%.",
+         "At high relative humidity, sweat from our skin evaporates very slowly.", "A",
+         "Evaporative cooling slows at high RH.", "Both A and R are true, and R explains A.", "Comfort threshold is 60%.", "easy"),
+        ("Heating a closed room without adding water vapour increases its relative humidity.",
+         "Warmer air can hold a larger maximum mass of water vapour before reaching saturation.", "D",
+         "Higher capacity DECREASES relative humidity.", "A is false; R is true.", "R explains why RH decreases.", "medium"),
+        ("White trails are sometimes seen behind jet planes flying at high altitudes.",
+         "Water vapour from jet exhaust condenses into tiny droplets or ice crystals in the frigid upper air when it cools below the dew point.", "A",
+         "Contrail formation.", "Both A and R are true, and R explains A.", "Directly from Balbharti Ch.5.", "easy"),
+        ("Wet clothes dry slowly on a rainy day even when it is warm.",
+         "During rainy weather, the relative humidity of air is very high (close to 100%), leaving little capacity for further evaporation.", "A",
+         "High RH slows evaporation.", "Both A and R are true, and R explains A.", "Air is nearly saturated.", "easy"),
+        ("Spectacles often fog up when stepping out of a cold air-conditioned car into warm humid air.",
+         "The cold lenses cool the warm humid air touching them below its dew point, condensing moisture onto the glass.", "A",
+         "Lens fogging.", "Both A and R are true, and R explains A.", "Reverse of cold tumbler—still cold surface + humid air.", "medium"),
+        ("Relative humidity is measured in \\(\\text{kg/m}^3\\).",
+         "Absolute humidity is defined as the mass of water vapour per unit volume of air.", "D",
+         "Relative humidity is a percentage (%), not \\(\\text{kg/m}^3\\).", "A is false; R is true.", "Distinguish absolute vs relative.", "easy"),
+        ("Dew forms on leaves in early morning rather than hot afternoon.",
+         "Overnight cooling lowers the temperature of leaves below the air's dew point.", "A",
+         "Nocturnal cooling.", "Both A and R are true, and R explains A.", "Afternoon air is usually well above dew point.", "easy"),
+        ("If the air temperature equals the dew point temperature, cooling the air by even \\(1^\\circ\\text{C}\\) causes condensation.",
+         "At the dew point, the air is already 100% saturated and cannot hold all its vapour at a lower temperature.", "A",
+         "Any cooling below dew point forces condensation.", "Both A and R are true, and R explains A.", "Produces dew or fog.", "medium"),
+    ]
+
+    one_ofb = [
+        ("ONE", "What is the percentage relative humidity (%) of air at its dew point temperature?", "100",
+         "At dew point, air is fully saturated.", "100%.", "Exact integer: 100.", "easy"),
+        ("ONE", "At \\(25^\\circ\\text{C}\\), \\(1\\text{ m}^3\\) of air holds \\(18\\text{ g}\\) of water vapour and needs \\(24\\text{ g}\\) for saturation. What is the relative humidity (in %)?", "75",
+         "\\((18 / 24) \\times 100\\).", "\\(0.75 \\times 100 = 75\\%\\).", "Exact integer: 75.", "easy"),
+        ("ONE", "If the saturation capacity of \\(1\\text{ m}^3\\) of air is \\(40\\text{ g}\\) and relative humidity is \\(60\\%\\), how many grams of water vapour are present in \\(1\\text{ m}^3\\)?", "24",
+         "\\((60 / 100) \\times 40\\).", "\\(0.6 \\times 40 = 24\\) g.", "Exact integer: 24.", "medium"),
+        ("ONE", "Above what percentage of relative humidity (%) do we generally feel the air is humid?", "60",
+         "Balbharti Ch.5 threshold.", "60%.", "Exact integer: 60.", "easy"),
+        ("OFB", "The temperature at which unsaturated air becomes completely saturated with water vapour upon cooling is called the ______ point temperature.", "dew",
+         "Name the saturation temperature.", "Dew point.", "Answer: dew.", "easy"),
+        ("OFB", "The mass of water vapour present in a unit volume of air is called ______ humidity.", "absolute",
+         "Absolute vs relative humidity.", "Absolute humidity.", "Answer: absolute.", "easy"),
+    ]
+    return build_pack(tc, osc, omc, otf, oar, one_ofb)
+
+# 3. 5.5.1: 1 Calorie = 4.184 Joules (14.5°C to 15.5°C)
+def gen_5_5_1():
+    tc = "MH-10-SCIT1-5-5.5.1"
+    osc = [
+        ("How many Joules are equal to 1 calorie of heat?", ["4.18 J (or 4.184 J)", "4180 J", "1000 J", "0.24 J"], "4.18 J (or 4.184 J)",
+         "Mechanical equivalent of heat.", "1 calorie = 4.184 J (often rounded to 4.18 J in school problems).", "1 kcal = 4184 J.", "easy"),
+        ("By standard definition, 1 calorie is the heat required to raise the temperature of 1 g of pure water by \\(1^\\circ\\text{C}\\) specifically from:", ["\\(14.5^\\circ\\text{C}\\) to \\(15.5^\\circ\\text{C}\\)", "\\(0^\\circ\\text{C}\\) to \\(1^\\circ\\text{C}\\)", "\\(99^\\circ\\text{C}\\) to \\(100^\\circ\\text{C}\\)", "\\(24.5^\\circ\\text{C}\\) to \\(25.5^\\circ\\text{C}\\)"], "\\(14.5^\\circ\\text{C}\\) to \\(15.5^\\circ\\text{C}\\)",
+         "Why is a specific temperature interval specified in Balbharti Ch.5?", "Specific heat of water varies slightly with temperature, so \\(14.5^\\circ\\text{C}\\) to \\(15.5^\\circ\\text{C}\\) is chosen as the standard \\(15^\\circ\\text{C}\\) calorie.", "Directly from Balbharti Ch.5.", "easy"),
+        ("Why does the definition of 1 calorie specify the exact interval \\(14.5^\\circ\\text{C}\\) to \\(15.5^\\circ\\text{C}\\) instead of any \\(1^\\circ\\text{C}\\) rise?", ["Because the heat needed to raise 1 g of water by \\(1^\\circ\\text{C}\\) varies slightly at different temperatures", "Because water freezes at 14.5°C", "Because water boils at 15.5°C", "Because thermometers only read between 14.5°C and 15.5°C"], "Because the heat needed to raise 1 g of water by \\(1^\\circ\\text{C}\\) varies slightly at different temperatures",
+         "Specific heat of water is not strictly constant across 0–100°C.", "Specifying \\(14.5^\\circ\\text{C}\\) to \\(15.5^\\circ\\text{C}\\) gives an exact, reproducible standard.", "Standard textbook reason.", "medium"),
+        ("What is the relationship between 1 kilocalorie (kcal) and Joules (J)?", ["1 kcal = 4184 J (or 4180 J)", "1 kcal = 4.184 J", "1 kcal = 418.4 J", "1 kcal = 1000 J"], "1 kcal = 4184 J (or 4180 J)",
+         "1 kcal = 1000 cal.", "\\(1000 \\times 4.184\\text{ J} = 4184\\text{ J}\\).", "1 kcal raises 1 kg of water by 1°C.", "easy"),
+        ("What is the SI unit of heat energy?", ["Joule (J)", "Calorie (cal)", "Kilocalorie (kcal)", "Watt (W)"], "Joule (J)",
+         "Heat is a form of energy.", "SI unit of all forms of energy (including heat) is the Joule (J).", "Watt is power.", "easy"),
+        ("1 kilocalorie (kcal) is defined as the heat required to raise the temperature of:", ["1 kg of pure water by \\(1^\\circ\\text{C}\\) (from \\(14.5^\\circ\\text{C}\\) to \\(15.5^\\circ\\text{C}\\))", "1 g of pure water by \\(1^\\circ\\text{C}\\)", "1 kg of copper by \\(1^\\circ\\text{C}\\)", "1 g of ice by \\(10^\\circ\\text{C}\\)"], "1 kg of pure water by \\(1^\\circ\\text{C}\\) (from \\(14.5^\\circ\\text{C}\\) to \\(15.5^\\circ\\text{C}\\))",
+         "1 kg = 1000 g.", "1 kcal = 1000 cal raises 1000 g (1 kg) of water by 1°C.", "1 g is 1 calorie.", "easy"),
+        ("Approximately how many calories are equal to 1 Joule?", ["0.239 cal (approx. 0.24 cal)", "4.184 cal", "10 cal", "1000 cal"], "0.239 cal (approx. 0.24 cal)",
+         "\\(1 / 4.184 \\approx 0.239\\) cal.", "Since 1 cal = 4.184 J, 1 J = \\(1/4.184 \\approx 0.239\\) cal.", "Common conversion.", "medium"),
+        ("Which scientist established the quantitative equivalence between mechanical work and heat energy?", ["James Prescott Joule", "Anders Celsius", "Isaac Newton", "Michael Faraday"], "James Prescott Joule",
+         "Paddle-wheel experiment.", "Joule showed that mechanical work converts to heat at a fixed ratio (4.184 J/cal).", "Hence SI unit of energy is Joule.", "easy"),
+        ("In nutrition labels on food packets, when energy is listed as '200 Calories' (with a capital C), it actually means:", ["200 kilocalories (200 kcal)", "200 small calories (0.2 kcal)", "200 Joules", "200 Watts"], "200 kilocalories (200 kcal)",
+         "Dietary 'Calorie' = 1 kcal = 1000 cal.", "Food energy is measured in kilocalories (4184 J each).", "Useful real-world distinction.", "medium"),
+        ("Which unit is larger: 1 Joule or 1 calorie?", ["1 calorie (it equals 4.184 Joules)", "1 Joule", "Both are equal", "Cannot be compared"], "1 calorie (it equals 4.184 Joules)",
+         "1 cal = 4.184 J > 1 J.", "1 calorie is more than 4 times larger than 1 Joule.", "Both measure energy.", "easy"),
+    ]
+    # Add 24 conversion numericals (cal <-> J and kcal <-> J) + 10 conceptual OSC
+    cal_vals = [2, 5, 10, 20, 25, 50, 100, 200, 500, 1000, 4, 8, 15, 30, 40, 60]
+    for cv in cal_vals:
+        jv = round(cv * 4.184, 3)
+        jv_str = f"{jv:g}"
+        osc.append((
+            f"Convert \\({cv}\\text{{ cal}}\\) of heat energy into Joules (using \\(1\\text{{ cal}} = 4.184\\text{{ J}}\\)).",
+            [f"\\({jv_str}\\text{{ J}}\\)", f"\\({round(cv / 4.184, 2)}\\text{{ J}}\\)", f"\\({jv * 10:g}\\text{{ J}}\\)", f"\\({cv * 2}\\text{{ J}}\\)"],
+            f"\\({jv_str}\\text{{ J}}\\)",
+            "Multiply calories by 4.184 J/cal.",
+            f"\\({cv} \\times 4.184 = {jv_str}\\text{{ J}}\\).",
+            "Verify unit conversion.",
+            "easy"
+        ))
+    kcal_vals = [2, 3, 5, 10, 0.5, 4, 6, 8]
+    for kcv in kcal_vals:
+        jv = int(round(kcv * 4184))
+        osc.append((
+            f"How many Joules of heat are equivalent to \\({kcv}\\text{{ kcal}}\\)? (Use \\(1\\text{{ kcal}} = 4184\\text{{ J}}\\))",
+            [f"\\({jv}\\text{{ J}}\\)", f"\\({jv // 1000}\\text{{ J}}\\)", f"\\({jv * 10}\\text{{ J}}\\)", f"\\({int(kcv * 1000)}\\text{{ J}}\\)"],
+            f"\\({jv}\\text{{ J}}\\)",
+            "1 kcal = 4184 J.",
+            f"\\({kcv} \\times 4184 = {jv}\\text{{ J}}\\).",
+            "Remember k = 1000.",
+            "medium"
+        ))
+    extra_osc = [
+        ("How many calories are needed to raise the temperature of 10 g of water from \\(14.5^\\circ\\text{C}\\) to \\(15.5^\\circ\\text{C}\\)?", ["10 cal", "1 cal", "41.84 cal", "100 cal"], "10 cal",
+         "1 cal raises 1 g of water by 1°C in this range.", "10 g requires \\(10 \\times 1 = 10\\) cal (= 41.84 J).", "41.84 is in Joules, not calories.", "easy"),
+        ("How many Joules are needed to raise the temperature of 10 g of water from \\(14.5^\\circ\\text{C}\\) to \\(15.5^\\circ\\text{C}\\)?", ["41.84 J", "10 J", "4.184 J", "4184 J"], "41.84 J",
+         "10 cal × 4.184 J/cal.", "\\(10 \\times 4.184 = 41.84\\text{ J}\\).", "Check units carefully.", "medium"),
+        ("How many kilocalories are needed to raise the temperature of 5 kg of water from \\(14.5^\\circ\\text{C}\\) to \\(15.5^\\circ\\text{C}\\)?", ["5 kcal", "5 cal", "500 kcal", "4.184 kcal"], "5 kcal",
+         "1 kcal raises 1 kg of water by 1°C.", "5 kg requires 5 kcal.", "5 cal would be for 5 g.", "easy"),
+        ("If 8368 J of mechanical work is completely converted into heat, how many kilocalories of heat are produced? (1 kcal = 4184 J)", ["2 kcal", "1 kcal", "4 kcal", "2000 kcal"], "2 kcal",
+         "Divide Joules by 4184.", "\\(8368 / 4184 = 2\\) kcal.", "2000 is in small calories, not kcal.", "medium"),
+        ("If 41.84 J of heat is supplied to 1 g of water at \\(14.5^\\circ\\text{C}\\), wait: 4.184 J raises 1 g by 1°C. What if 41.84 J is supplied to 10 g of water at \\(14.5^\\circ\\text{C}\\)?", ["Its temperature rises by \\(1^\\circ\\text{C}\\) to \\(15.5^\\circ\\text{C}\\)", "Its temperature rises by \\(10^\\circ\\text{C}\\)", "It boils immediately", "It freezes"], "Its temperature rises by \\(1^\\circ\\text{C}\\) to \\(15.5^\\circ\\text{C}\\)",
+         "41.84 J = 10 cal.", "10 cal raises 10 g of water by \\(1^\\circ\\text{C}\\).", "Verify mass × ΔT.", "medium"),
+        ("Which temperature rise is equivalent to 1°C in the Kelvin scale?", ["1 K", "274 K", "273 K", "1.8 K"], "1 K",
+         "Celsius and Kelvin degree intervals are identical.", "A temperature *difference* of \\(1^\\circ\\text{C}\\) equals \\(1\\text{ K}\\).", "Only the zero point differs by 273.15.", "medium"),
+        ("What is the CGS unit of heat energy?", ["Calorie (cal)", "Joule (J)", "Erg", "Kelvin (K)"], "Calorie (cal)",
+         "Calorie is the traditional metric/CGS-linked heat unit.", "1 cal = 4.184 J = \\(4.184 \\times 10^7\\) erg.", "Joule is SI.", "easy"),
+        ("How many calories equal 1 kcal?", ["1000 cal", "100 cal", "4184 cal", "4.184 cal"], "1000 cal",
+         "Prefix kilo- = 1000.", "1 kcal = 1000 cal.", "4184 is in Joules.", "easy"),
+        ("Which statement is TRUE about heat and temperature?", ["Heat is a form of energy measured in Joules/calories, whereas temperature measures hotness in °C/K", "Both are measured in Joules", "Both are measured in °C", "1 calorie equals 1 °C"], "Heat is a form of energy measured in Joules/calories, whereas temperature measures hotness in °C/K",
+         "Distinguish heat (energy) vs temperature (thermal state).", "Heat flows due to temperature difference.", "Different units.", "easy"),
+        ("If a student writes '1 cal = 4.184 J', what physical quantity is being converted?", ["Heat energy", "Electric power", "Specific heat capacity", "Temperature"], "Heat energy",
+         "Both cal and J are units of energy.", "Heat energy conversion factor.", "Power is in Watts (J/s).", "easy"),
+    ]
+    osc.extend(extra_osc)
+
+    omc = [
+        ("Which statements are TRUE about 1 calorie?",
+         ["It equals 4.184 Joules", "It is the heat needed to raise 1 g of water from \\(14.5^\\circ\\text{C}\\) to \\(15.5^\\circ\\text{C}\\)", "It is a unit of heat energy", "It equals 4184 Joules"],
+         ["It equals 4.184 Joules", "It is the heat needed to raise 1 g of water from \\(14.5^\\circ\\text{C}\\) to \\(15.5^\\circ\\text{C}\\)", "It is a unit of heat energy"],
+         "Definition and value of 1 calorie.", "1 cal = 4.184 J; 1 kcal = 4184 J.", "Distinguish cal vs kcal.", "easy"),
+        ("Which statements are TRUE about 1 kilocalorie (kcal)?",
+         ["1 kcal = 1000 calories", "1 kcal = 4184 Joules", "It raises the temperature of 1 kg of water from \\(14.5^\\circ\\text{C}\\) to \\(15.5^\\circ\\text{C}\\)", "1 kcal = 4.184 Joules"],
+         ["1 kcal = 1000 calories", "1 kcal = 4184 Joules", "It raises the temperature of 1 kg of water from \\(14.5^\\circ\\text{C}\\) to \\(15.5^\\circ\\text{C}\\)"],
+         "Definition and value of 1 kcal.", "1000 cal = 4184 J.", "4.184 J is 1 small calorie.", "easy"),
+        ("Which are valid units of heat energy?",
+         ["Joule (J)", "Calorie (cal)", "Kilocalorie (kcal)", "Degree Celsius (°C)"],
+         ["Joule (J)", "Calorie (cal)", "Kilocalorie (kcal)"],
+         "Energy units vs temperature unit.", "J, cal, and kcal measure heat energy.", "°C measures temperature.", "easy"),
+        ("Why is the specific range \\(14.5^\\circ\\text{C}\\) to \\(15.5^\\circ\\text{C}\\) used in defining 1 calorie?",
+         ["The specific heat of water varies slightly with temperature", "It provides an exact standard for reproducible measurement", "A temperature rise of \\(1^\\circ\\text{C}\\) at another temperature (e.g., 90°C) takes a slightly different amount of heat", "Water boils at 15.5°C"],
+         ["The specific heat of water varies slightly with temperature", "It provides an exact standard for reproducible measurement", "A temperature rise of \\(1^\\circ\\text{C}\\) at another temperature (e.g., 90°C) takes a slightly different amount of heat"],
+         "Precision in calorimetry.", "Standardizing at 14.5–15.5°C ensures exactness.", "Water boils at 100°C.", "medium"),
+        ("Which conversions are mathematically correct (using 1 cal = 4.184 J)?",
+         ["10 cal = 41.84 J", "100 cal = 418.4 J", "1 kcal = 4184 J", "5 cal = 50 J"],
+         ["10 cal = 41.84 J", "100 cal = 418.4 J", "1 kcal = 4184 J"],
+         "Multiply by 4.184.", "5 × 4.184 = 20.92 J, not 50 J.", "First three are exact.", "easy"),
+        ("When 4184 J of heat is absorbed by 1 kg of water at \\(14.5^\\circ\\text{C}\\):",
+         ["It equals 1 kcal of heat", "It equals 1000 cal of heat", "Water temperature rises to \\(15.5^\\circ\\text{C}\\)", "Water turns completely into steam"],
+         ["It equals 1 kcal of heat", "It equals 1000 cal of heat", "Water temperature rises to \\(15.5^\\circ\\text{C}\\)"],
+         "4184 J = 1 kcal = 1000 cal.", "Raises 1 kg water by 1°C.", "Does not boil at 15.5°C.", "easy"),
+        ("Which statements about Joule's mechanical equivalent of heat are correct?",
+         ["Mechanical work can be converted into heat", "4.184 J of work produces 1 cal of heat", "Both heat and mechanical work are forms of energy with SI unit Joule", "Heat cannot be measured in Joules"],
+         ["Mechanical work can be converted into heat", "4.184 J of work produces 1 cal of heat", "Both heat and mechanical work are forms of energy with SI unit Joule"],
+         "Joule's discovery.", "Work <-> Heat at 4.184 J/cal.", "Heat IS measured in Joules.", "easy"),
+        ("Which statements are true when comparing 1 cal and 1 J?",
+         ["1 cal is larger than 1 J", "1 cal = 4.184 J", "1 J ≈ 0.239 cal", "1 J is larger than 1 cal"],
+         ["1 cal is larger than 1 J", "1 cal = 4.184 J", "1 J ≈ 0.239 cal"],
+         "Compare magnitudes.", "1 cal > 1 J.", "0.239 cal < 1 cal.", "easy"),
+        ("If 200 g of water is heated from \\(14.5^\\circ\\text{C}\\) to \\(15.5^\\circ\\text{C}\\):",
+         ["Heat required is 200 cal", "Heat required is 0.2 kcal", "Heat required is 836.8 J", "Heat required is 4.184 J"],
+         ["Heat required is 200 cal", "Heat required is 0.2 kcal", "Heat required is 836.8 J"],
+         "\\(200 \\times 1 = 200\\) cal = 0.2 kcal = \\(200 \\times 4.184 = 836.8\\) J.", "Check all three units.", "4.184 J is for 1 g.", "medium"),
+        ("Which statements about dietary 'Calories' on food packaging are true?",
+         ["1 food Calorie (Cal) = 1 kilocalorie (kcal)", "1 food Calorie = 1000 small calories", "1 food Calorie = 4184 Joules", "1 food Calorie = 4.184 Joules"],
+         ["1 food Calorie (Cal) = 1 kilocalorie (kcal)", "1 food Calorie = 1000 small calories", "1 food Calorie = 4184 Joules"],
+         "Food Calorie = kcal.", "Capital-C Calorie is 1 kcal = 4184 J.", "Not 4.184 J.", "medium"),
+    ]
+
+    otf = [
+        ("1 calorie is equal to 4.184 Joules.", True,
+         "Standard conversion factor.", "1 cal = 4.184 J.", "True.", "easy"),
+        ("1 kilocalorie is equal to 4.184 Joules.", False,
+         "1 kcal = 1000 cal.", "1 kcal = 4184 Joules.", "False.", "easy"),
+        ("By definition, 1 calorie is the heat needed to raise 1 g of water from \\(14.5^\\circ\\text{C}\\) to \\(15.5^\\circ\\text{C}\\).", True,
+         "Standard Balbharti definition.", "Exact 1°C interval.", "True.", "easy"),
+        ("The SI unit of heat is the calorie.", False,
+         "Heat is energy.", "The SI unit of heat is the Joule (J).", "False.", "easy"),
+        ("1 Joule is approximately equal to 0.24 calories.", True,
+         "\\(1 / 4.184 \\approx 0.239 \\approx 0.24\\) cal.", "Reciprocal of 4.184.", "True.", "medium"),
+        ("The specific temperature range \\(14.5^\\circ\\text{C}\\) to \\(15.5^\\circ\\text{C}\\) is specified because water's specific heat varies slightly with temperature.", True,
+         "Ensures an exact standard.", "Directly from Balbharti Ch.5.", "True.", "easy"),
+        ("1 kilocalorie is the heat required to raise the temperature of 1 kg of water by \\(1^\\circ\\text{C}\\) (from \\(14.5^\\circ\\text{C}\\) to \\(15.5^\\circ\\text{C}\\)).", True,
+         "1 kg = 1000 g -> 1000 cal = 1 kcal.", "Exact definition.", "True.", "easy"),
+        ("10 calories of heat equals 418.4 Joules.", False,
+         "\\(10 \\times 4.184 = 41.84\\) J.", "418.4 J is 100 calories.", "False.", "easy"),
+        ("A temperature change of \\(1^\\circ\\text{C}\\) from \\(14.5^\\circ\\text{C}\\) to \\(15.5^\\circ\\text{C}\\) is equal to a change of 1 K.", True,
+         "Celsius and Kelvin step sizes are identical.", "\\(\\Delta T = 1^\\circ\\text{C} = 1\\text{ K}\\).", "True.", "easy"),
+        ("James Prescott Joule established the equivalence between mechanical work and heat.", True,
+         "Paddle-wheel experiment.", "4.184 J = 1 cal.", "True.", "easy"),
+    ]
+
+    oar = [
+        ("The definition of 1 calorie specifies heating 1 g of water from \\(14.5^\\circ\\text{C}\\) to \\(15.5^\\circ\\text{C}\\).",
+         "The amount of heat required to raise 1 g of water by \\(1^\\circ\\text{C}\\) varies slightly at different temperatures.", "A",
+         "Reason for the 14.5–15.5°C standard.", "Both A and R are true, and R explains A.", "Directly from Balbharti Ch.5.", "easy"),
+        ("1 kilocalorie equals 4184 Joules.",
+         "1 kilocalorie equals 1000 calories, and each calorie equals 4.184 Joules.", "A",
+         "\\(1000 \\times 4.184 = 4184\\).", "Both A and R are true, and R explains A.", "Exact conversion.", "easy"),
+        ("The SI unit of heat is the Joule, not the calorie.",
+         "Heat is a form of energy, and the SI unit of all energy is the Joule.", "A",
+         "Heat = thermal energy.", "Both A and R are true, and R explains A.", "Calorie is a traditional non-SI unit.", "easy"),
+        ("1 Joule is larger than 1 calorie.",
+         "1 calorie equals 4.184 Joules.", "D",
+         "4.184 J > 1 J, so 1 cal > 1 J.", "A is false; R is true.", "R contradicts A.", "easy"),
+        ("Raising 1 kg of water from \\(14.5^\\circ\\text{C}\\) to \\(15.5^\\circ\\text{C}\\) requires 1000 calories.",
+         "1 kg equals 1000 g, and each gram requires 1 calorie for this \\(1^\\circ\\text{C}\\) rise.", "A",
+         "1 kcal = 1000 cal.", "Both A and R are true, and R explains A.", "Exact scaling.", "easy"),
+        ("In food nutrition, '100 Calories' means 100 small calories (418.4 J).",
+         "Dietary Calories (with a capital C) represent kilocalories, where 1 kcal = 4184 J.", "D",
+         "Food Calories are kcal.", "A is false (100 food Calories = 100 kcal = 418,400 J); R is true.", "Important distinction.", "medium"),
+        ("A temperature rise from \\(14.5^\\circ\\text{C}\\) to \\(15.5^\\circ\\text{C}\\) corresponds to \\(\\Delta T = 1\\text{ K}\\).",
+         "The size of one degree on the Celsius scale is identical to one Kelvin on the Kelvin scale.", "A",
+         "Interval equivalence.", "Both A and R are true, and R explains A.", "\\(\\Delta T_C = \\Delta T_K\\).", "easy"),
+        ("Mechanical work of 41.84 J completely converted into heat produces 10 calories.",
+         "The mechanical equivalent of heat is 4.184 Joules per calorie.", "A",
+         "\\(41.84 / 4.184 = 10\\) cal.", "Both A and R are true, and R explains A.", "Exact arithmetic.", "medium"),
+        ("1 calorie can raise 1 g of copper from \\(14.5^\\circ\\text{C}\\) to \\(15.5^\\circ\\text{C}\\).",
+         "Water has a much higher specific heat capacity than copper.", "D",
+         "1 cal raises 1 g of water by 1°C; copper needs only ~0.09 cal/g°C.", "A is false (1 cal would raise 1 g copper by ~11°C); R is true.", "Specific heat differs by material.", "medium"),
+        ("If 8368 J of heat is given to 2 kg of water at \\(14.5^\\circ\\text{C}\\), its temperature becomes \\(15.5^\\circ\\text{C}\\).",
+         "8368 J equals 2 kcal, which raises 2 kg of water by \\(1^\\circ\\text{C}\\).", "A",
+         "\\(8368 / 4184 = 2\\) kcal -> 2 kg by 1°C.", "Both A and R are true, and R explains A.", "Exact check.", "medium"),
+    ]
+
+    one_ofb = [
+        ("ONE", "How many Joules equal 100 calories? (Use \\(1\\text{ cal} = 4.184\\text{ J}\\))", "418.4",
+         "\\(100 \\times 4.184\\).", "418.4 J.", "Numeric: 418.4.", "easy"),
+        ("ONE", "How many Joules equal 1 kilocalorie? (Use \\(1\\text{ cal} = 4.184\\text{ J}\\))", "4184",
+         "\\(1000 \\times 4.184\\).", "4184 J.", "Exact integer: 4184.", "easy"),
+        ("ONE", "How many kilocalories are equal to 8368 Joules?", "2",
+         "\\(8368 / 4184\\).", "2 kcal.", "Exact integer: 2.", "medium"),
+        ("ONE", "How many calories are required to raise the temperature of 25 g of water from \\(14.5^\\circ\\text{C}\\) to \\(15.5^\\circ\\text{C}\\)?", "25",
+         "1 cal per gram per °C.", "25 cal.", "Exact integer: 25.", "easy"),
+        ("OFB", "1 calorie is defined as the heat required to raise 1 g of water from \\(14.5^\\circ\\text{C}\\) to ______ °C.", "15.5",
+         "1°C rise from 14.5°C.", "15.5.", "Answer: 15.5.", "easy"),
+        ("OFB", "The SI unit of heat energy is the ______.", "Joule",
+         "Name the SI energy unit.", "Joule.", "Answer: Joule.", "easy"),
+    ]
+    return build_pack(tc, osc, omc, otf, oar, one_ofb)
+
+# 4. 5.5.2: Specific heat capacity: Q = m * c * ΔT
+def gen_5_5_2():
+    tc = "MH-10-SCIT1-5-5.5.2"
+    osc = [
+        ("What is the formula for heat energy \\(Q\\) absorbed or released during a temperature change without phase change?", ["\\(Q = m \\cdot c \\cdot \\Delta T\\)", "\\(Q = m \\cdot L\\)", "\\(Q = I^2 R t\\)", "\\(Q = m g h\\)"], "\\(Q = m \\cdot c \\cdot \\Delta T\\)",
+         "Sensible heat formula.", "Heat \\(Q\\) = mass (\\(m\\)) × specific heat capacity (\\(c\\)) × temperature change (\\(\\Delta T\\)).", "\\(m L\\) is latent heat (phase change at constant T).", "easy"),
+        ("What is the SI unit of specific heat capacity (\\(c\\))?", ["\\(\\text{J/(kg}\\cdot^\\circ\\text{C)}\\) or \\(\\text{J/(kg}\\cdot\\text{K)}\\)", "\\(\\text{cal/(g}\\cdot^\\circ\\text{C)}\\)", "\\(\\text{J/kg}\\)", "\\(\\text{J/K}\\)"], "\\(\\text{J/(kg}\\cdot^\\circ\\text{C)}\\) or \\(\\text{J/(kg}\\cdot\\text{K)}\\)",
+         "From \\(c = Q / (m \\cdot \\Delta T)\\).", "SI units: Q in J, m in kg, \\(\\Delta T\\) in K (or °C) -> \\(\\text{J/(kg}\\cdot\\text{K)}\\).", "\\(\\text{cal/(g}\\cdot^\\circ\\text{C)}\\) is CGS.", "easy"),
+        ("What is the specific heat capacity of pure liquid water in CGS and SI units respectively?", ["\\(1\\text{ cal/(g}\\cdot^\\circ\\text{C)}\\) and \\(4184\\text{ J/(kg}\\cdot^\\circ\\text{C)}\\) (or \\(4200\\))", "\\(0.1\\text{ cal/(g}\\cdot^\\circ\\text{C)}\\) and \\(418\\text{ J/(kg}\\cdot^\\circ\\text{C)}\\)", "\\(4.18\\text{ cal/(g}\\cdot^\\circ\\text{C)}\\) and \\(1\\text{ J/(kg}\\cdot^\\circ\\text{C)}\\)", "\\(10\\text{ cal/(g}\\cdot^\\circ\\text{C)}\\) and \\(41840\\text{ J/(kg}\\cdot^\\circ\\text{C)}\\)"], "\\(1\\text{ cal/(g}\\cdot^\\circ\\text{C)}\\) and \\(4184\\text{ J/(kg}\\cdot^\\circ\\text{C)}\\) (or \\(4200\\))",
+         "Water has the highest specific heat among common substances.", "In CGS: \\(1\\text{ cal/(g}\\cdot^\\circ\\text{C)}\\); in SI: \\(4184\\text{ J/(kg}\\cdot\\text{K)}\\).", "Memorize both values.", "easy"),
+        ("Why does water act as an excellent coolant in car radiators and hot-water bottles for fomentation?", ["Water has a very high specific heat capacity, so it absorbs or releases large amounts of heat with a small temperature change", "Water boils at 10°C", "Water has zero specific heat", "Water freezes at 50°C"], "Water has a very high specific heat capacity, so it absorbs or releases large amounts of heat with a small temperature change",
+         "High \\(c\\) means large thermal inertia.", "Water stores large heat per kg per °C, cooling engines effectively and staying warm long in hot-water bags.", "Directly from Balbharti Ch.5.", "easy"),
+        ("Why do coastal areas experience a moderate climate (mild summers and winters) compared to inland deserts?", ["Water has a much higher specific heat than land/sand, so the sea heats up and cools down much more slowly", "Land has higher specific heat than water", "Coastal areas receive no sunlight", "Ocean water never evaporates"], "Water has a much higher specific heat than land/sand, so the sea heats up and cools down much more slowly",
+         "Sea breezes and thermal buffering.", "High specific heat of ocean water moderates coastal temperatures.", "Sand has low specific heat (~0.2 cal/g°C) and heats/cools fast.", "easy"),
+        ("What is the difference between 'heat capacity' (thermal capacity) and 'specific heat capacity'?", ["Heat capacity is \\(m \\cdot c\\) (for the whole object), whereas specific heat capacity \\(c\\) is per unit mass of the substance", "Both are identical", "Heat capacity is per unit mass; specific heat is for the whole object", "Specific heat depends on the object's shape"], "Heat capacity is \\(m \\cdot c\\) (for the whole object), whereas specific heat capacity \\(c\\) is per unit mass of the substance",
+         "Intensive vs extensive property.", "Specific heat \\(c\\) is a material property (independent of mass); heat capacity \\(C = m c\\) scales with mass.", "Units: J/K vs J/(kg·K).", "medium"),
+        ("Does the specific heat capacity \\(c\\) of a pure metal block change if you cut the block in half?", ["No, specific heat capacity is an intensive material property independent of mass", "Yes, it halves", "Yes, it doubles", "Yes, it becomes zero"], "No, specific heat capacity is an intensive material property independent of mass",
+         "\\(c\\) depends only on the substance (and phase), not on sample size.", "Both halves are still the same metal, so \\(c\\) is unchanged (though heat capacity \\(mc\\) halves).", "Key conceptual check.", "medium"),
+        ("If equal masses of water (\\(c = 1\\)) and copper (\\(c = 0.095\\)) receive the same amount of heat, which will show a MUCH larger rise in temperature?", ["Copper", "Water", "Both rise by the exact same temperature", "Neither warms up"], "Copper",
+         "From \\(\\Delta T = Q / (m c)\\), smaller \\(c\\) gives larger \\(\\Delta T\\).", "Copper has ~10 times smaller specific heat than water, so its temperature rises ~10 times more.", "That's why metal pans heat up fast.", "easy"),
+        ("What is the specific heat capacity of a substance if \\(2\\text{ kg}\\) of it requires \\(4000\\text{ J}\\) of heat to raise its temperature by \\(5^\\circ\\text{C}\\)?", ["\\(400\\text{ J/(kg}\\cdot^\\circ\\text{C)}\\)", "\\(800\\text{ J/(kg}\\cdot^\\circ\\text{C)}\\)", "\\(200\\text{ J/(kg}\\cdot^\\circ\\text{C)}\\)", "\\(40,000\\text{ J/(kg}\\cdot^\\circ\\text{C)}\\)"], "\\(400\\text{ J/(kg}\\cdot^\\circ\\text{C)}\\)",
+         "\\(c = Q / (m \\Delta T)\\).", "\\(c = 4000 / (2 \\times 5) = 4000 / 10 = 400\\text{ J/(kg}\\cdot^\\circ\\text{C)}\\).", "Check units.", "easy"),
+        ("How much heat (in kcal) is required to raise the temperature of \\(5\\text{ kg}\\) of water from \\(20^\\circ\\text{C}\\) to \\(80^\\circ\\text{C}\\)? (\\(c_{\\text{water}} = 1\\text{ kcal/(kg}\\cdot^\\circ\\text{C)}\\))", ["300 kcal", "400 kcal", "100 kcal", "60 kcal"], "300 kcal",
+         "\\(Q = m c \\Delta T\\).", "\\(\\Delta T = 80 - 20 = 60^\\circ\\text{C}\\); \\(Q = 5 \\times 1 \\times 60 = 300\\text{ kcal}\\).", "Remember \\(\\Delta T = T_2 - T_1\\).", "easy"),
+    ]
+    # Add 24 parameterized Q = m * c * dT numericals + 10 conceptual OSC
+    num_cases = [
+        (2, 1, 20, 70, 100, "kcal"),
+        (3, 1, 15, 65, 150, "kcal"),
+        (4, 1, 25, 75, 200, "kcal"),
+        (10, 1, 10, 50, 400, "kcal"),
+        (5, 0.1, 20, 120, 50, "kcal"),
+        (4, 0.2, 30, 80, 40, "kcal"),
+        (6, 0.1, 10, 110, 60, "kcal"),
+        (2, 0.5, 20, 60, 40, "kcal"),
+        (8, 0.25, 10, 50, 80, "kcal"),
+        (10, 0.4, 25, 75, 200, "kcal"),
+    ]
+    for m_kg, c_val, t1, t2, q_ans, unit in num_cases:
+        dt = t2 - t1
+        q_str = f"{q_ans:g}"
+        osc.append((
+            f"Calculate the heat energy required to raise the temperature of \\({m_kg}\\text{{ kg}}\\) of a substance (specific heat \\(c = {c_val}\\text{{ kcal/(kg}}\\cdot^\\circ\\text{{C)}}\\)) from \\({t1}^\\circ\\text{{C}}\\) to \\({t2}^\\circ\\text{{C}}\\).",
+            [f"\\({q_str}\\text{{ {unit}}}\\)", f"\\({q_ans * 2:g}\\text{{ {unit}}}\\)", f"\\({q_ans / 2:g}\\text{{ {unit}}}\\)", f"\\({dt}\\text{{ {unit}}}\\)"],
+            f"\\({q_str}\\text{{ {unit}}}\\)",
+            "Use \\(Q = m \\cdot c \\cdot \\Delta T\\).",
+            f"\\(\\Delta T = {t2} - {t1} = {dt}^\\circ\\text{{C}}\\). \\(Q = {m_kg} \\times {c_val} \\times {dt} = {q_str}\\text{{ {unit}}}\\).",
+            "Check units match kg and kcal.",
+            "medium"
+        ))
+    si_cases = [
+        (2, 400, 10, 8000),
+        (3, 900, 20, 54000),
+        (5, 4200, 10, 210000),
+        (4, 500, 15, 30000),
+        (1, 380, 50, 19000),
+        (2, 900, 25, 45000),
+        (5, 400, 30, 60000),
+        (10, 4200, 5, 210000),
+    ]
+    for m_kg, c_si, dt, q_j in si_cases:
+        osc.append((
+            f"How many Joules of heat are absorbed by \\({m_kg}\\text{{ kg}}\\) of a material (\\(c = {c_si}\\text{{ J/(kg}}\\cdot\\text{{K)}}\\)) when its temperature rises by \\({dt}\\text{{ K}}\\)?",
+            [f"\\({q_j}\\text{{ J}}\\)", f"\\({q_j // 2}\\text{{ J}}\\)", f"\\({q_j * 2}\\text{{ J}}\\)", f"\\({c_si * dt}\\text{{ J}}\\)"],
+            f"\\({q_j}\\text{{ J}}\\)",
+            "Apply \\(Q = m \\cdot c \\cdot \\Delta T\\).",
+            f"\\(Q = {m_kg} \\times {c_si} \\times {dt} = {q_j}\\text{{ J}}\\).",
+            "Units: \\(\\text{kg} \\cdot \\text{J/(kg}\\cdot\\text{K)} \\cdot \\text{K} = \\text{J}\\).",
+            "medium"
+        ))
+    # 6 find-deltaT or find-c numericals + 10 conceptual
+    for q_j, m_kg, c_si, dt_ans in [(18000, 2, 900, 10), (24000, 3, 400, 20), (42000, 2, 4200, 5), (15000, 5, 500, 6), (36000, 4, 450, 20), (8000, 2, 800, 5)]:
+        osc.append((
+            f"When \\({q_j}\\text{{ J}}\\) of heat is supplied to \\({m_kg}\\text{{ kg}}\\) of a solid of specific heat \\({c_si}\\text{{ J/(kg}}\\cdot^\\circ\\text{{C)}}\\), what is its temperature rise \\(\\Delta T\\)?",
+            [f"\\({dt_ans}^\\circ\\text{{C}}\\)", f"\\({dt_ans * 2}^\\circ\\text{{C}}\\)", f"\\({dt_ans + 5}^\\circ\\text{{C}}\\)", f"\\({dt_ans // 2 if dt_ans >= 2 else 1}^\\circ\\text{{C}}\\)"],
+            f"\\({dt_ans}^\\circ\\text{{C}}\\)",
+            "Rearrange \\(\\Delta T = Q / (m \\cdot c)\\).",
+            f"\\(\\Delta T = {q_j} / ({m_kg} \\times {c_si}) = {dt_ans}^\\circ\\text{{C}}\\).",
+            "Verify: \\(m c \\Delta T = Q\\).",
+            "medium"
+        ))
+    extra_osc = [
+        ("What is the CGS unit of specific heat capacity?", ["\\(\\text{cal/(g}\\cdot^\\circ\\text{C)}\\)", "\\(\\text{J/(kg}\\cdot\\text{K)}\\)", "\\(\\text{kcal/(kg}\\cdot^\\circ\\text{C)}\\)", "\\(\\text{cal/g}\\)"], "\\(\\text{cal/(g}\\cdot^\\circ\\text{C)}\\)",
+         "CGS uses gram, calorie, and °C.", "\\(c = Q / (m \\Delta T)\\) -> \\(\\text{cal/(g}\\cdot^\\circ\\text{C)}\\).", "\\(\\text{J/(kg}\\cdot\\text{K)}\\) is SI.", "easy"),
+        ("How are \\(\\text{kcal/(kg}\\cdot^\\circ\\text{C)}\\) and \\(\\text{cal/(g}\\cdot^\\circ\\text{C)}\\) numerically related?", ["They are numerically equal (\\(1\\text{ kcal/(kg}\\cdot^\\circ\\text{C)} = 1\\text{ cal/(g}\\cdot^\\circ\\text{C)}\\))", "1 kcal/(kg·°C) = 1000 cal/(g·°C)", "1 cal/(g·°C) = 1000 kcal/(kg·°C)", "They differ by 4.184"], "They are numerically equal (\\(1\\text{ kcal/(kg}\\cdot^\\circ\\text{C)} = 1\\text{ cal/(g}\\cdot^\\circ\\text{C)}\\))",
+         "Both numerator (kcal = 1000 cal) and denominator (kg = 1000 g) scale by 1000.", "The factors of 1000 cancel out!", "Super useful shortcut for numericals.", "hard"),
+        ("Among water, iron, copper, and lead, which has the HIGHEST specific heat capacity?", ["Water", "Iron", "Copper", "Lead"], "Water",
+         "Compare c values: water (1.0), iron (0.110), copper (0.095), lead (0.031) cal/g°C.", "Water has ~9 times higher specific heat than iron and ~32 times higher than lead.", "Explains thermal buffering of oceans.", "easy"),
+        ("Among iron (\\(0.110\\)), copper (\\(0.095\\)), and lead (\\(0.031\\text{ cal/g}^\\circ\\text{C}\\)), which heats up MOST rapidly for the same mass and heat input?", ["Lead", "Iron", "Copper", "All heat at the exact same rate"], "Lead",
+         "Lowest specific heat gives highest \\(\\Delta T = Q / (m c)\\).", "Lead (0.031) has the lowest \\(c\\), so its temperature rises fastest.", "Iron has the highest among the three metals.", "medium"),
+        ("What does the symbol \\(\\Delta T\\) represent in \\(Q = m c \\Delta T\\)?", ["Change in temperature (\\(T_{\\text{final}} - T_{\\text{initial}}\\))", "Final temperature only", "Boiling point", "Time taken in seconds"], "Change in temperature (\\(T_{\\text{final}} - T_{\\text{initial}}\\))",
+         "\\(\\Delta\\) denotes difference/change.", "\\(\\Delta T\\) is the temperature rise or fall, identical in °C and K.", "Never plug in raw \\(T\\) unless initial \\(T=0\\).", "easy"),
+        ("If 50 g of water cools from \\(60^\\circ\\text{C}\\) to \\(20^\\circ\\text{C}\\), how much heat is RELEASED?", ["2000 cal (2 kcal)", "1000 cal", "3000 cal", "4000 cal"], "2000 cal (2 kcal)",
+         "\\(Q = m c \\Delta T\\) applies to cooling too.", "\\(Q = 50 \\times 1 \\times (60 - 20) = 50 \\times 40 = 2000\\text{ cal} = 2\\text{ kcal}\\).", "Heat is released to surroundings.", "medium"),
+        ("Which substance's specific heat capacity is approximately \\(0.5\\text{ cal/(g}\\cdot^\\circ\\text{C)}\\) (about half of liquid water)?", ["Ice (solid water) and Steam", "Copper", "Lead", "Gold"], "Ice (solid water) and Steam",
+         "Specific heat depends on phase too.", "Ice (~0.5 cal/g°C) and steam (~0.48 cal/g°C) have roughly half the specific heat of liquid water (1.0 cal/g°C).", "Metals are much lower (~0.03–0.2).", "hard"),
+        ("In \\(Q = m c \\Delta T\\), if you double BOTH the mass \\(m\\) and the temperature rise \\(\\Delta T\\) of a given material, the heat \\(Q\\) required:", ["Increases 4 times (quadruples)", "Doubles", "Halves", "Stays unchanged"], "Increases 4 times (quadruples)",
+         "\\(Q \\propto m \\cdot \\Delta T\\).", "\\(2 \\times 2 = 4\\) times.", "Simple scaling check.", "medium"),
+        ("Why do desert regions get extremely hot during the day and very cold at night?", ["Sand/rock has a low specific heat capacity, so it heats up quickly in sunlight and cools down quickly at night", "Sand has higher specific heat than water", "Deserts have no gravity", "Sunlight is frozen at night"], "Sand/rock has a low specific heat capacity, so it heats up quickly in sunlight and cools down quickly at night",
+         "Low \\(c\\) means large \\(\\Delta T\\) for a given heat gain or loss.", "Sand (~0.2 cal/g°C) changes temperature 5 times faster than water for equal heat.", "Opposite of coastal moderation.", "easy"),
+        ("What is the heat capacity (\\(m c\\)) of a \\(2\\text{ kg}\\) copper block if \\(c_{\\text{copper}} = 380\\text{ J/(kg}\\cdot\\text{K)}\\)?", ["\\(760\\text{ J/K}\\)", "\\(190\\text{ J/K}\\)", "\\(380\\text{ J/K}\\)", "\\(760\\text{ J/(kg}\\cdot\\text{K)}\\)"], "\\(760\\text{ J/K}\\)",
+         "Heat capacity \\(C = m \\cdot c\\).", "\\(C = 2 \\times 380 = 760\\text{ J/K}\\).", "Unit of heat capacity is J/K (no kg).", "hard"),
+    ]
+    osc.extend(extra_osc)
+
+    omc = [
+        ("Which statements are TRUE about specific heat capacity (\\(c\\))?",
+         ["It is the heat required to raise the temperature of unit mass of a substance by \\(1^\\circ\\text{C}\\)", "Its SI unit is \\(\\text{J/(kg}\\cdot\\text{K)}\\)", "Its CGS unit is \\(\\text{cal/(g}\\cdot^\\circ\\text{C)}\\)", "It doubles if the mass of the object is doubled"],
+         ["It is the heat required to raise the temperature of unit mass of a substance by \\(1^\\circ\\text{C}\\)", "Its SI unit is \\(\\text{J/(kg}\\cdot\\text{K)}\\)", "Its CGS unit is \\(\\text{cal/(g}\\cdot^\\circ\\text{C)}\\)"],
+         "Definition and units of specific heat.", "Specific heat is an intensive property independent of mass.", "Units are J/(kg·K) and cal/(g·°C).", "easy"),
+        ("Which everyday phenomena are explained by water's very high specific heat capacity?",
+         ["Moderate climate in coastal cities", "Use of water as a coolant in automobile radiators", "Use of hot-water bags for medical fomentation", "Rapid heating of desert sand at noon"],
+         ["Moderate climate in coastal cities", "Use of water as a coolant in automobile radiators", "Use of hot-water bags for medical fomentation"],
+         "Applications of water's high \\(c\\).", "Coastal buffering, engine coolant, and hot-water bottles rely on high \\(c\\) of water.", "Desert sand has LOW specific heat.", "easy"),
+        ("In the formula \\(Q = m \\cdot c \\cdot \\Delta T\\), which quantities are directly proportional to \\(Q\\)?",
+         ["Mass \\(m\\) of the substance", "Specific heat capacity \\(c\\)", "Temperature change \\(\\Delta T\\)", "Time of day"],
+         ["Mass \\(m\\) of the substance", "Specific heat capacity \\(c\\)", "Temperature change \\(\\Delta T\\)"],
+         "Direct proportionality in \\(Q = m c \\Delta T\\).", "All three factors \\(m, c, \\Delta T\\) scale \\(Q\\) linearly.", "Time of day is irrelevant.", "easy"),
+        ("Which values correctly represent the specific heat capacity of liquid water?",
+         ["\\(1\\text{ cal/(g}\\cdot^\\circ\\text{C)}\\)", "\\(1\\text{ kcal/(kg}\\cdot^\\circ\\text{C)}\\)", "\\(4184\\text{ J/(kg}\\cdot^\\circ\\text{C)}\\)", "\\(0.095\\text{ cal/(g}\\cdot^\\circ\\text{C)}\\)"],
+         ["\\(1\\text{ cal/(g}\\cdot^\\circ\\text{C)}\\)", "\\(1\\text{ kcal/(kg}\\cdot^\\circ\\text{C)}\\)", "\\(4184\\text{ J/(kg}\\cdot^\\circ\\text{C)}\\)"],
+         "Water's specific heat in three unit systems.", "All three equal water's specific heat.", "0.095 is copper.", "medium"),
+        ("If equal masses of water, iron, and lead are given equal amounts of heat:",
+         ["Lead shows the largest temperature rise", "Water shows the smallest temperature rise", "Iron rises more in temperature than water", "All three reach the exact same temperature"],
+         ["Lead shows the largest temperature rise", "Water shows the smallest temperature rise", "Iron rises more in temperature than water"],
+         "\\(\\Delta T \\propto 1/c\\).", "\\(c_{\\text{lead}} < c_{\\text{iron}} < c_{\\text{water}}\\) implies \\(\\Delta T_{\\text{lead}} > \\Delta T_{\\text{iron}} > \\Delta T_{\\text{water}}\\).", "Temperatures differ.", "medium"),
+        ("Which statements accurately distinguish heat capacity and specific heat capacity?",
+         ["Specific heat capacity is independent of the object's mass", "Heat capacity equals mass times specific heat capacity (\\(m c\\))", "SI unit of heat capacity is \\(\\text{J/K}\\)", "Both have the exact same SI unit"],
+         ["Specific heat capacity is independent of the object's mass", "Heat capacity equals mass times specific heat capacity (\\(m c\\))", "SI unit of heat capacity is \\(\\text{J/K}\\)"],
+         "Intensive vs extensive.", "Units differ: J/(kg·K) vs J/K.", "Verify definitions.", "medium"),
+        ("When \\(2\\text{ kg}\\) of water is heated from \\(25^\\circ\\text{C}\\) to \\(75^\\circ\\text{C}\\) (\\(c = 1\\text{ kcal/(kg}\\cdot^\\circ\\text{C)}\\)):",
+         ["\\(\\Delta T = 50^\\circ\\text{C}\\)", "\\(Q = 100\\text{ kcal}\\)", "\\(Q = 418,400\\text{ J}\\)", "\\(Q = 50\\text{ kcal}\\)"],
+         ["\\(\\Delta T = 50^\\circ\\text{C}\\)", "\\(Q = 100\\text{ kcal}\\)", "\\(Q = 418,400\\text{ J}\\)"],
+         "\\(Q = 2 \\times 1 \\times 50 = 100\\) kcal = 418,400 J.", "Check both kcal and J.", "50 kcal forgets mass 2 kg.", "medium"),
+        ("Which statements are true when a hot metal sphere cools from \\(100^\\circ\\text{C}\\) to \\(30^\\circ\\text{C}\\)?",
+         ["Heat is released by the sphere", "\\(\\Delta T\\) magnitude is \\(70^\\circ\\text{C}\\) (or \\(70\\text{ K}\\))", "The heat released is given by \\(Q = m c \\Delta T\\)", "Its specific heat capacity becomes negative"],
+         ["Heat is released by the sphere", "\\(\\Delta T\\) magnitude is \\(70^\\circ\\text{C}\\) (or \\(70\\text{ K}\\))", "The heat released is given by \\(Q = m c \\Delta T\\)"],
+         "Cooling obeys \\(Q = m c \\Delta T\\).", "Specific heat \\(c\\) is always positive.", "70°C = 70 K interval.", "easy"),
+        ("Why does \\(Q = m c \\Delta T\\) NOT apply during melting of ice at \\(0^\\circ\\text{C}\\)?", ["Temperature remains constant at \\(0^\\circ\\text{C}\\) (\\(\\Delta T = 0\\))", "Heat absorbed goes into breaking intermolecular bonds as latent heat (\\(Q = m L\\))", "Ice has infinite mass", "Water does not melt at 0°C"],
+         ["Temperature remains constant at \\(0^\\circ\\text{C}\\) (\\(\\Delta T = 0\\))", "Heat absorbed goes into breaking intermolecular bonds as latent heat (\\(Q = m L\\))"],
+         "Sensible heat vs latent heat.", "Phase change occurs at constant temperature, so \\(Q = m L\\) is used instead.", "Only 2 options are true here—let's check!", "medium"),
+        ("Which factors does specific heat capacity of a substance depend on?",
+         ["Nature of the substance (material)", "Physical state/phase (solid, liquid, gas)", "Mass of the sample", "Shape of the container"],
+         ["Nature of the substance (material)", "Physical state/phase (solid, liquid, gas)"],
+         "Material & phase dependence.", "Depends on substance and phase (e.g., water 1.0 vs ice 0.5), NOT on mass or shape.", "2 correct options.", "medium"),
+    ]
+
+    otf = [
+        ("The amount of heat absorbed or released by an object without phase change is \\(Q = m c \\Delta T\\).", True,
+         "Standard calorimetry formula.", "Sensible heat equation.", "True.", "easy"),
+        ("The SI unit of specific heat capacity is \\(\\text{cal/(g}\\cdot^\\circ\\text{C)}\\).", False,
+         "That is the CGS unit.", "The SI unit is \\(\\text{J/(kg}\\cdot\\text{K)}\\) or \\(\\text{J/(kg}\\cdot^\\circ\\text{C)}\\).", "False.", "easy"),
+        ("Water has one of the highest specific heat capacities among common liquids and solids.", True,
+         "\\(c_{\\text{water}} = 1\\text{ cal/(g}\\cdot^\\circ\\text{C)} = 4184\\text{ J/(kg}\\cdot\\text{K)}\\).", "Much higher than metals or sand.", "True.", "easy"),
+        ("If you double the mass of a copper block, its specific heat capacity also doubles.", False,
+         "Specific heat is an intensive material property.", "It remains unchanged (only heat capacity \\(mc\\) doubles).", "False.", "medium"),
+        ("1 \\(\\text{kcal/(kg}\\cdot^\\circ\\text{C)}\\) is numerically equal to 1 \\(\\text{cal/(g}\\cdot^\\circ\\text{C)}\\).", True,
+         "Both numerator and denominator scale by 1000.", "1000/1000 = 1.", "True.", "medium"),
+        ("Copper heats up much faster than an equal mass of water for the same heat supply because copper has a lower specific heat.", True,
+         "\\(\\Delta T = Q / (mc)\\).", "Lower \\(c\\) -> higher \\(\\Delta T\\).", "True.", "easy"),
+        ("Water is used in car radiators because it has a very low specific heat capacity.", False,
+         "It is used because it has a very HIGH specific heat capacity.", "Absorbs large heat with small temperature rise.", "False.", "easy"),
+        ("Coastal regions have moderate climates partly because seawater heats and cools slowly due to its high specific heat.", True,
+         "Thermal buffering by oceans.", "Standard textbook application.", "True.", "easy"),
+        ("The temperature change \\(\\Delta T\\) in \\(Q = m c \\Delta T\\) has the same numerical value whether measured in °C or in K.", True,
+         "1°C step = 1 K step.", "Differences are identical in both scales.", "True.", "easy"),
+        ("During boiling of water at \\(100^\\circ\\text{C}\\), \\(\\Delta T = 0\\) so heat absorbed is calculated using latent heat rather than \\(m c \\Delta T\\).", True,
+         "Phase change uses \\(Q = m L\\).", "Temperature stays constant during boiling.", "True.", "medium"),
+    ]
+
+    oar = [
+        ("Water is used as a coolant in automobile radiators.",
+         "Water has a very high specific heat capacity, allowing it to absorb large amounts of heat without a large rise in temperature.", "A",
+         "High specific heat of water.", "Both A and R are true, and R explains A.", "Prevents engine overheating.", "easy"),
+        ("Land heats up and cools down much faster than the sea.",
+         "Soil and sand have a much lower specific heat capacity than water.", "A",
+         "Causes sea breeze and land breeze.", "Both A and R are true, and R explains A.", "Directly from \\(\\Delta T = Q / (mc)\\).", "easy"),
+        ("A 2 kg block of iron has twice the specific heat capacity of a 1 kg block of iron.",
+         "Specific heat capacity is an intensive property that depends only on the material, not on its mass.", "D",
+         "Both blocks have the exact same specific heat capacity.", "A is false; R is true.", "Heat capacity doubles, not specific heat.", "medium"),
+        ("Hot-water bottles are used for fomentation to relieve muscle pain.",
+         "Water's high specific heat capacity enables it to store a large amount of heat and release it slowly while cooling.", "A",
+         "Thermal energy storage.", "Both A and R are true, and R explains A.", "Stays warm longer.", "easy"),
+        ("Equal masses of copper and water supplied with equal heat reach the same temperature rise.",
+         "Water has a much higher specific heat capacity than copper.", "D",
+         "Copper's temperature rises ~10 times more than water's.", "A is false; R is true.", "\\(\\Delta T \\propto 1/c\\).", "easy"),
+        ("In the formula \\(Q = m c \\Delta T\\), \\(\\Delta T\\) can be substituted in either °C or K without changing the answer.",
+         "The magnitude of a temperature interval (difference) is identical on the Celsius and Kelvin scales.", "A",
+         "Celsius vs Kelvin intervals.", "Both A and R are true, and R explains A.", "\\(T_2 - T_1\\) is same.", "medium"),
+        ("The numerical value of specific heat capacity of any substance is the same in \\(\\text{cal/(g}\\cdot^\\circ\\text{C)}\\) and \\(\\text{kcal/(kg}\\cdot^\\circ\\text{C)}\\).",
+         "Converting calories to kilocalories and grams to kilograms both introduce a factor of 1000, which cancels out.", "A",
+         "Unit conversion identity.", "Both A and R are true, and R explains A.", "Very handy in exams.", "medium"),
+        ("Ice and liquid water have the exact same specific heat capacity.",
+         "Specific heat capacity depends on the physical state (phase) of a substance as well as its chemical nature.", "D",
+         "Ice (~0.5 cal/g°C) differs from liquid water (1.0 cal/g°C).", "A is false; R is true.", "Phase matters.", "medium"),
+        ("In \\(Q = m c \\Delta T\\), doubling the mass while halving the temperature rise keeps the heat required unchanged.",
+         "Heat energy \\(Q\\) is proportional to the product \\(m \\cdot \\Delta T\\).", "A",
+         "\\(2 \\times 0.5 = 1\\).", "Both A and R are true, and R explains A.", "Exact algebraic scaling.", "medium"),
+        ("Desert regions experience extreme temperature swings between day and night.",
+         "Dry sand has a low specific heat capacity, causing large temperature changes for modest heat gain or loss.", "A",
+         "Low thermal inertia of sand.", "Both A and R are true, and R explains A.", "Heats fast by day, cools fast by night.", "easy"),
+    ]
+
+    one_ofb = [
+        ("ONE", "How many kilocalories of heat are required to raise the temperature of \\(4\\text{ kg}\\) of water from \\(25^\\circ\\text{C}\\) to \\(75^\\circ\\text{C}\\)? (\\(c = 1\\text{ kcal/(kg}\\cdot^\\circ\\text{C)}\\))", "200",
+         "\\(Q = m c \\Delta T\\).", "\\(4 \\times 1 \\times 50 = 200\\) kcal.", "Exact integer: 200.", "easy"),
+        ("ONE", "Calculate the heat (in J) absorbed by \\(2\\text{ kg}\\) of aluminum (\\(c = 900\\text{ J/(kg}\\cdot\\text{K)}\\)) when heated by \\(10\\text{ K}\\).", "18000",
+         "\\(Q = m c \\Delta T\\).", "\\(2 \\times 900 \\times 10 = 18000\\) J.", "Exact integer: 18000.", "easy"),
+        ("ONE", "If \\(6000\\text{ J}\\) of heat raises the temperature of \\(3\\text{ kg}\\) of a metal by \\(5^\\circ\\text{C}\\), what is its specific heat capacity in \\(\\text{J/(kg}\\cdot^\\circ\\text{C)}\\)?", "400",
+         "\\(c = Q / (m \\Delta T)\\).", "\\(6000 / (3 \\times 5) = 400\\).", "Exact integer: 400.", "medium"),
+        ("ONE", "What is the numerical value of the specific heat capacity of water in \\(\\text{cal/(g}\\cdot^\\circ\\text{C)}\\)?", "1",
+         "Standard CGS value.", "1.", "Exact integer: 1.", "easy"),
+        ("OFB", "In the heat equation \\(Q = m \\cdot c \\cdot \\Delta T\\), the letter \\(c\\) stands for ______ heat capacity.", "specific",
+         "Name the material constant.", "Specific heat capacity.", "Answer: specific.", "easy"),
+        ("OFB", "Water is used in car radiators as a coolant because it has a very ______ specific heat capacity.", "high",
+         "High vs low.", "High.", "Answer: high.", "easy"),
+    ]
+    return build_pack(tc, osc, omc, otf, oar, one_ofb)
+
+# 5. 5.5.3: Iron, copper, lead spheres in paraffin wax experiment
+def gen_5_5_3():
+    tc = "MH-10-SCIT1-5-5.5.3"
+    osc = [
+        ("In the Balbharti textbook experiment, three solid spheres of iron, copper, and lead of EQUAL MASS are heated in boiling water to \\(100^\\circ\\text{C}\\) and placed on a thick paraffin wax slab. Which sphere melts the wax and sinks the DEEPEST?", ["Iron sphere", "Copper sphere", "Lead sphere", "All three sink to the exact same depth"], "Iron sphere",
+         "Deepest sinker releases the most heat: \\(Q = m c \\Delta T\\).", "Since \\(m\\) and \\(\\Delta T\\) are equal, heat released \\(Q \\propto c\\). Iron has the highest specific heat (0.110), followed by copper (0.095), then lead (0.031).", "Iron releases the most heat and sinks deepest.", "easy"),
+        ("In the paraffin wax experiment with equal-mass spheres of iron, copper, and lead heated to \\(100^\\circ\\text{C}\\), which sphere sinks the LEAST depth?", ["Lead sphere", "Iron sphere", "Copper sphere", "All sink equally"], "Lead sphere",
+         "Least depth = least heat released = lowest specific heat.", "Lead has the lowest specific heat (\\(0.031\\text{ cal/(g}\\cdot^\\circ\\text{C)}\\)), so it releases the least heat.", "Iron sinks deepest.", "easy"),
+        ("What is the correct decreasing order of sinking depth in paraffin wax for equal-mass spheres of iron, copper, and lead heated to \\(100^\\circ\\text{C}\\)?", ["Iron > Copper > Lead", "Lead > Copper > Iron", "Copper > Iron > Lead", "Iron = Copper = Lead"], "Iron > Copper > Lead",
+         "Depth \\(\\propto c\\) when \\(m\\) and \\(T_{\\text{initial}}\\) are equal.", "\\(c_{\\text{iron}} (0.110) > c_{\\text{copper}} (0.095) > c_{\\text{lead}} (0.031)\\).", "Memorize this order.", "easy"),
+        ("What principle does the iron, copper, and lead spheres in paraffin wax experiment demonstrate?", ["Different substances of equal mass absorb/release different amounts of heat for the same temperature change because they have different specific heat capacities", "All metals have the exact same specific heat", "Lead is denser than iron", "Paraffin wax boils at 100°C"], "Different substances of equal mass absorb/release different amounts of heat for the same temperature change because they have different specific heat capacities",
+         "Purpose of the Balbharti Ch.5 activity.", "Demonstrates that specific heat capacity is a characteristic property of each material.", "Equal mass + equal temperature does NOT mean equal heat content.", "easy"),
+        ("In the wax-slab experiment, why are all three metal spheres heated in the SAME beaker of boiling water before placing them on the wax?", ["To ensure all three spheres start at the exact same initial temperature (\\(100^\\circ\\text{C}\\))", "To make them melt", "To make them equal in mass", "To coat them with water"], "To ensure all three spheres start at the exact same initial temperature (\\(100^\\circ\\text{C}\\))",
+         "Controlled variable: initial temperature \\(T_i = 100^\\circ\\text{C}\\).", "Keeping \\(m\\) and \\(\\Delta T\\) identical isolates specific heat \\(c\\) as the only variable.", "Boiling water provides uniform 100°C.", "easy"),
+        ("In the wax-slab experiment, why must the three spheres have EQUAL MASS?", ["So that differences in heat released (\\(Q = m c \\Delta T\\)) are due solely to differences in specific heat capacity \\(c\\)", "So they have equal volume", "So they all float on wax", "So they have equal color"], "So that differences in heat released (\\(Q = m c \\Delta T\\)) are due solely to differences in specific heat capacity \\(c\\)",
+         "Control mass \\(m\\) in \\(Q = m c \\Delta T\\).", "Since densities of Fe, Cu, Pb differ, equal mass means different sizes/volumes, which is necessary to isolate \\(c\\).", "Equal volume would mix mass and specific heat.", "medium"),
+        ("How do the volumes (sizes) of the equal-mass iron, copper, and lead spheres compare?", ["Iron sphere is largest, lead sphere is smallest (since lead is densest)", "Lead sphere is largest", "All three have identical diameter", "Copper is smallest"], "Iron sphere is largest, lead sphere is smallest (since lead is densest)",
+         "\\(V = m / \\rho\\).", "Densities: Pb (11.3) > Cu (8.9) > Fe (7.9 g/cm³), so for equal mass, Fe has the largest volume and Pb the smallest.", "Important subtlety in the textbook diagram!", "hard"),
+        ("What is the specific heat capacity of iron (in \\(\\text{cal/(g}\\cdot^\\circ\\text{C)}\\)) as given in Balbharti Class 10?", ["0.110", "0.095", "0.031", "1.000"], "0.110",
+         "Recall Balbharti Ch.5 table.", "Iron: 0.110; Copper: 0.095; Lead: 0.031 \\(\\text{cal/(g}\\cdot^\\circ\\text{C)}\\).", "Water is 1.000.", "medium"),
+        ("What is the specific heat capacity of copper (in \\(\\text{cal/(g}\\cdot^\\circ\\text{C)}\\)) as given in Balbharti Class 10?", ["0.095", "0.110", "0.031", "0.500"], "0.095",
+         "Recall Balbharti Ch.5 table.", "Copper = 0.095 \\(\\text{cal/(g}\\cdot^\\circ\\text{C)}\\).", "Iron = 0.110; Lead = 0.031.", "medium"),
+        ("What is the specific heat capacity of lead (in \\(\\text{cal/(g}\\cdot^\\circ\\text{C)}\\)) as given in Balbharti Class 10?", ["0.031", "0.110", "0.095", "0.210"], "0.031",
+         "Recall Balbharti Ch.5 table.", "Lead = 0.031 \\(\\text{cal/(g}\\cdot^\\circ\\text{C)}\\).", "Lowest of the three.", "medium"),
+    ]
+    # Add 34 distinct OSC items (numericals + comparisons + conceptual)
+    masses_g = [50, 100, 150, 200, 250, 300, 400, 500]
+    for m_g in masses_g:
+        # Iron vs Lead heat released from 100°C to 50°C (dT = 50°C)
+        q_fe = round(m_g * 0.110 * 50, 1)
+        q_pb = round(m_g * 0.031 * 50, 1)
+        diff_q = round(q_fe - q_pb, 1)
+        osc.append((
+            f"Equal-mass (\\({m_g}\\text{{ g}}\\)) spheres of iron (\\(c = 0.110\\)) and lead (\\(c = 0.031\\text{{ cal/g}}^\\circ\\text{{C}}\\)) cool from \\(100^\\circ\\text{{C}}\\) to \\(50^\\circ\\text{{C}}\\) on wax. How much MORE heat (in cal) does the iron sphere release than the lead sphere?",
+            [f"\\({diff_q:g}\\text{{ cal}}\\)", f"\\({q_fe:g}\\text{{ cal}}\\)", f"\\({q_pb:g}\\text{{ cal}}\\)", f"\\({diff_q * 2:g}\\text{{ cal}}\\)"],
+            f"\\({diff_q:g}\\text{{ cal}}\\)",
+            "\\(\\Delta Q = m (c_{\\text{Fe}} - c_{\\text{Pb}}) \\Delta T\\).",
+            f"\\(\\Delta Q = {m_g} \\times (0.110 - 0.031) \\times 50 = {m_g} \\times 0.079 \\times 50 = {diff_q:g}\\text{{ cal}}\\).",
+            "Iron releases ~3.5 times more heat than lead.",
+            "hard"
+        ))
+    for m_g in [100, 200, 300, 400]:
+        q_cu = round(m_g * 0.095 * 40, 1)
+        osc.append((
+            f"A \\({m_g}\\text{{ g}}\\) copper sphere (\\(c = 0.095\\text{{ cal/g}}^\\circ\\text{{C}}\\)) cools from \\(100^\\circ\\text{{C}}\\) to \\(60^\\circ\\text{{C}}\\) on a wax slab. How much heat (in cal) does it transfer to the wax?",
+            [f"\\({q_cu:g}\\text{{ cal}}\\)", f"\\({q_cu * 2:g}\\text{{ cal}}\\)", f"\\({q_cu / 2:g}\\text{{ cal}}\\)", f"\\({m_g * 40}\\text{{ cal}}\\)"],
+            f"\\({q_cu:g}\\text{{ cal}}\\)",
+            "\\(Q = m c \\Delta T\\).",
+            f"\\(Q = {m_g} \\times 0.095 \\times 40 = {q_cu:g}\\text{{ cal}}\\).",
+            "This heat melts the paraffin wax.",
+            "medium"
+        ))
+    extra_osc = [
+        ("Roughly how many times deeper (or more wax melted) does the iron sphere melt compared to the lead sphere of equal mass?", ["About 3.5 times more (since \\(0.110 / 0.031 \\approx 3.55\\))", "About 10 times more", "Exact same amount", "Half as much"], "About 3.5 times more (since \\(0.110 / 0.031 \\approx 3.55\\))",
+         "Ratio of heat released = ratio of specific heats.", "\\(0.110 / 0.031 \\approx 3.55\\).", "Iron has ~3.55× higher specific heat than lead.", "hard"),
+        ("Why does the paraffin wax melt when the hot metal spheres are placed on it?", ["Heat flows from the \\(100^\\circ\\text{C}\\) spheres into the cooler wax, raising it to its melting point (~50–60°C) and supplying latent heat of fusion", "Metals chemically dissolve wax", "Gravity pushes cold iron through solid wax", "Water from the beaker melts the wax"], "Heat flows from the \\(100^\\circ\\text{C}\\) spheres into the cooler wax, raising it to its melting point (~50–60°C) and supplying latent heat of fusion",
+         "Heat transfer from hot to cold body.", "Melted wax gives way under the sphere's weight until the sphere cools to the wax's melting point.", "Physical melting, not chemical.", "medium"),
+        ("When all three spheres stop sinking in the paraffin wax, what is their final temperature?", ["Approximately equal to the melting point of paraffin wax (all three reach thermal equilibrium with the melting wax)", "100°C", "0°C", "Iron is at 100°C and lead at 0°C"], "Approximately equal to the melting point of paraffin wax (all three reach thermal equilibrium with the melting wax)",
+         "Melting stops when the sphere cools to the wax's melting temperature.", "Since all three start at 100°C and cool to the same wax melting point, all three undergo the same \\(\\Delta T\\).", "Confirming equal \\(\\Delta T\\) in \\(Q = mc\\Delta T\\)!", "hard"),
+        ("Suppose a fourth sphere of ALUMINUM (\\(c = 0.215\\text{ cal/g}^\\circ\\text{C}\\)) of the same mass at \\(100^\\circ\\text{C}\\) is also placed on the wax slab. Where will it rank?", ["Aluminum will sink even deeper than iron (Al > Fe > Cu > Pb)", "Aluminum will sink less than lead", "Between copper and lead", "Equal to copper"], "Aluminum will sink even deeper than iron (Al > Fe > Cu > Pb)",
+         "Compare \\(c_{\\text{Al}} = 0.215\\) with Fe (0.110), Cu (0.095), Pb (0.031).", "Aluminum has nearly double the specific heat of iron, so it melts the most wax.", "Great extension question.", "hard"),
+        ("Why is it important to wipe the spheres dry or transfer them quickly from boiling water onto the wax slab?", ["So hot water droplets don't drip onto the wax (water has high specific heat) and spheres don't lose heat to air before touching the wax", "To make them heavier", "To cool them to 0°C first", "To change their specific heat"], "So hot water droplets don't drip onto the wax (water has high specific heat) and spheres don't lose heat to air before touching the wax",
+         "Experimental precision in calorimetry.", "Quick transfer preserves \\(100^\\circ\\text{C}\\) initial temperature; drying prevents extra heat from water.", "Good lab technique.", "medium"),
+        ("If the experiment is repeated with equal-VOLUME spheres instead of equal-MASS spheres, which property would confound the comparison?", ["Mass (because densities of Fe, Cu, and Pb are different, equal volume gives unequal masses)", "Temperature", "Wax melting point", "Atmospheric pressure"], "Mass (because densities of Fe, Cu, and Pb are different, equal volume gives unequal masses)",
+         "\\(Q = m c \\Delta T\\) depends on \\(m\\), not volume.", "Equal volume would give lead a much larger mass than iron, mixing mass and \\(c\\).", "Equal mass is mandatory.", "hard"),
+        ("What is the SI specific heat of iron (\\(0.110\\text{ cal/(g}\\cdot^\\circ\\text{C)}\\)) in \\(\\text{J/(kg}\\cdot^\\circ\\text{C)}\\)? (Use \\(1\\text{ cal} = 4.184\\text{ J}\\))", ["~\\(460\\text{ J/(kg}\\cdot^\\circ\\text{C)}\\)", "~\\(4184\\text{ J/(kg}\\cdot^\\circ\\text{C)}\\)", "~\\(110\\text{ J/(kg}\\cdot^\\circ\\text{C)}\\)", "~\\(130\\text{ J/(kg}\\cdot^\\circ\\text{C)}\\)"], "~\\(460\\text{ J/(kg}\\cdot^\\circ\\text{C)}\\)",
+         "Multiply \\(0.110\\) by \\(4184\\).", "\\(0.110 \\times 4184 \\approx 460\\text{ J/(kg}\\cdot^\\circ\\text{C)}\\).", "130 is lead; 397 is copper.", "hard"),
+        ("What is the SI specific heat of lead (\\(0.031\\text{ cal/(g}\\cdot^\\circ\\text{C)}\\)) in \\(\\text{J/(kg}\\cdot^\\circ\\text{C)}\\)? (Use \\(1\\text{ cal} = 4.184\\text{ J}\\))", ["~\\(130\\text{ J/(kg}\\cdot^\\circ\\text{C)}\\)", "~\\(460\\text{ J/(kg}\\cdot^\\circ\\text{C)}\\)", "~\\(397\\text{ J/(kg}\\cdot^\\circ\\text{C)}\\)", "~\\(4184\\text{ J/(kg}\\cdot^\\circ\\text{C)}\\)"], "~\\(130\\text{ J/(kg}\\cdot^\\circ\\text{C)}\\)",
+         "Multiply \\(0.031\\) by \\(4184\\).", "\\(0.031 \\times 4184 \\approx 130\\text{ J/(kg}\\cdot^\\circ\\text{C)}\\).", "460 is iron; 397 is copper.", "hard"),
+        ("What is the SI specific heat of copper (\\(0.095\\text{ cal/(g}\\cdot^\\circ\\text{C)}\\)) in \\(\\text{J/(kg}\\cdot^\\circ\\text{C)}\\)? (Use \\(1\\text{ cal} = 4.184\\text{ J}\\))", ["~\\(397\\text{ J/(kg}\\cdot^\\circ\\text{C)}\\)", "~\\(460\\text{ J/(kg}\\cdot^\\circ\\text{C)}\\)", "~\\(130\\text{ J/(kg}\\cdot^\\circ\\text{C)}\\)", "~\\(95\\text{ J/(kg}\\cdot^\\circ\\text{C)}\\)"], "~\\(397\\text{ J/(kg}\\cdot^\\circ\\text{C)}\\)",
+         "Multiply \\(0.095\\) by \\(4184\\).", "\\(0.095 \\times 4184 \\approx 397\\text{ J/(kg}\\cdot^\\circ\\text{C)}\\).", "460 is iron; 130 is lead.", "hard"),
+        ("Why did the copper sphere sink almost as deep as the iron sphere, while the lead sphere barely sank?", ["Copper's specific heat (0.095) is close to iron's (0.110), whereas lead's (0.031) is much smaller", "Copper is magnetic", "Lead is lighter than wax", "Copper was heated to 200°C"], "Copper's specific heat (0.095) is close to iron's (0.110), whereas lead's (0.031) is much smaller",
+         "Compare numerical specific heats.", "0.110 and 0.095 are fairly close; 0.031 is less than one-third of 0.110.", "Visual observation in textbook figure.", "medium"),
+        ("If the paraffin wax slab is replaced by a thicker slab of ice at \\(0^\\circ\\text{C}\\), which equal-mass sphere (at \\(100^\\circ\\text{C}\\)) would melt the MOST ice?", ["Iron", "Copper", "Lead", "All melt equal ice"], "Iron",
+         "Same logic: most heat released = most ice melted.", "Iron releases the most heat because \\(c_{\\text{iron}} > c_{\\text{copper}} > c_{\\text{lead}}\\).", "Independent of whether wax or ice is used.", "medium"),
+        ("In the wax-slab experiment, which physical quantity is the SAME for all three spheres at the start?", ["Mass and initial temperature (\\(100^\\circ\\text{C}\\))", "Specific heat capacity", "Volume and radius", "Total heat released"], "Mass and initial temperature (\\(100^\\circ\\text{C}\\))",
+         "Controlled variables.", "Mass \\(m\\) and \\(T_i = 100^\\circ\\text{C}\\) are identical; \\(c\\), volume, and \\(Q\\) differ.", "Check setup.", "easy"),
+        ("If a student accidentally uses a lead sphere of TWICE the mass of the iron sphere, wait: \\(m_{\\text{Pb}} c_{\\text{Pb}} = 2 \\times 0.031 = 0.062\\) vs \\(1 \\times 0.110 = 0.110\\). Which still sinks deeper?", ["Iron still sinks deeper (0.110 > 0.062)", "Lead sinks deeper", "Both sink identically", "Neither melts wax"], "Iron still sinks deeper (0.110 > 0.062)",
+         "Compare heat capacities \\(m c\\).", "Even doubled mass of lead has \\(2 \\times 0.031 = 0.062 < 0.110\\).", "You'd need >3.5× mass of lead to match iron!", "hard"),
+        ("Which statement is FALSE about the iron, copper, and lead wax-slab experiment?", ["Lead sinks deepest because it has the highest density", "Iron sinks deepest because it has the highest specific heat among the three", "All three spheres are heated to \\(100^\\circ\\text{C}\\) in boiling water", "All three spheres have equal mass"], "Lead sinks deepest because it has the highest density",
+         "Depth depends on heat released (specific heat), NOT density!", "Lead has the lowest specific heat and sinks the least.", "The other three statements are true.", "easy"),
+        ("Which property of a substance is defined as 'the amount of heat energy required to raise the temperature of a unit mass of an object by \\(1^\\circ\\text{C}\\)', demonstrated by the wax-slab experiment?", ["Specific heat capacity", "Latent heat of vaporization", "Thermal conductivity", "Refractive index"], "Specific heat capacity",
+         "Core concept of section 5.5.", "The wax-slab experiment visually demonstrates specific heat capacity differences.", "Latent heat is for phase change.", "easy"),
+        ("Which of the three spheres (iron, copper, lead) has the SMALLEST diameter when all three have equal mass?", ["Lead", "Iron", "Copper", "All have the same diameter"], "Lead",
+         "Highest density -> smallest volume for equal mass.", "Lead has density \\(11.3\\text{ g/cm}^3\\), making it the most compact sphere.", "Iron is largest in diameter.", "medium"),
+        ("In the wax-slab experiment, how does the amount of wax melted relate to the heat lost by each sphere?", ["Amount of wax melted is directly proportional to the heat lost by the sphere", "Amount of wax melted is inversely proportional to heat lost", "Wax melts without absorbing any heat", "Only light energy melts the wax"], "Amount of wax melted is directly proportional to the heat lost by the sphere",
+         "Conservation of heat energy.", "More heat released -> more wax reaches m.p. and melts -> deeper cavity.", "Basis of the visual comparison.", "easy"),
+        ("Why is boiling water (\\(100^\\circ\\text{C}\\)) used to heat the spheres instead of heating them directly over a flame?", ["Boiling water ensures a uniform, known, and identical temperature of \\(100^\\circ\\text{C}\\) for all three spheres", "Flames cannot heat iron", "Lead boils in a flame", "Water lowers the melting point of iron"], "Boiling water ensures a uniform, known, and identical temperature of \\(100^\\circ\\text{C}\\) for all three spheres",
+         "Controlled thermal bath.", "All spheres reach thermal equilibrium with boiling water at \\(100^\\circ\\text{C}\\).", "Direct flame would heat them unevenly.", "medium"),
+        ("If the wax slab were at \\(25^\\circ\\text{C}\\) and melted at \\(55^\\circ\\text{C}\\), how much temperature drop does each \\(100^\\circ\\text{C}\\) sphere undergo while melting wax?", ["\\(45^\\circ\\text{C}\\) (from \\(100^\\circ\\text{C}\\) down to \\(55^\\circ\\text{C}\\))", "\\(100^\\circ\\text{C}\\)", "\\(25^\\circ\\text{C}\\)", "\\(75^\\circ\\text{C}\\)"], "\\(45^\\circ\\text{C}\\) (from \\(100^\\circ\\text{C}\\) down to \\(55^\\circ\\text{C}\\))",
+         "Melting stops when sphere cools to wax's melting point (55°C).", "\\(100 - 55 = 45^\\circ\\text{C}\\).", "Below 55°C, wax no longer melts.", "hard"),
+        ("Which metal among iron, copper, and lead requires the LEAST heat to raise 100 g of it by \\(10^\\circ\\text{C}\\)?", ["Lead", "Copper", "Iron", "All require the same heat"], "Lead",
+         "\\(Q = m c \\Delta T\\) -> smallest \\(c\\) requires least heat.", "Lead (0.031) requires only 31 cal, vs 95 cal for Cu and 110 cal for Fe.", "Same order as heat released on cooling.", "easy"),
+        ("What happens to the rate of sinking if the wax slab is made of a wax with a higher melting point (e.g., 80°C instead of 55°C)?", ["All three spheres sink less deeply, though the order Fe > Cu > Pb stays the same", "All three sink deeper", "Lead sinks deepest", "Order reverses to Pb > Cu > Fe"], "All three spheres sink less deeply, though the order Fe > Cu > Pb stays the same",
+         "Higher wax m.p. means smaller \\(\\Delta T\\) (100 - 80 = 20°C) before melting stops.", "Less heat released -> shallower depths, same order.", "Order depends only on \\(c\\).", "hard"),
+        ("Which statement correctly summarizes the conclusion of the iron, copper, and lead sphere experiment?", ["Different metals of the same mass and temperature store and release different amounts of heat because their specific heat capacities differ", "All metals have identical specific heat capacity", "Heat stored depends only on density", "Paraffin wax has higher specific heat than water"], "Different metals of the same mass and temperature store and release different amounts of heat because their specific heat capacities differ",
+         "Textbook takeaway of Balbharti Ch.5 activity.", "Specific heat capacity is unique to each substance.", "Density does not determine heat stored per kg.", "easy"),
+    ]
+    osc.extend(extra_osc)
+
+    omc = [
+        ("Which statements are TRUE about the paraffin wax experiment with equal-mass iron, copper, and lead spheres?",
+         ["All three spheres are heated to \\(100^\\circ\\text{C}\\) in boiling water", "Iron sinks deepest into the wax", "Lead sinks the least into the wax", "Lead sinks deepest because it is heaviest per unit volume"],
+         ["All three spheres are heated to \\(100^\\circ\\text{C}\\) in boiling water", "Iron sinks deepest into the wax", "Lead sinks the least into the wax"],
+         "Core observations of the wax experiment.", "Depth order is Iron > Copper > Lead.", "Density does not govern depth here; specific heat does.", "easy"),
+        ("Which quantities are kept CONSTANT (controlled) across the three spheres in the wax-slab experiment?",
+         ["Mass of each sphere", "Initial temperature (\\(100^\\circ\\text{C}\\))", "Wax slab material", "Specific heat capacity"],
+         ["Mass of each sphere", "Initial temperature (\\(100^\\circ\\text{C}\\))", "Wax slab material"],
+         "Controlled variables.", "Mass, initial T, and wax are controlled; specific heat \\(c\\) and volume differ.", "Specific heat is the independent variable.", "easy"),
+        ("Which statements correctly match the Balbharti specific heat values (in \\(\\text{cal/(g}\\cdot^\\circ\\text{C)}\\))?",
+         ["Iron: 0.110", "Copper: 0.095", "Lead: 0.031", "Lead: 0.500"],
+         ["Iron: 0.110", "Copper: 0.095", "Lead: 0.031"],
+         "Check textbook table.", "Fe=0.110, Cu=0.095, Pb=0.031.", "0.500 is ice, not lead.", "medium"),
+        ("Why does the iron sphere melt more wax than the lead sphere?",
+         ["Iron has a higher specific heat capacity than lead", "For equal mass and temperature drop, iron releases more heat (\\(Q = mc\\Delta T\\))", "More heat melts a larger volume of wax", "Iron is denser than lead"],
+         ["Iron has a higher specific heat capacity than lead", "For equal mass and temperature drop, iron releases more heat (\\(Q = mc\\Delta T\\))", "More heat melts a larger volume of wax"],
+         "Cause-effect chain.", "Higher \\(c\\) -> more \\(Q\\) -> more wax melted.", "Lead is actually denser than iron.", "easy"),
+        ("Which statements about the sizes (volumes) of the equal-mass spheres in this experiment are true?",
+         ["Iron has the largest volume/diameter", "Lead has the smallest volume/diameter", "Copper's size is between iron and lead", "All three have the exact same diameter"],
+         ["Iron has the largest volume/diameter", "Lead has the smallest volume/diameter", "Copper's size is between iron and lead"],
+         "\\(V = m / \\rho\\).", "Since \\(\\rho_{\\text{Pb}} > \\rho_{\\text{Cu}} > \\rho_{\\text{Fe}}\\), volumes are \\(V_{\\text{Fe}} > V_{\\text{Cu}} > V_{\\text{Pb}}\\).", "Diameters differ.", "hard"),
+        ("If the three spheres cool from \\(100^\\circ\\text{C}\\) to \\(60^\\circ\\text{C}\\) on the wax:",
+         ["Iron releases the most heat", "Copper releases more heat than lead", "Lead releases the least heat", "All three release equal heat"],
+         ["Iron releases the most heat", "Copper releases more heat than lead", "Lead releases the least heat"],
+         "\\(Q_{\\text{Fe}} > Q_{\\text{Cu}} > Q_{\\text{Pb}}\\).", "Follows \\(c_{\\text{Fe}} > c_{\\text{Cu}} > c_{\\text{Pb}}\\).", "Heat released is unequal.", "easy"),
+        ("What does this experiment prove?",
+         ["Different substances have different specific heat capacities", "Heat absorbed/released depends on the nature of the material", "Specific heat capacity can be compared qualitatively by melting wax", "All metals have specific heat equal to 1 cal/g°C"],
+         ["Different substances have different specific heat capacities", "Heat absorbed/released depends on the nature of the material", "Specific heat capacity can be compared qualitatively by melting wax"],
+         "Conclusions of the activity.", "Shows material dependence of specific heat.", "Only water has c = 1 cal/g°C.", "easy"),
+        ("Which precautions make the wax-slab experiment accurate?",
+         ["Ensure all three spheres have the exact same mass", "Leave them in boiling water long enough to reach \\(100^\\circ\\text{C}\\) uniformly", "Transfer them simultaneously and quickly onto the wax", "Cool the lead sphere in ice before placing on wax"],
+         ["Ensure all three spheres have the exact same mass", "Leave them in boiling water long enough to reach \\(100^\\circ\\text{C}\\) uniformly", "Transfer them simultaneously and quickly onto the wax"],
+         "Experimental controls.", "Equal mass, uniform 100°C, and quick simultaneous placement.", "Cooling lead in ice would ruin the control.", "medium"),
+        ("If equal masses of water, iron, copper, and lead at \\(100^\\circ\\text{C}\\) were compared for heat released upon cooling to \\(50^\\circ\\text{C}\\):",
+         ["Water would release the most heat by far", "Iron would release more heat than copper", "Lead would release the least heat", "Copper would release more heat than water"],
+         ["Water would release the most heat by far", "Iron would release more heat than copper", "Lead would release the least heat"],
+         "Order: Water (1.0) > Iron (0.110) > Copper (0.095) > Lead (0.031).", "Water releases ~9× more than iron.", "Copper < Water.", "easy"),
+        ("Which properties of paraffin wax are relevant to this demonstration?",
+         ["It is solid at room temperature", "It melts at a moderate temperature (below \\(100^\\circ\\text{C}\\))", "Melted wax allows the denser metal sphere to sink into it", "It has a melting point of \\(1500^\\circ\\text{C}\\)"],
+         ["It is solid at room temperature", "It melts at a moderate temperature (below \\(100^\\circ\\text{C}\\))", "Melted wax allows the denser metal sphere to sink into it"],
+         "Why paraffin wax is chosen.", "Solid at room T, melts easily below 100°C.", "1500°C would never melt.", "easy"),
+    ]
+
+    otf = [
+        ("In the paraffin wax experiment, the iron sphere sinks the deepest among iron, copper, and lead of equal mass.", True,
+         "\\(c_{\\text{iron}} > c_{\\text{copper}} > c_{\\text{lead}}\\).", "Iron releases the most heat.", "True.", "easy"),
+        ("Lead has a higher specific heat capacity than iron.", False,
+         "Lead = 0.031; Iron = 0.110 cal/g°C.", "Iron has ~3.5 times higher specific heat than lead.", "False.", "easy"),
+        ("All three spheres in the wax-slab experiment must have the same mass.", True,
+         "Mass must be controlled in \\(Q = mc\\Delta T\\).", "Isolates specific heat capacity.", "True.", "easy"),
+        ("All three spheres are heated in boiling water so they start at the same initial temperature of \\(100^\\circ\\text{C}\\).", True,
+         "Controls initial temperature.", "Standard procedure.", "True.", "easy"),
+        ("Because all three spheres have equal mass, they also have the exact same volume and diameter.", False,
+         "Densities differ (Pb > Cu > Fe).", "Equal mass means iron is largest and lead is smallest.", "False.", "medium"),
+        ("The correct order of depth reached in the wax is Iron > Copper > Lead.", True,
+         "Follows specific heat order 0.110 > 0.095 > 0.031.", "True.", "True.", "easy"),
+        ("Copper has a specific heat capacity of \\(0.095\\text{ cal/(g}\\cdot^\\circ\\text{C)}\\).", True,
+         "Balbharti Ch.5 table.", "Between iron (0.110) and lead (0.031).", "True.", "medium"),
+        ("The lead sphere sinks least because it has the highest density.", False,
+         "High density makes it sink *more* easily if wax is melted, NOT less!", "It sinks least because it has the lowest specific heat and melts the least wax.", "False.", "medium"),
+        ("This experiment proves that different substances have different specific heat capacities.", True,
+         "Core conclusion.", "Equal mass + equal T -> different heat released.", "True.", "easy"),
+        ("If an aluminum sphere (\\(c = 0.215\\)) of the same mass at \\(100^\\circ\\text{C}\\) is added, it will sink even deeper than iron.", True,
+         "0.215 > 0.110.", "Releases nearly twice the heat of iron.", "True.", "medium"),
+    ]
+
+    oar = [
+        ("In the paraffin wax experiment, the iron sphere sinks deeper than the copper and lead spheres of equal mass.",
+         "Iron has a higher specific heat capacity than copper and lead, so it releases more heat while cooling.", "A",
+         "Connect depth to heat released and specific heat.", "Both A and R are true, and R explains A.", "c_Fe > c_Cu > c_Pb.", "easy"),
+        ("The lead sphere penetrates the wax slab to the smallest depth.",
+         "Lead has the lowest specific heat capacity (0.031 cal/g°C) among the three metals, releasing the least heat.", "A",
+         "Explain why lead sinks least.", "Both A and R are true, and R explains A.", "Least heat -> least wax melted.", "easy"),
+        ("All three spheres are heated in boiling water before being placed on the wax slab.",
+         "Boiling water brings all three spheres to the exact same initial temperature of \\(100^\\circ\\text{C}\\).", "A",
+         "Controlled variable.", "Both A and R are true, and R explains A.", "Ensures fair comparison.", "easy"),
+        ("The three equal-mass spheres of iron, copper, and lead have identical diameters.",
+         "Iron, copper, and lead have different densities.", "D",
+         "Different densities + equal mass = different volumes/diameters.", "A is false (iron is largest, lead smallest); R is true.", "R explains why A is false.", "medium"),
+        ("Copper sinks deeper into the paraffin wax than lead, but not as deep as iron.",
+         "The specific heat capacity of copper (0.095) lies between that of lead (0.031) and iron (0.110).", "A",
+         "Intermediate depth.", "Both A and R are true, and R explains A.", "Exact numerical order.", "easy"),
+        ("Equal-volume spheres should be used instead of equal-mass spheres in this experiment.",
+         "Heat energy absorbed or released is given by \\(Q = m c \\Delta T\\), which depends directly on mass.", "D",
+         "Equal mass is required, not equal volume.", "A is false; R is true.", "Verify \\(Q = m c \\Delta T\\).", "medium"),
+        ("The spheres eventually stop sinking in the wax slab.",
+         "Each sphere stops melting wax once its temperature cools down to the melting point of paraffin wax.", "A",
+         "Thermal equilibrium stops melting.", "Both A and R are true, and R explains A.", "Same final temperature.", "medium"),
+        ("If water were somehow solid-packed in a thin capsule of equal mass at \\(100^\\circ\\text{C}\\), it would melt far more wax than iron.",
+         "Water's specific heat capacity (1.0 cal/g°C) is about 9 times greater than that of iron (0.110 cal/g°C).", "A",
+         "Compare water vs iron.", "Both A and R are true, and R explains A.", "Illustrates water's huge specific heat.", "medium"),
+        ("Lead sinks least in the wax because lead is less dense than iron.",
+         "Lead actually has a higher density than iron, so an equal-mass lead sphere is smaller in volume.", "D",
+         "Lead is MORE dense than iron (11.3 vs 7.9 g/cm³).", "A is false; R is true.", "Specific heat explains depth, not density.", "medium"),
+        ("The wax-slab experiment demonstrates that specific heat capacity is a characteristic property of a material.",
+         "Despite having the same mass and initial temperature, the three metals release different quantities of heat.", "A",
+         "Core conclusion.", "Both A and R are true, and R explains A.", "Directly from Balbharti Ch.5.", "easy"),
+    ]
+
+    one_ofb = [
+        ("ONE", "A \\(100\\text{ g}\\) iron sphere (\\(c = 0.110\\text{ cal/(g}\\cdot^\\circ\\text{C)}\\)) cools from \\(100^\\circ\\text{C}\\) to \\(60^\\circ\\text{C}\\) on wax. How much heat (in cal) does it release?", "440",
+         "\\(Q = m c \\Delta T\\).", "\\(100 \\times 0.110 \\times 40 = 440\\) cal.", "Exact integer: 440.", "medium"),
+        ("ONE", "A \\(100\\text{ g}\\) lead sphere (\\(c = 0.031\\text{ cal/(g}\\cdot^\\circ\\text{C)}\\)) cools from \\(100^\\circ\\text{C}\\) to \\(60^\\circ\\text{C}\\) on wax. How much heat (in cal) does it release?", "124",
+         "\\(Q = m c \\Delta T\\).", "\\(100 \\times 0.031 \\times 40 = 124\\) cal.", "Exact integer: 124.", "medium"),
+        ("ONE", "A \\(200\\text{ g}\\) copper sphere (\\(c = 0.095\\text{ cal/(g}\\cdot^\\circ\\text{C)}\\)) cools by \\(50^\\circ\\text{C}\\) on wax. How much heat (in cal) does it release?", "950",
+         "\\(Q = m c \\Delta T\\).", "\\(200 \\times 0.095 \\times 50 = 950\\) cal.", "Exact integer: 950.", "medium"),
+        ("ONE", "At what temperature (in °C) are all three spheres heated in boiling water at standard pressure before placing on the wax?", "100",
+         "Boiling point of water.", "100 °C.", "Exact integer: 100.", "easy"),
+        ("OFB", "In the paraffin wax experiment, among iron, copper, and lead spheres of equal mass, the ______ sphere sinks the deepest.", "iron",
+         "Highest specific heat among the three.", "Iron.", "Answer: iron.", "easy"),
+        ("OFB", "In the paraffin wax experiment, the ______ sphere sinks the least because it has the lowest specific heat capacity.", "lead",
+         "Lowest specific heat (0.031).", "Lead.", "Answer: lead.", "easy"),
+    ]
+    return build_pack(tc, osc, omc, otf, oar, one_ofb)
+
+# 6. 5.6.1: Heat lost by hot object = Heat gained by cold object (in isolated system)
+def gen_5_6_1():
+    tc = "MH-10-SCIT1-5-5.6.1"
+    osc = [
+        ("What does the Principle of Heat Exchange state for an isolated system containing a hot object and a cold object?", ["Heat energy lost by the hot object = Heat energy gained by the cold object", "Heat lost by hot object is always twice the heat gained by cold object", "Both objects cool to 0°C", "Cold object loses heat to hot object"], "Heat energy lost by the hot object = Heat energy gained by the cold object",
+         "Conservation of energy in calorimetry.", "In an isolated system (no heat exchange with surroundings), heat lost by hot body equals heat gained by cold body until thermal equilibrium.", "Heat always flows from hotter to colder body.", "easy"),
+        ("Which fundamental law of physics is the basis of the Principle of Heat Exchange?", ["Law of Conservation of Energy", "Newton's Third Law", "Ohm's Law", "Faraday's Law"], "Law of Conservation of Energy",
+         "Heat is thermal energy.", "Energy cannot be created or destroyed, so heat leaving the hot object must enter the cold object (in an isolated system).", "Calorimetry relies on this.", "easy"),
+        ("Which laboratory device is designed as a thermally isolated container to measure heat exchange accurately?", ["Calorimeter", "Galvanometer", "Voltmeter", "Prism"], "Calorimeter",
+         "Calor = heat, meter = measure.", "A calorimeter has a polished copper vessel inside an insulating jacket/wooden box to minimize heat loss to surroundings.", "Galvanometer detects current.", "easy"),
+        ("If \\(100\\text{ g}\\) of water at \\(80^\\circ\\text{C}\\) is mixed with \\(100\\text{ g}\\) of water at \\(20^\\circ\\text{C}\\) in an insulated calorimeter, what is the final equilibrium temperature?", ["\\(50^\\circ\\text{C}\\)", "\\(60^\\circ\\text{C}\\)", "\\(40^\\circ\\text{C}\\)", "\\(100^\\circ\\text{C}\\)"], "\\(50^\\circ\\text{C}\\)",
+         "Equal masses of the same substance average their temperatures.", "\\(T_f = (80 + 20) / 2 = 50^\\circ\\text{C}\\).", "Check: \\(100(80-50) = 100(50-20) = 3000\\) cal.", "easy"),
+        ("When a hot iron ball is dropped into cold water inside a copper calorimeter, which components GAIN heat?", ["Both the cold water AND the copper calorimeter", "Only the cold water", "Only the iron ball", "Neither water nor calorimeter"], "Both the cold water AND the copper calorimeter",
+         "Both water and the inner copper vessel start cold and warm up together.", "Heat lost by hot iron = Heat gained by water + Heat gained by calorimeter.", "Classic Balbharti calorimetry equation.", "medium"),
+        ("Why is the inner vessel of a calorimeter made of copper and polished on the outside?", ["Copper has low specific heat and high conductivity (reaches equilibrium fast), and polishing reduces radiative heat loss", "Copper is an insulator", "Copper has higher specific heat than water", "Polishing absorbs heat from air"], "Copper has low specific heat and high conductivity (reaches equilibrium fast), and polishing reduces radiative heat loss",
+         "Calorimeter design principles.", "Low \\(c\\) means the vessel absorbs very little heat itself; shiny surface reflects radiation.", "Outer wooden box + wool/air gap stops conduction/convection.", "hard"),
+        ("If \\(m_1\\) g of hot water at \\(T_1\\) mixes with \\(m_2\\) g of cold water at \\(T_2\\) (neglecting calorimeter), what is the final temperature \\(T\\)?", ["\\(\\frac{m_1 T_1 + m_2 T_2}{m_1 + m_2}\\)", "\\(\\frac{T_1 + T_2}{2}\\) always", "\\(\\frac{m_1 T_2 + m_2 T_1}{m_1 + m_2}\\)", "\\(T_1 - T_2\\)"], "\\(\\frac{m_1 T_1 + m_2 T_2}{m_1 + m_2}\\)",
+         "Solve \\(m_1 c (T_1 - T) = m_2 c (T - T_2)\\).", "Cancel \\(c\\): \\(m_1 T_1 + m_2 T_2 = (m_1 + m_2) T\\).", "Weighted average by mass.", "medium"),
+        ("At thermal equilibrium after mixing a hot and cold object in an isolated system, what is true?", ["Both objects reach the exact same final temperature and net heat flow becomes zero", "Hot object stays hotter than cold object", "Heat continues flowing forever", "Masses become equal"], "Both objects reach the exact same final temperature and net heat flow becomes zero",
+         "Definition of thermal equilibrium.", "Equal temperature -> zero temperature difference -> no net heat transfer.", "Masses don't change.", "easy"),
+        ("What does 'isolated system' mean in the Principle of Heat Exchange?", ["No heat enters from or escapes to the outside surroundings", "The container is placed over a gas burner", "Only one object is inside", "Vacuum is absent"], "No heat enters from or escapes to the outside surroundings",
+         "Adiabatic boundary.", "All heat lost by hot components stays inside the system and goes into cold components.", "A burner would add external heat.", "easy"),
+        ("If \\(200\\text{ g}\\) of water at \\(90^\\circ\\text{C}\\) is mixed with \\(100\\text{ g}\\) of water at \\(30^\\circ\\text{C}\\), what is the final temperature?", ["\\(70^\\circ\\text{C}\\)", "\\(60^\\circ\\text{C}\\)", "\\(50^\\circ\\text{C}\\)", "\\(80^\\circ\\text{C}\\)"], "\\(70^\\circ\\text{C}\\)",
+         "\\(T = (200 \\times 90 + 100 \\times 30) / (200 + 100)\\).", "\\((18000 + 3000) / 300 = 21000 / 300 = 70^\\circ\\text{C}\\).", "60°C would be for equal masses.", "medium"),
+    ]
+    # Add 24 numericals on mixing/calorimetry + 10 conceptual OSC
+    mix_cases = [
+        (100, 60, 100, 20, 40),
+        (100, 90, 100, 10, 50),
+        (200, 80, 200, 20, 50),
+        (300, 80, 100, 40, 70),
+        (100, 80, 300, 40, 50),
+        (200, 70, 300, 20, 40),
+        (400, 60, 100, 10, 50),
+        (150, 80, 150, 20, 50),
+        (250, 90, 250, 30, 60),
+        (100, 100, 400, 25, 40),
+        (300, 90, 200, 40, 70),
+        (100, 75, 200, 15, 35),
+    ]
+    for m1, t1, m2, t2, tf in mix_cases:
+        osc.append((
+            f"\\({m1}\\text{{ g}}\\) of hot water at \\({t1}^\\circ\\text{{C}}\\) is mixed with \\({m2}\\text{{ g}}\\) of cold water at \\({t2}^\\circ\\text{{C}}\\) in an insulated container. Find the final equilibrium temperature.",
+            [f"\\({tf}^\\circ\\text{{C}}\\)", f"\\({tf + 10}^\\circ\\text{{C}}\\)", f"\\({tf - 10 if tf > 10 else 5}^\\circ\\text{{C}}\\)", f"\\({(t1 + t2) // 2 if (t1 + t2) // 2 != tf else tf + 5}^\\circ\\text{{C}}\\)"],
+            f"\\({tf}^\\circ\\text{{C}}\\)",
+            "Apply Heat Lost = Heat Gained: \\(m_1 (T_1 - T_f) = m_2 (T_f - T_2)\\).",
+            f"\\(T_f = \\frac{{{m1}\\times{t1} + {m2}\\times{t2}}}{{{m1}+{m2}}} = {tf}^\\circ\\text{{C}}\\).",
+            "Final temperature always lies between \\(T_2\\) and \\(T_1\\).",
+            "medium"
+        ))
+    # 6 metal-in-water calorimetry numericals (find c or T_f)
+    metal_cases = [
+        (100, 100, 200, 20, 24, 0.105), # wait let's use exact clean numbers!
+    ]
+    # Clean exact metal calorimetry: m_m * c_m * (T_m - T_f) = m_w * 1 * (T_f - T_w)
+    clean_metal = [
+        (100, 0.1, 100, 190, 20, 24), # 100*0.1*(100-24)=760? Wait: 10*(100-24)=760; 190*(24-20)=760! Exact!
+        (200, 0.1, 100, 180, 20, 28), # 20*(100-28)=1440; 180*(28-20)=1440! Exact!
+        (100, 0.2, 100, 180, 20, 28), # 20*(100-28)=1440; 180*(28-20)=1440! Exact!
+        (250, 0.1, 100, 225, 25, 32.5), # 25*(100-32.5)=1687.5; 225*(32.5-25)=1687.5! Exact!
+        (100, 0.1, 120, 190, 20, 25), # 10*(120-25)=950; 190*(25-20)=950! Exact!
+        (200, 0.2, 100, 160, 20, 36), # 40*(100-36)=2560; 160*(36-20)=2560! Exact!
+    ]
+    for mm, cm, tm, mw, tw, tf in clean_metal:
+        osc.append((
+            f"A \\({mm}\\text{{ g}}\\) metal block at \\({tm}^\\circ\\text{{C}}\\) is dropped into \\({mw}\\text{{ g}}\\) of water at \\({tw}^\\circ\\text{{C}}\\) in an insulated vessel. If the final temperature is \\({tf:g}^\\circ\\text{{C}}\\), find the specific heat capacity of the metal (in \\(\\text{{cal/(g}}\\cdot^\\circ\\text{{C)}}\\)).",
+            [f"\\({cm}\\)", f"\\({cm * 2:g}\\)", f"\\({round(cm / 2, 3)}\\)", f"\\(1.0\\)"],
+            f"\\({cm}\\)",
+            "Heat lost by metal = Heat gained by water: \\(m_m c_m (T_m - T_f) = m_w c_w (T_f - T_w)\\).",
+            f"\\({mm} \\cdot c_m \\cdot ({tm} - {tf:g}) = {mw} \\cdot 1 \\cdot ({tf:g} - {tw}) \\implies c_m = {cm}\\text{{ cal/(g}}\\cdot^\\circ\\text{{C)}}\\).",
+            "Check heat balance on both sides.",
+            "hard"
+        ))
+    # 6 more heat-lost = heat-gained direct numericals
+    for q_lost in [500, 1200, 2500, 4200, 800, 3600]:
+        osc.append((
+            f"In an isolated calorimeter, a hot copper block loses \\({q_lost}\\text{{ cal}}\\) of heat to cold water. Neglecting calorimeter absorption, how much heat is gained by the cold water?",
+            [f"\\({q_lost}\\text{{ cal}}\\)", f"\\({q_lost // 2}\\text{{ cal}}\\)", f"\\({q_lost * 2}\\text{{ cal}}\\)", "0 cal"],
+            f"\\({q_lost}\\text{{ cal}}\\)",
+            "Heat lost = Heat gained.",
+            f"By the Principle of Heat Exchange, cold water gains exactly \\({q_lost}\\text{{ cal}}\\).",
+            "Energy is conserved.",
+            "easy"
+        ))
+    extra_osc = [
+        ("In a real laboratory calorimeter experiment (including the copper calorimeter of mass \\(m_c\\) and specific heat \\(c_c\\)), what is the complete heat exchange equation when a hot solid enters cold water?", ["\\(Q_{\\text{solid}} = Q_{\\text{water}} + Q_{\\text{calorimeter}}\\)", "\\(Q_{\\text{solid}} + Q_{\\text{calorimeter}} = Q_{\\text{water}}\\)", "\\(Q_{\\text{solid}} = Q_{\\text{water}} - Q_{\\text{calorimeter}}\\)", "\\(Q_{\\text{calorimeter}} = 0\\) always"], "\\(Q_{\\text{solid}} = Q_{\\text{water}} + Q_{\\text{calorimeter}}\\)",
+         "Calorimeter starts at the same cold temperature as the water inside it.", "Both water and calorimeter warm up by absorbing heat from the hot solid.", "Standard Balbharti formula.", "medium"),
+        ("Why is a wooden outer box with insulating wool/air gap placed around the copper vessel of a calorimeter?", ["To prevent heat exchange (conduction/convection) between the calorimeter and the outside surroundings", "To heat the water faster", "To make the calorimeter heavier", "To dissolve the hot solid"], "To prevent heat exchange (conduction/convection) between the calorimeter and the outside surroundings",
+         "Creates an approximately isolated system.", "Insulation minimizes heat leakage to/from the room.", "Polishing minimizes radiation.", "easy"),
+        ("What is the purpose of the stirrer in a calorimeter?", ["To mix the water gently so the entire system reaches a uniform equilibrium temperature quickly", "To generate heat by friction", "To cool the solid to 0°C", "To measure mass"], "To mix the water gently so the entire system reaches a uniform equilibrium temperature quickly",
+         "Ensures uniform temperature throughout the water.", "Prevents hot/cold layers from skewing thermometer readings.", "Stir gently to avoid friction heat.", "easy"),
+        ("If a hot object at \\(80^\\circ\\text{C}\\) is placed in contact with a cold object at \\(20^\\circ\\text{C}\\), which final temperature is IMPOSSIBLE?", ["\\(85^\\circ\\text{C}\\) or \\(15^\\circ\\text{C}\\)", "\\(50^\\circ\\text{C}\\)", "\\(30^\\circ\\text{C}\\)", "\\(70^\\circ\\text{C}\\)"], "\\(85^\\circ\\text{C}\\) or \\(15^\\circ\\text{C}\\)",
+         "Final equilibrium temperature must strictly lie between \\(T_{\\text{cold}}\\) and \\(T_{\\text{hot}}\\).", "It cannot exceed \\(80^\\circ\\text{C}\\) or drop below \\(20^\\circ\\text{C}\\).", "Thermodynamic bound.", "easy"),
+        ("Why does a metal spoon placed in hot tea warm up while the tea cools slightly?", ["Heat flows from hot tea to cooler spoon until both reach the same temperature", "Coldness flows as a fluid from spoon to tea", "The spoon creates heat by nuclear reaction", "Tea boils at 20°C"], "Heat flows from hot tea to cooler spoon until both reach the same temperature",
+         "Spontaneous heat flow from higher to lower temperature.", "Heat lost by tea = Heat gained by spoon (plus cup/air).", "Everyday heat exchange.", "easy"),
+        ("If \\(100\\text{ g}\\) of ice at \\(0^\\circ\\text{C}\\) is mixed with \\(100\\text{ g}\\) of water at \\(80^\\circ\\text{C}\\) (\\(L_{\\text{ice}} = 80\\text{ cal/g}\\)), what is the final state and temperature?", ["All ice melts and final temperature is \\(0^\\circ\\text{C}\\) (200 g water at \\(0^\\circ\\text{C}\\))", "Final temperature is \\(40^\\circ\\text{C}\\)", "Half the ice remains unmelted", "Water boils"], "All ice melts and final temperature is \\(0^\\circ\\text{C}\\) (200 g water at \\(0^\\circ\\text{C}\\))",
+         "Heat needed to melt 100 g ice = \\(100 \\times 80 = 8000\\) cal. Heat available from 100 g water cooling 80→0°C = \\(100 \\times 1 \\times 80 = 8000\\) cal.", "Exact match! All ice melts at \\(0^\\circ\\text{C}\\) with 0°C final temperature.", "Classic competitive calorimetry question!", "hard"),
+        ("If \\(100\\text{ g}\\) of ice at \\(0^\\circ\\text{C}\\) is mixed with \\(100\\text{ g}\\) of water at \\(40^\\circ\\text{C}\\) (\\(L_{\\text{ice}} = 80\\text{ cal/g}\\)), what is the final temperature?", ["\\(0^\\circ\\text{C}\\) (with 50 g ice remaining unmelted)", "\\(20^\\circ\\text{C}\\)", "\\(-20^\\circ\\text{C}\\)", "\\(10^\\circ\\text{C}\\)"], "\\(0^\\circ\\text{C}\\) (with 50 g ice remaining unmelted)",
+         "Water cooling 40→0°C gives \\(100 \\times 40 = 4000\\) cal, which melts only \\(4000 / 80 = 50\\) g of ice.", "Ice–water mixture remains at \\(0^\\circ\\text{C}\\).", "Cannot be 20°C because latent heat consumes the energy.", "hard"),
+        ("What is the 'method of mixtures' used for in a physics laboratory?", ["To determine the unknown specific heat capacity (or latent heat) of a substance using a calorimeter", "To separate salt from water", "To measure refractive index of glass", "To measure current"], "To determine the unknown specific heat capacity (or latent heat) of a substance using a calorimeter",
+         "Balbharti Ch.5 measurement method.", "Mixing hot solid with cold water in a calorimeter lets us solve for unknown \\(c\\).", "Applies Principle of Heat Exchange.", "easy"),
+        ("In a calorimetry experiment, why is the hot solid transferred quickly from the heater into the calorimeter?", ["To minimize heat loss to the air during transfer", "To cool it down to room temperature first", "To increase its mass", "To evaporate the water"], "To minimize heat loss to the air during transfer",
+         "Experimental accuracy.", "Any heat lost in air causes error in \\(Q_{\\text{lost}} = Q_{\\text{gained}}\\).", "Standard lab precaution.", "easy"),
+        ("When a hot object and a cold object are in thermal contact inside an isolated box, heat stops flowing when:", ["Both reach the same temperature", "The hot object reaches 0°C", "The cold object reaches 100°C", "Both have equal mass"], "Both reach the same temperature",
+         "Thermal equilibrium condition.", "Zero \\(\\Delta T\\) between objects stops net heat flow.", "Masses need not be equal.", "easy"),
+    ]
+    osc.extend(extra_osc)
+
+    omc = [
+        ("Which statements are TRUE about the Principle of Heat Exchange?",
+         ["It applies strictly to an isolated system", "Heat lost by the hot body equals heat gained by the cold body", "It is based on the Law of Conservation of Energy", "Heat flows spontaneously from the cold body to the hot body"],
+         ["It applies strictly to an isolated system", "Heat lost by the hot body equals heat gained by the cold body", "It is based on the Law of Conservation of Energy"],
+         "Core principle of calorimetry.", "Energy conserved inside isolated box; flows hot -> cold.", "Never flows cold -> hot spontaneously.", "easy"),
+        ("When a hot iron sphere is dropped into cold water inside a copper calorimeter:",
+         ["The iron sphere loses heat", "The cold water gains heat", "The copper calorimeter also gains heat", "The temperature of the iron sphere increases"],
+         ["The iron sphere loses heat", "The cold water gains heat", "The copper calorimeter also gains heat"],
+         "Identify heat gainer vs loser.", "Hot iron loses heat; cold water + calorimeter gain heat.", "Iron cools down.", "easy"),
+        ("Which design features of a calorimeter help create an isolated system?",
+         ["Outer wooden box with insulating material (like wool/felt)", "Polished outer surface of the copper vessel to reduce radiation", "Insulating lid on top", "Heating the calorimeter over a Bunsen burner"],
+         ["Outer wooden box with insulating material (like wool/felt)", "Polished outer surface of the copper vessel to reduce radiation", "Insulating lid on top"],
+         "Minimizing conduction, convection, and radiation.", "All three reduce heat exchange with room air.", "No burner is used.", "easy"),
+        ("If \\(100\\text{ g}\\) of water at \\(80^\\circ\\text{C}\\) is mixed with \\(100\\text{ g}\\) of water at \\(20^\\circ\\text{C}\\) (isolated):",
+         ["Final equilibrium temperature is \\(50^\\circ\\text{C}\\)", "Hot water loses 3000 cal of heat", "Cold water gains 3000 cal of heat", "Final temperature is \\(60^\\circ\\text{C}\\)"],
+         ["Final equilibrium temperature is \\(50^\\circ\\text{C}\\)", "Hot water loses 3000 cal of heat", "Cold water gains 3000 cal of heat"],
+         "\\(T_f = 50^\\circ\\text{C}\\); \\(Q = 100 \\times 1 \\times 30 = 3000\\) cal.", "Heat lost = Heat gained = 3000 cal.", "Not 60°C.", "medium"),
+        ("Which statements are true at thermal equilibrium after mixing?",
+         ["Both hot and cold bodies have the same temperature", "Net heat transfer between them becomes zero", "Final temperature lies between the initial cold and hot temperatures", "The hotter body's final temperature is higher than its initial temperature"],
+         ["Both hot and cold bodies have the same temperature", "Net heat transfer between them becomes zero", "Final temperature lies between the initial cold and hot temperatures"],
+         "Thermal equilibrium state.", "Same T, zero net flow, bounded between \\(T_{\\text{cold}}\\) and \\(T_{\\text{hot}}\\).", "Hot body cools down.", "easy"),
+        ("Why is copper used for the inner vessel of a calorimeter?",
+         ["Copper has low specific heat capacity, absorbing minimal heat", "Copper is a good thermal conductor, reaching equilibrium quickly", "Copper can be polished to reduce radiative heat loss", "Copper is an electrical and thermal insulator"],
+         ["Copper has low specific heat capacity, absorbing minimal heat", "Copper is a good thermal conductor, reaching equilibrium quickly", "Copper can be polished to reduce radiative heat loss"],
+         "Material advantages of copper.", "Low c, high conductivity, polishable.", "Copper is a conductor, not an insulator.", "medium"),
+        ("Which laboratory precautions improve the accuracy of the method of mixtures?",
+         ["Transferring the hot solid quickly to avoid heat loss to air", "Using a stirrer gently for uniform temperature", "Using an insulated calorimeter with a lid", "Using an uninsulated open steel pot over a flame"],
+         ["Transferring the hot solid quickly to avoid heat loss to air", "Using a stirrer gently for uniform temperature", "Using an insulated calorimeter with a lid"],
+         "Minimizing errors in calorimetry.", "Quick transfer, gentle stirring, insulation.", "Open pot over flame ruins isolation.", "easy"),
+        ("If \\(200\\text{ g}\\) of water at \\(90^\\circ\\text{C}\\) is mixed with \\(100\\text{ g}\\) of water at \\(30^\\circ\\text{C}\\):",
+         ["Final temperature is \\(70^\\circ\\text{C}\\)", "Hot water cools by \\(20^\\circ\\text{C}\\)", "Cold water warms up by \\(40^\\circ\\text{C}\\)", "Heat lost by hot water is 4000 cal and heat gained by cold water is 4000 cal"],
+         ["Final temperature is \\(70^\\circ\\text{C}\\)", "Hot water cools by \\(20^\\circ\\text{C}\\)", "Cold water warms up by \\(40^\\circ\\text{C}\\)", "Heat lost by hot water is 4000 cal and heat gained by cold water is 4000 cal"],
+         "All four statements are true and consistent!", "\\(200 \\times 20 = 4000\\) cal; \\(100 \\times 40 = 4000\\) cal.", "Exact verification.", "medium"),
+        ("Which quantities are needed to calculate the heat gained by a copper calorimeter of mass \\(m_c\\)?",
+         ["Mass of the calorimeter \\(m_c\\)", "Specific heat capacity of copper \\(c_c\\)", "Temperature rise \\(\\Delta T\\) of the calorimeter", "Boiling point of mercury"],
+         ["Mass of the calorimeter \\(m_c\\)", "Specific heat capacity of copper \\(c_c\\)", "Temperature rise \\(\\Delta T\\) of the calorimeter"],
+         "\\(Q_c = m_c c_c \\Delta T\\).", "Needs mass, specific heat, and \\(\\Delta T\\).", "Mercury is irrelevant.", "easy"),
+        ("Which equations correctly represent heat exchange in an isolated calorimeter when a hot solid of mass \\(m_s\\) is added to cold water?",
+         ["\\(Q_{\\text{lost by solid}} = Q_{\\text{gained by water}} + Q_{\\text{gained by calorimeter}}\\)", "\\(m_s c_s (T_s - T_f) = (m_w c_w + m_c c_c)(T_f - T_w)\\)", "\\(Q_{\\text{lost}} - Q_{\\text{gained}} = 0\\)", "\\(Q_{\\text{solid}} + Q_{\\text{water}} = 0\\) with both positive"],
+         ["\\(Q_{\\text{lost by solid}} = Q_{\\text{gained by water}} + Q_{\\text{gained by calorimeter}}\\)", "\\(m_s c_s (T_s - T_f) = (m_w c_w + m_c c_c)(T_f - T_w)\\)", "\\(Q_{\\text{lost}} - Q_{\\text{gained}} = 0\\)"],
+         "Full calorimetry equation.", "First three are equivalent forms.", "Two positive heats cannot sum to zero.", "hard"),
+    ]
+
+    otf = [
+        ("In an isolated system, heat energy lost by the hot object equals heat energy gained by the cold object.", True,
+         "Principle of Heat Exchange.", "Based on conservation of energy.", "True.", "easy"),
+        ("The Principle of Heat Exchange is based on the Law of Conservation of Mass.", False,
+         "It is based on Conservation of Energy.", "Heat is thermal energy.", "False.", "easy"),
+        ("When a hot metal piece is dropped into cold water in a calorimeter, the calorimeter also absorbs some heat.", True,
+         "\\(Q_{\\text{metal}} = Q_{\\text{water}} + Q_{\\text{calorimeter}}\\).", "Both water and vessel warm up.", "True.", "easy"),
+        ("If equal masses of water at \\(80^\\circ\\text{C}\\) and \\(20^\\circ\\text{C}\\) are mixed in an insulated vessel, the final temperature is \\(50^\\circ\\text{C}\\).", True,
+         "\\((80 + 20)/2 = 50^\\circ\\text{C}\\).", "Equal masses of same substance average.", "True.", "easy"),
+        ("The final equilibrium temperature of a mixture can be higher than the initial temperature of the hot object.", False,
+         "Must lie between \\(T_{\\text{cold}}\\) and \\(T_{\\text{hot}}\\).", "Impossible by energy conservation.", "False.", "easy"),
+        ("A calorimeter is enclosed in an insulating box to prevent heat loss to or gain from the surroundings.", True,
+         "Approximates an isolated system.", "Standard calorimeter design.", "True.", "easy"),
+        ("At thermal equilibrium, heat continues to flow rapidly from the cold object to the hot object.", False,
+         "At thermal equilibrium, both have the same temperature and net heat flow is zero.", "Heat never flows cold to hot spontaneously.", "False.", "easy"),
+        ("The inner vessel of a calorimeter is made of copper partly because copper has a low specific heat capacity.", True,
+         "Absorbs very little heat itself and conducts well.", "Standard choice.", "True.", "medium"),
+        ("If \\(300\\text{ g}\\) of water at \\(60^\\circ\\text{C}\\) is mixed with \\(100\\text{ g}\\) of water at \\(20^\\circ\\text{C}\\), the final temperature is \\(40^\\circ\\text{C}\\).", False,
+         "\\((300\\times 60 + 100\\times 20)/400 = 20000/400 = 50^\\circ\\text{C}\\).", "Unequal masses don't give simple mean.", "False.", "medium"),
+        ("When \\(100\\text{ g}\\) of ice at \\(0^\\circ\\text{C}\\) melts completely in \\(100\\text{ g}\\) of water at \\(80^\\circ\\text{C}\\), the final temperature is \\(0^\\circ\\text{C}\\).", True,
+         "8000 cal needed = 8000 cal available.", "Exact energy match.", "True.", "hard"),
+    ]
+
+    oar = [
+        ("In an isolated system, the heat lost by a hot object equals the heat gained by a cold object.",
+         "According to the law of conservation of energy, total thermal energy in an isolated system remains constant.", "A",
+         "Energy conservation.", "Both A and R are true, and R explains A.", "Core principle.", "easy"),
+        ("A calorimeter has a polished copper vessel placed inside an insulating wooden box.",
+         "Polishing reduces radiative heat loss and the insulating box prevents conductive/convective heat exchange with the room.", "A",
+         "Calorimeter insulation.", "Both A and R are true, and R explains A.", "Creates an isolated system.", "easy"),
+        ("When a hot metal sphere is dropped into cold water inside a copper calorimeter, we include the calorimeter's heat gain in accurate calculations.",
+         "The copper calorimeter is in thermal contact with the cold water and warms up to the same final equilibrium temperature.", "A",
+         "Calorimeter warms up with water.", "Both A and R are true, and R explains A.", "\\(Q_{\\text{solid}} = Q_{\\text{water}} + Q_{\\text{cal}}\\).", "medium"),
+        ("Mixing 100 g of water at \\(80^\\circ\\text{C}\\) with 300 g of water at \\(40^\\circ\\text{C}\\) gives a final temperature of \\(60^\\circ\\text{C}\\).",
+         "When unequal masses of the same substance are mixed, the final temperature is closer to the temperature of the larger mass.", "D",
+         "\\((100\\times 80 + 300\\times 40)/400 = 50^\\circ\\text{C}\\), not 60°C.", "A is false; R is true.", "R explains why it's 50°C (closer to 40°C).", "medium"),
+        ("At thermal equilibrium, net heat flow between the two mixed objects stops.",
+         "Both objects have reached the same final temperature, so there is no temperature difference to drive heat transfer.", "A",
+         "Zero \\(\\Delta T\\) -> zero net flow.", "Both A and R are true, and R explains A.", "Definition of thermal equilibrium.", "easy"),
+        ("In a calorimetry experiment, the hot solid is transferred quickly from boiling water into the calorimeter.",
+         "Quick transfer minimizes heat loss from the hot solid to the surrounding air before it enters the water.", "A",
+         "Reducing experimental error.", "Both A and R are true, and R explains A.", "Standard lab step.", "easy"),
+        ("If 100 g of hot iron at \\(100^\\circ\\text{C}\\) is mixed with 100 g of cold water at \\(20^\\circ\\text{C}\\), the final temperature is \\(60^\\circ\\text{C}\\).",
+         "Water has a much higher specific heat capacity than iron.", "D",
+         "Final T is ~28°C (much closer to 20°C), not 60°C.", "A is false; R is true.", "R explains why final T stays near water's T.", "hard"),
+        ("A stirrer is used in a calorimeter during mixing.",
+         "Gentle stirring ensures uniform temperature distribution throughout the water before reading the thermometer.", "A",
+         "Purpose of stirrer.", "Both A and R are true, and R explains A.", "Accurate temperature measurement.", "easy"),
+        ("Heat can flow spontaneously from a cold object at \\(20^\\circ\\text{C}\\) to a hot object at \\(80^\\circ\\text{C}\\) in an isolated box.",
+         "Heat energy always flows naturally from a body at higher temperature to a body at lower temperature.", "D",
+         "Second law / natural direction of heat flow.", "A is false; R is true.", "Never flows cold to hot spontaneously.", "easy"),
+        ("When 100 g of ice at \\(0^\\circ\\text{C}\\) is mixed with 100 g of water at \\(80^\\circ\\text{C}\\), the final temperature is \\(0^\\circ\\text{C}\\).",
+         "The 8000 cal released by 100 g of water cooling from \\(80^\\circ\\text{C}\\) to \\(0^\\circ\\text{C}\\) is entirely consumed as latent heat to melt the 100 g of ice.", "A",
+         "\\(100 \\times 80 = 8000\\) cal.", "Both A and R are true, and R explains A.", "Exact phase-change calorimetry.", "hard"),
+    ]
+
+    one_ofb = [
+        ("ONE", "If \\(100\\text{ g}\\) of water at \\(80^\\circ\\text{C}\\) is mixed with \\(100\\text{ g}\\) of water at \\(20^\\circ\\text{C}\\) in an insulated vessel, what is the final temperature (in °C)?", "50",
+         "Equal masses average: \\((80 + 20) / 2\\).", "50 °C.", "Exact integer: 50.", "easy"),
+        ("ONE", "If \\(200\\text{ g}\\) of water at \\(90^\\circ\\text{C}\\) is mixed with \\(100\\text{ g}\\) of water at \\(30^\\circ\\text{C}\\) in an insulated vessel, what is the final temperature (in °C)?", "70",
+         "\\((200 \\times 90 + 100 \\times 30) / 300\\).", "\\(21000 / 300 = 70\\) °C.", "Exact integer: 70.", "medium"),
+        ("ONE", "In an isolated system, a hot block loses \\(1500\\text{ cal}\\) of heat to cold water and a calorimeter. If the calorimeter gains \\(200\\text{ cal}\\), how much heat (in cal) does the water gain?", "1300",
+         "\\(Q_{\\text{lost}} = Q_{\\text{water}} + Q_{\\text{cal}}\\)", "\\(1500 - 200 = 1300\\) cal.", "Exact integer: 1300.", "easy"),
+        ("ONE", "A \\(100\\text{ g}\\) metal block at \\(100^\\circ\\text{C}\\) is dropped into \\(190\\text{ g}\\) of water at \\(20^\\circ\\text{C}\\). The final temperature is \\(24^\\circ\\text{C}\\). Find the specific heat of the metal in \\(\\text{cal/(g}\\cdot^\\circ\\text{C)}\\).", "0.1",
+         "\\(100 \\cdot c \\cdot 76 = 190 \\cdot 1 \\cdot 4\\).", "\\(7600 c = 760 \\implies c = 0.1\\).", "Decimal: 0.1.", "hard"),
+        ("OFB", "According to the Principle of Heat Exchange, in an isolated system, heat lost by the hot object equals heat ______ by the cold object.", "gained",
+         "Conservation of heat energy.", "Gained (or absorbed).", "Answer: gained.", "easy"),
+        ("OFB", "The laboratory instrument used to measure heat exchange in an isolated system is called a ______.", "calorimeter",
+         "Name the insulated copper vessel device.", "Calorimeter.", "Answer: calorimeter.", "easy"),
+    ]
+    return build_pack(tc, osc, omc, otf, oar, one_ofb)
+
+def main():
+    gens = [gen_5_3_3, gen_5_4_3, gen_5_5_1, gen_5_5_2, gen_5_5_3, gen_5_6_1]
+    all_qs = []
+    for g in gens:
+        all_qs.extend(g())
+    by_topic = validate_pack_collection(all_qs)
+    out_path = os.path.join(os.path.dirname(__file__), "audit_data", "mh10_scit1_ch5_empty.json")
+    os.makedirs(os.path.dirname(out_path), exist_ok=True)
+    with open(out_path, "w", encoding="utf-8") as f:
+        json.dump(all_qs, f, indent=2, ensure_ascii=False)
+    print(f"SUCCESS Ch.5: {len(all_qs)} questions across {len(by_topic)} subtopics -> {out_path}")
+
+if __name__ == "__main__":
+    main()
