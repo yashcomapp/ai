@@ -1763,8 +1763,8 @@ export function validateQuestion(q: any, questionType: 'objective' | 'subjective
     }
   }
 
-  // Check for duplicate or near-identical options in MCQs
-  if (Array.isArray(q.options) && q.options.length >= 2) {
+  // Check for duplicate or near-identical options in MCQs (skip fixed canonical OAR A/B/C/D templates)
+  if (canonicalType !== 'OAR' && Array.isArray(q.options) && q.options.length >= 2) {
     const rawOptions = q.options;
     const duplicatePairs: string[] = [];
 
