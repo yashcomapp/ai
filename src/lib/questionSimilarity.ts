@@ -26,6 +26,11 @@ function normalizeQuestionText(text: string): string {
     .trim();
 }
 
+function normalizeTemplateSkeleton(normText: string): string {
+  if (!normText) return '';
+  return normText.replace(/\b\d+(?:\.\d+)?\b/g, '#');
+}
+
 function extractTokens(text: string, removeStopWords = true): string[] {
   const norm = normalizeQuestionText(text);
   if (!norm) return [];
@@ -130,6 +135,18 @@ export function areQuestionsTooSimilar(
   const fullWords1 = norm1.split(' ').filter(Boolean);
   const fullWords2 = norm2.split(' ').filter(Boolean);
   const wordSeqSim = calculateWordSequenceSimilarity(fullWords1, fullWords2);
+
+  // 1b. Template/loop-based numeric variant check (e.g. "5 pipes... 7 pipes" vs "7 pipes... 9 pipes")
+  const skel1 = normalizeTemplateSkeleton(norm1);
+  const skel2 = normalizeTemplateSkeleton(norm2);
+  if (skel1.includes('#') && skel2.includes('#')) {
+    if (skel1 === skel2) return true;
+    const skelWords1 = skel1.split(' ').filter(Boolean);
+    const skelWords2 = skel2.split(' ').filter(Boolean);
+    if (skelWords1.length >= 6 && calculateWordSequenceSimilarity(skelWords1, skelWords2) >= 0.92) {
+      return true;
+    }
+  }
 
   // Core content word overlap
   const contentTokens1 = extractTokens(text1, true);

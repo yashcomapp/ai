@@ -940,6 +940,22 @@ export default function AdminExamGeneratorPage() {
       const usedCodes = new Set<string>();
       const shortfallReqs: any[] = [];
 
+      // Pick up to `limit` questions one-by-one, enforcing mutual distinctness inside `selected`
+      // so duplicates within `prioritized` itself can never be batched together.
+      const pickDistinctIntoSelected = (prioritized: Question[], limit: number): Question[] => {
+        const picked: Question[] = [];
+        for (const q of prioritized) {
+          if (picked.length >= limit) break;
+          const code = q.questionCode || q.id || '';
+          if (code && usedCodes.has(code)) continue;
+          if (selected.some(sel => areQuestionsTooSimilar(q, sel))) continue;
+          if (code) usedCodes.add(code);
+          selected.push(q);
+          picked.push(q);
+        }
+        return picked;
+      };
+
       // Calculate total topic question targets based on topic weightages
       const topicQuestionTargets = distributeCountsByWeight(effectiveTotalQs, selectedTopics, topicWeights, topicWeightMode, getTopicKey);
 
@@ -971,12 +987,8 @@ export default function AdminExamGeneratorPage() {
               !selected.some(sel => areQuestionsTooSimilar(q, sel))
             );
             const prioritized = sortQuestionsByCompetencyDepth(candidates, selected, 2);
-            const picked = prioritized.slice(0, req.count);
-            picked.forEach(q => {
-              usedCodes.add(q.questionCode || q.id || '');
-              selected.push(q);
-              pickedForTopic++;
-            });
+            const picked = pickDistinctIntoSelected(prioritized, req.count);
+            pickedForTopic += picked.length;
           });
 
           // 2. If topic target not fully reached, pick any remaining valid questions for this topic
@@ -987,13 +999,8 @@ export default function AdminExamGeneratorPage() {
               !selected.some(sel => areQuestionsTooSimilar(q, sel))
             );
             const prioritizedRemaining = sortQuestionsByCompetencyDepth(remaining, selected, 2);
-            const picked = prioritizedRemaining.slice(0, targetForTopic - pickedForTopic);
-
-            picked.forEach(q => {
-              usedCodes.add(q.questionCode || q.id || '');
-              selected.push(q);
-              pickedForTopic++;
-            });
+            const picked = pickDistinctIntoSelected(prioritizedRemaining, targetForTopic - pickedForTopic);
+            pickedForTopic += picked.length;
           }
 
           // 3. If still short of topic target, record shortfall
@@ -1010,7 +1017,7 @@ export default function AdminExamGeneratorPage() {
           }
         });
 
-        // Global Exam Guarantee for Flexible Pool Mode
+        // Global Exam Guarantee for Flexible Pool Mode (strictly distinct, never bypasses areQuestionsTooSimilar)
         if (selected.length < effectiveTotalQs) {
           const remainingPool = candidatePool.filter(q =>
             selectedTopics.some(t => isQuestionMatchingTopic(q, t)) &&
@@ -1018,28 +1025,7 @@ export default function AdminExamGeneratorPage() {
             !selected.some(sel => areQuestionsTooSimilar(q, sel))
           );
           const prioritizedRemaining = sortQuestionsByCompetencyDepth(remainingPool, selected, 2);
-          const picked = prioritizedRemaining.slice(0, effectiveTotalQs - selected.length);
-          picked.forEach(q => {
-            usedCodes.add(q.questionCode || q.id || '');
-            selected.push(q);
-          });
-        }
-        if (selected.length < effectiveTotalQs) {
-          const fallbackPool = candidatePool.filter(q =>
-            selectedTopics.some(t => isQuestionMatchingTopic(q, t)) &&
-            !usedCodes.has(q.questionCode || q.id || '') &&
-            !selected.some(sel => {
-              const t1 = (sel.text || sel.questionText || sel.question || '').trim().toLowerCase();
-              const t2 = (q.text || q.questionText || q.question || '').trim().toLowerCase();
-              return t1.length > 0 && t1 === t2;
-            })
-          );
-          const prioritizedFallback = sortQuestionsByCompetencyDepth(fallbackPool, selected, 2);
-          const pickedFallback = prioritizedFallback.slice(0, effectiveTotalQs - selected.length);
-          pickedFallback.forEach(q => {
-            usedCodes.add(q.questionCode || q.id || '');
-            selected.push(q);
-          });
+          pickDistinctIntoSelected(prioritizedRemaining, effectiveTotalQs - selected.length);
         }
         if (selected.length >= effectiveTotalQs) {
           shortfallReqs.length = 0;
@@ -1079,12 +1065,8 @@ export default function AdminExamGeneratorPage() {
             );
 
             const prioritized = sortQuestionsByCompetencyDepth(candidates, selected, 2);
-            const picked = prioritized.slice(0, targetForTopicAndType);
-            picked.forEach(q => {
-              usedCodes.add(q.questionCode || q.id || '');
-              selected.push(q);
-              topicPickedCounts[tKey] = (topicPickedCounts[tKey] || 0) + 1;
-            });
+            const picked = pickDistinctIntoSelected(prioritized, targetForTopicAndType);
+            topicPickedCounts[tKey] = (topicPickedCounts[tKey] || 0) + picked.length;
 
             let stillNeeded = targetForTopicAndType - picked.length;
             
@@ -1097,13 +1079,8 @@ export default function AdminExamGeneratorPage() {
                 !selected.some(sel => areQuestionsTooSimilar(q, sel))
               );
               const prioritizedRelaxed = sortQuestionsByCompetencyDepth(relaxed, selected, 2);
-              const pickedRelaxed = prioritizedRelaxed.slice(0, stillNeeded);
-
-              pickedRelaxed.forEach(q => {
-                usedCodes.add(q.questionCode || q.id || '');
-                selected.push(q);
-                topicPickedCounts[tKey] = (topicPickedCounts[tKey] || 0) + 1;
-              });
+              const pickedRelaxed = pickDistinctIntoSelected(prioritizedRelaxed, stillNeeded);
+              topicPickedCounts[tKey] = (topicPickedCounts[tKey] || 0) + pickedRelaxed.length;
               stillNeeded -= pickedRelaxed.length;
             }
 
@@ -1115,13 +1092,8 @@ export default function AdminExamGeneratorPage() {
                 !selected.some(sel => areQuestionsTooSimilar(q, sel))
               );
               const prioritizedOther = sortQuestionsByCompetencyDepth(otherTypes, selected, 2);
-              const pickedOther = prioritizedOther.slice(0, stillNeeded);
-
-              pickedOther.forEach(q => {
-                usedCodes.add(q.questionCode || q.id || '');
-                selected.push(q);
-                topicPickedCounts[tKey] = (topicPickedCounts[tKey] || 0) + 1;
-              });
+              const pickedOther = pickDistinctIntoSelected(prioritizedOther, stillNeeded);
+              topicPickedCounts[tKey] = (topicPickedCounts[tKey] || 0) + pickedOther.length;
               stillNeeded -= pickedOther.length;
             }
 
@@ -1152,52 +1124,20 @@ export default function AdminExamGeneratorPage() {
               !selected.some(sel => areQuestionsTooSimilar(q, sel))
             );
             const prioritizedRemaining = sortQuestionsByCompetencyDepth(remaining, selected, 2);
-            const picked = prioritizedRemaining.slice(0, neededForTopic);
-
-            picked.forEach(q => {
-              usedCodes.add(q.questionCode || q.id || '');
-              selected.push(q);
-              topicPickedCounts[tKey] = (topicPickedCounts[tKey] || 0) + 1;
-            });
+            const picked = pickDistinctIntoSelected(prioritizedRemaining, neededForTopic);
+            topicPickedCounts[tKey] = (topicPickedCounts[tKey] || 0) + picked.length;
           }
         });
 
-        // 6. Global Exam Guarantee: If total selected questions < effectiveTotalQs, fill remaining slots from ANY matching unused candidate questions in the pool
+        // 6. Global Exam Guarantee: If total selected questions < effectiveTotalQs, fill remaining slots from ANY matching distinct candidate questions in the pool
         if (selected.length < effectiveTotalQs) {
-          // Pass A: Pick distinct questions without similarity collisions
           const remainingPool = candidatePool.filter(q =>
             selectedTopics.some(t => isQuestionMatchingTopic(q, t)) &&
             !usedCodes.has(q.questionCode || q.id || '') &&
             !selected.some(sel => areQuestionsTooSimilar(q, sel))
           );
           const prioritizedRemaining = sortQuestionsByCompetencyDepth(remainingPool, selected, 2);
-          const picked = prioritizedRemaining.slice(0, effectiveTotalQs - selected.length);
-
-          picked.forEach(q => {
-            usedCodes.add(q.questionCode || q.id || '');
-            selected.push(q);
-          });
-        }
-
-        // Pass B: If still short of target exam questions and candidate pool has available questions,
-        // backfill remaining slots from unused candidates (excluding only exact identical text) so the exam is never cut short
-        if (selected.length < effectiveTotalQs) {
-          const fallbackPool = candidatePool.filter(q =>
-            selectedTopics.some(t => isQuestionMatchingTopic(q, t)) &&
-            !usedCodes.has(q.questionCode || q.id || '') &&
-            !selected.some(sel => {
-              const t1 = (sel.text || sel.questionText || sel.question || '').trim().toLowerCase();
-              const t2 = (q.text || q.questionText || q.question || '').trim().toLowerCase();
-              return t1.length > 0 && t1 === t2;
-            })
-          );
-          const prioritizedFallback = sortQuestionsByCompetencyDepth(fallbackPool, selected, 2);
-          const pickedFallback = prioritizedFallback.slice(0, effectiveTotalQs - selected.length);
-
-          pickedFallback.forEach(q => {
-            usedCodes.add(q.questionCode || q.id || '');
-            selected.push(q);
-          });
+          pickDistinctIntoSelected(prioritizedRemaining, effectiveTotalQs - selected.length);
         }
       }
 
