@@ -138,9 +138,11 @@ export function preprocessMathText(text: any): string {
   str = str.replace(/(^|[\s,;:(!/])\^\s*\\?circ\b/g, '$1{}^\\circ');
   str = str.replace(/(^|[\s,;:(!/])\^{\s*\\?circ\s*}/g, '$1{}^{\\circ}');
 
-  // Heal mismatched opening ( with closing \) or vice versa
+  // Heal mismatched opening ( with closing \) or vice versa, and unclosed \(... \ missing ')'
   str = str.replace(/(?<!\\)\(([^()\n]+?)\\\)/g, '\\($1\\)');
   str = str.replace(/\\\(([^()\n]+?)(?<!\\)\)/g, '\\($1\\)');
+  str = str.replace(/\\\(([^\n]+?)\\(?![()\[\]a-zA-Z])/g, '\\($1\\)');
+  str = str.replace(/\\\[([^\n]+?)\\(?![()\[\]a-zA-Z])/g, '\\[$1\\]');
 
   // Heal any corrupted nested delimiters inside superscripts/subscripts like ^{\(\circ\)} or _{...}
   str = str.replace(/([\^_]\{)\s*\\?\(\s*(\\?[a-zA-Z0-9]+)\s*\\?\)\s*(\})/g, '$1$2$3');
@@ -1782,6 +1784,26 @@ export function validateQuestion(q: any, questionType: 'objective' | 'subjective
     if (duplicatePairs.length > 0) {
       errors.push(`Duplicate or near-identical options detected: ${duplicatePairs.join('; ')}. All options must be mutually distinct choices.`);
     }
+  }
+
+  // Validate balanced LaTeX math delimiters across text, solution, and options
+  const checkMathDelimiters = (val: any, label: string) => {
+    if (typeof val !== 'string' || !val) return;
+    const s = val.trim();
+    const openInline = (s.match(/\\\(/g) || []).length;
+    const closeInline = (s.match(/\\\)/g) || []).length;
+    const openDisp = (s.match(/\\\[/g) || []).length;
+    const closeDisp = (s.match(/\\\]/g) || []).length;
+    if (openInline !== closeInline || openDisp !== closeDisp || /\\\([^)]*\\$/.test(s)) {
+      errors.push(`Malformed or unclosed LaTeX math delimiter in ${label}.`);
+    }
+  };
+  checkMathDelimiters(q.text, 'question text');
+  checkMathDelimiters(q.solution || q.explanation, 'solution');
+  if (Array.isArray(q.options)) {
+    q.options.forEach((opt: any, idx: number) => {
+      checkMathDelimiters(typeof opt === 'object' ? opt.text : opt, `Option ${String.fromCharCode(65 + idx)}`);
+    });
   }
 
   if (!isSubjective) {
