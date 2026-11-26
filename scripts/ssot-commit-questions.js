@@ -60,7 +60,11 @@ async function commitQuestionsFoolproof(questions, { dryRun = false, sourceLabel
       errors.push(`#${i + 1} (${q.questionCode || q.topicCode}): ${valErrs.join('; ')}`);
     }
 
-    const currErrs = validateQuestionCurriculum({ ...normalizedQ, type: typeCode });
+    const currErrs = validateQuestionCurriculum({
+      ...normalizedQ,
+      type: typeCode,
+      chapterName: q.chapterName || q.chapterTitle || q.topicName || q.topic || ''
+    });
     if (!currErrs.valid) {
       errors.push(`#${i + 1} (${q.questionCode || q.topicCode}): Curriculum guard: ${currErrs.errors.join('; ')}`);
     }

@@ -195,11 +195,11 @@ export function validateQuestionCurriculum(q: any): { valid: boolean; errors: st
   const chapterName = String(q.chapterName || q.chapterTitle || '');
   const subjectName = String(q.subject || q.subjectName || '');
 
-  // 1. Numerical Disqualification Guard
-  if (type === 'ONE') {
+  // 1. Numerical Disqualification Guard (Objective ONE + Subjective SSN/SLN)
+  if (type === 'ONE' || type === 'SSN' || type === 'SLN') {
     if (isTopicPurelyQualitative(topicCode, chapterName, subjectName)) {
       errors.push(
-        `[CURRICULUM GUARD] Numerical question (ONE) rejected: Topic '${topicCode}' is purely qualitative/theoretical. ` +
+        `[CURRICULUM GUARD] Numerical question (${type}) rejected: Topic '${topicCode}' is purely qualitative/theoretical. ` +
         `Artificial calculations, fake flow rates, or synthetic arithmetic are strictly forbidden on this topic.`
       );
     }
