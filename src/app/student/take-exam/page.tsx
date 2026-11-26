@@ -141,10 +141,10 @@ function TakeExamContent() {
       // Non-blocking auto-submit on time expiry
       submitExamAction();
     },
-    onTick: () => {
-      // Light-weight ref ticker to prevent 1,800 unnecessary React re-renders and preserve debounce timer
+    onTick: (deltaSeconds: number = 1) => {
+      // Light-weight ref ticker using wall-clock delta so throttled/backgrounded tabs stay accurate
       if (questionTimeSpentRef.current && questionTimeSpentRef.current[currentQIndex] !== undefined) {
-        questionTimeSpentRef.current[currentQIndex] += 1;
+        questionTimeSpentRef.current[currentQIndex] += deltaSeconds;
       }
     }
   });

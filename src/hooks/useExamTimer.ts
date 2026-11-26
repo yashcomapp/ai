@@ -5,7 +5,7 @@ interface UseExamTimerProps {
   initialSeconds: number;
   isPaused: boolean;
   onTimeUp: () => void;
-  onTick?: () => void;
+  onTick?: (deltaSeconds: number) => void;
 }
 
 export function useExamTimer({ initialSeconds, isPaused, onTimeUp, onTick }: UseExamTimerProps) {
@@ -55,6 +55,7 @@ export function useExamTimer({ initialSeconds, isPaused, onTimeUp, onTick }: Use
       if (isPausedRef.current) return;
       const now = Date.now();
       const remaining = Math.max(0, Math.ceil((endTimeRef.current - now) / 1000));
+      const deltaSeconds = Math.max(0, timeRemainingRef.current - remaining);
       
       if (remaining <= 0) {
         if (timerRef.current) {
@@ -63,14 +64,17 @@ export function useExamTimer({ initialSeconds, isPaused, onTimeUp, onTick }: Use
         }
         setTimeRemaining(0);
         timeRemainingRef.current = 0;
+        if (deltaSeconds > 0 && onTickRef.current) {
+          onTickRef.current(deltaSeconds);
+        }
         onTimeUpRef.current();
         return;
       }
 
       setTimeRemaining(remaining);
       timeRemainingRef.current = remaining;
-      if (onTickRef.current) {
-        onTickRef.current();
+      if (deltaSeconds > 0 && onTickRef.current) {
+        onTickRef.current(deltaSeconds);
       }
     };
 

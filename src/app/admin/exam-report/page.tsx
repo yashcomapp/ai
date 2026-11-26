@@ -372,9 +372,21 @@ function ExamReportContent() {
   };
 
   const getReviewTimeTaken = (r: Attempt) => {
-    return Array.isArray(r.questionDetails) && r.questionDetails.length
+    const qSum = Array.isArray(r.questionDetails) && r.questionDetails.length
       ? r.questionDetails.reduce((sum, qd) => sum + (qd.timeSpentSeconds || 0), 0)
-      : (r.durationSpent || 0);
+      : 0;
+    const authoritativeDuration = Number(r.durationSpent) || 0;
+    if (authoritativeDuration > 0 || qSum > 0) {
+      return Math.max(authoritativeDuration, qSum);
+    }
+    if (r.startedAt && r.completedAt) {
+      const startMs = new Date(r.startedAt).getTime();
+      const endMs = new Date(r.completedAt).getTime();
+      if (!isNaN(startMs) && !isNaN(endMs) && endMs > startMs) {
+        return Math.round((endMs - startMs) / 1000);
+      }
+    }
+    return 0;
   };
 
   const getStudentBatchName = (studentCode: string) => {
