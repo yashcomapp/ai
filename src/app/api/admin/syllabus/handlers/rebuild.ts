@@ -75,9 +75,9 @@ export async function runIndexRebuild() {
         const subtopics = Array.isArray(topic.subtopics) ? topic.subtopics : [];
         const hasSubs = subtopics.length > 0;
         const subtopicsSum = hasSubs
-          ? subtopics.reduce((acc: number, s: any) => acc + (Number(s.targetQuestions) || 80), 0)
+          ? subtopics.reduce((acc: number, s: any) => acc + (Number(s.targetQuestions) || 65), 0)
           : 0;
-        const topicTarget = hasSubs ? subtopicsSum : (Number(topic.targetQuestions) || 80);
+        const topicTarget = hasSubs ? subtopicsSum : (Number(topic.targetQuestions) || 65);
         const topicClassification = 'standard';
 
         const docRef = adminDb.collection('syllabusTopicIndex').doc(topicCode);
@@ -124,7 +124,7 @@ export async function runIndexRebuild() {
           } else if (subtopic && typeof subtopic === 'object') {
             subNum = subtopic.number ? String(subtopic.number) : `${topicNum}.${sIdx + 1}`;
             subName = subtopic.name || subtopic.title || '';
-            subTarget = Number(subtopic.targetQuestions) || 80;
+            subTarget = Number(subtopic.targetQuestions) || 65;
             subClassification = 'standard';
           }
 

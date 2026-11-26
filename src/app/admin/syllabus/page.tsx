@@ -1881,7 +1881,7 @@ Return ONLY a valid JSON object matching the schema below:
                 Competitive Question Standard
               </label>
               <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--warning)' }}>
-                🎯 Target: 80 Questions (40 Exam | 20 Practice | 20 Foundation)
+                🎯 Target: 65 Questions (35 Exam | 20 Practice | 10 Foundation)
               </div>
             </div>
 
@@ -1904,7 +1904,7 @@ Return ONLY a valid JSON object matching the schema below:
                   value={topicModal.targetQuestions}
                   min={5}
                   max={200}
-                  placeholder="e.g. 80"
+                  placeholder="e.g. 65"
                   onChange={(e) => setTopicModal(prev => ({ ...prev, targetQuestions: e.target.value === '' ? '' : (parseInt(e.target.value, 10) || '') }))}
                   style={{ width: '100%', padding: '8px', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', background: 'var(--surface)', color: 'var(--text)', fontSize: '12px' }}
                 />
@@ -1967,7 +1967,7 @@ Return ONLY a valid JSON object matching the schema below:
                 Competitive Question Standard
               </label>
               <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--warning)' }}>
-                🎯 Target: 80 Questions (40 Exam | 20 Practice | 20 Foundation)
+                🎯 Target: 65 Questions (35 Exam | 20 Practice | 10 Foundation)
               </div>
             </div>
 
@@ -1978,7 +1978,7 @@ Return ONLY a valid JSON object matching the schema below:
                 value={subtopicModal.targetQuestions}
                 min={5}
                 max={200}
-                placeholder="e.g. 80"
+                placeholder="e.g. 65"
                 onChange={(e) => setSubtopicModal(prev => ({ ...prev, targetQuestions: e.target.value === '' ? '' : (parseInt(e.target.value, 10) || '') }))}
                 style={{ width: '100%', padding: '8px', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', background: 'var(--surface)', color: 'var(--text)', fontSize: '12px' }}
               />

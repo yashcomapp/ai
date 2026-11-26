@@ -104,7 +104,7 @@ function CreateQBContent() {
   const [topicWeightageMode, setTopicWeightageMode] = useState<'custom_counts' | 'equal' | 'percentage'>('custom_counts');
   const [topicWeightageMap, setTopicWeightageMap] = useState<Record<string, number | string>>({});
   const [topicCustomCounts, setTopicCustomCounts] = useState<Record<string, number | string>>({});
-  const [defaultPerTopicCount, setDefaultPerTopicCount] = useState<number | string>(80);
+  const [defaultPerTopicCount, setDefaultPerTopicCount] = useState<number | string>(65);
   const [totalBatchQuestions, setTotalBatchQuestions] = useState<number | string>(80);
 
 
@@ -2058,15 +2058,15 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
                         </button>
                         <button
                           type="button"
-                          className={`pill-btn ${Number(defaultPerTopicCount) === 80 ? 'active' : ''}`}
+                          className={`pill-btn ${Number(defaultPerTopicCount) === 65 ? 'active' : ''}`}
                           style={{ padding: '3px 8px', fontSize: '10.5px' }}
                           onClick={() => {
-                            setDefaultPerTopicCount(80);
-                            if (selectedTopics[0]) setTopicCustomCounts({ [topicKey(selectedTopics[0])]: 80 });
+                            setDefaultPerTopicCount(65);
+                            if (selectedTopics[0]) setTopicCustomCounts({ [topicKey(selectedTopics[0])]: 65 });
                           }}
-                          title="Medium topic: 80 Questions"
+                          title="Standard topic: 65 Questions (35 Exam | 20 Practice | 10 Foundation)"
                         >
-                          Medium (80)
+                          Standard (65)
                         </button>
                         <button
                           type="button"

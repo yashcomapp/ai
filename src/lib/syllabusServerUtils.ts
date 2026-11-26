@@ -90,9 +90,9 @@ export async function getCachedSyllabusTopicsMap(classCodes: string[] = []): Pro
         const subtopics = Array.isArray(t.subtopics) ? t.subtopics : [];
         const hasSubs = subtopics.length > 0;
         const subtopicsSum = hasSubs
-          ? subtopics.reduce((acc: number, s: any) => acc + (Number(s?.targetQuestions) || 80), 0)
+          ? subtopics.reduce((acc: number, s: any) => acc + (Number(s?.targetQuestions) || 65), 0)
           : 0;
-        const topicTarget = hasSubs ? subtopicsSum : (Number(t.targetQuestions) || 80);
+        const topicTarget = hasSubs ? subtopicsSum : (Number(t.targetQuestions) || 65);
         const topicClassification = 'standard';
 
         const tObj = {
@@ -136,7 +136,7 @@ export async function getCachedSyllabusTopicsMap(classCodes: string[] = []): Pro
           } else if (st && typeof st === 'object') {
             subNum = st.topicNumber ? String(st.topicNumber) : (st.number ? String(st.number) : `${tNum}.${sIdx + 1}`);
             subName = st.name || st.title || '';
-            subTarget = Number(st.targetQuestions) || 80;
+            subTarget = Number(st.targetQuestions) || 65;
             subClassification = 'standard';
           }
 

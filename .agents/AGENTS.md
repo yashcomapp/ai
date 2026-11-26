@@ -162,9 +162,9 @@
   - A 10-second coalescing window and 5-second post-return stabilization buffer must be strictly maintained.
   - `useProctoring.ts` must NEVER duplicate `setTabViolations` calls in its `onViolation` callback.
 
-### T. Unified Topic Standard & Practice Quotas (80 Qs Standard Pack / 20 Qs Practice Vault)
+### T. Unified Topic Standard & Practice Quotas (65 Qs Standard Pack / 20 Qs Practice Vault)
 - **Rule**: All topics and subtopics adhere to ONE unified competitive standard across all 3 vaults:
-  - **Standard Topic Pack**: **80 Questions Total** (strictly **40 Exam Vault**, **20 Practice Vault**, **20 Foundation Vault**).
+  - **Standard Topic Pack**: **65 Questions Total** (strictly **35 Exam Vault**, **20 Practice Vault**, **10 Foundation Vault** — high difficulty & reasoning questions).
   - **Single Competitive Quality Standard**: Every question across all 3 vaults must be of competitive examination standard (rigorous conceptual depth, analytical reasoning, and 4 plausible options with structured 3-part step-by-step solutions).
   - **Universal Practice Quota & Vault Architecture**:
     - Standard **2 Practice Sets** ($2 \times 6 = 12$ questions target, max 2 sets to achieve mastery).
