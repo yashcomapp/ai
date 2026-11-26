@@ -5,7 +5,7 @@ import { verifyRole } from '@/lib/auth';
 import { QuestionRepository } from '@/repositories/question.repository';
 import { ChunkedBatch } from '@/lib/firebase/batch';
 import { validateQuestion, normalizeBloomLevel, OBJECTIVE_QUESTION_TYPES, SUBJECTIVE_QUESTION_TYPES, QUESTION_TYPE_MAP, cleanStringForMatch, toCanonicalQuestionType, isObjectiveType, isSubjectiveType, stripCitations, canonicalizeQuestionAnswers, isQuestionInVault } from '@/lib/questionTypes';
-import { validateBatchDistinctness } from '@/lib/questionSimilarity';
+import { validateBatchDistinctness, areQuestionsTooSimilar } from '@/lib/questionSimilarity';
 import { validateQuestionCurriculum } from '@/lib/curriculumGuard';
 import { getFromCache, setInCache, invalidateCache } from '@/lib/firebase/cache';
 import { 
@@ -385,6 +385,44 @@ export async function POST(req: NextRequest) {
         });
       }
 
+      // 1b. Check incoming batch against existing Firestore questions in the same topicCodes (Rule 2J)
+      const incomingTopicCodes = Array.from(new Set(processedItems.map(p => p.topicCode).filter(Boolean)));
+      const existingByTopic = new Map<string, any[]>();
+      for (let i = 0; i < incomingTopicCodes.length; i += 10) {
+        const chunk = incomingTopicCodes.slice(i, i + 10);
+        const snap = await adminDb.collection('questions')
+          .where('topicCode', 'in', chunk)
+          .select('questionCode', 'text', 'assertion', 'reason', 'type', 'options', 'correctAnswer', 'correctAnswers', 'topicCode')
+          .get();
+        snap.docs.forEach(d => {
+          const data = d.data();
+          const tc = data.topicCode || '';
+          if (!existingByTopic.has(tc)) existingByTopic.set(tc, []);
+          existingByTopic.get(tc)!.push({ id: d.id, ...data });
+        });
+      }
+
+      const dbDuplicateErrors: string[] = [];
+      for (let idx = 0; idx < processedItems.length; idx++) {
+        const p = processedItems[idx];
+        const existingList = existingByTopic.get(p.topicCode) || [];
+        const selfId = p.item.id || p.item.questionCode || '';
+        const match = existingList.find(ex => {
+          if (selfId && (ex.id === selfId || ex.questionCode === selfId)) return false;
+          return areQuestionsTooSimilar(p.item, ex);
+        });
+        if (match) {
+          dbDuplicateErrors.push(`Question #${idx + 1} duplicates or is a loop/template variant of existing question ${match.questionCode || match.id}.`);
+          if (dbDuplicateErrors.length >= 5) break;
+        }
+      }
+      if (dbDuplicateErrors.length > 0) {
+        return NextResponse.json({
+          message: `Deduplication Guardrail Violation (Database): ${dbDuplicateErrors.slice(0, 3).join(' | ')}`,
+          errors: dbDuplicateErrors
+        }, { status: 400 });
+      }
+
       // 2. Transactionally reserve sequence numbers only for new questions
       const startSeqMap: Record<string, number> = {};
       const neededCounterIds = Object.keys(counterNeeds);
@@ -551,6 +589,33 @@ export async function POST(req: NextRequest) {
 
     const counterId = `${topicCode}-${typeCode}`;
     let finalCode = id || '';
+
+    // Check against existing questions in the same topicCode to prevent duplicates / loop variants (Rule 2J)
+    const existingTopicSnap = await adminDb.collection('questions')
+      .where('topicCode', '==', topicCode)
+      .select('questionCode', 'text', 'assertion', 'reason', 'type', 'options', 'correctAnswer', 'correctAnswers')
+      .get();
+    const candidateIncoming = {
+      text: stripCitations(text),
+      assertion: stripCitations(assertion || ''),
+      reason: stripCitations(reason || ''),
+      type: typeCode,
+      options: Array.isArray(options) ? options : [],
+      correctAnswer: body.correctAnswer,
+      correctAnswers: body.correctAnswers
+    };
+    const dupMatch = existingTopicSnap.docs.find(d => {
+      const ex = { id: d.id, ...d.data() as any };
+      if (id && (ex.id === id || ex.questionCode === id)) return false;
+      if (finalCode && (ex.id === finalCode || ex.questionCode === finalCode)) return false;
+      return areQuestionsTooSimilar(candidateIncoming, ex);
+    });
+    if (dupMatch) {
+      const matchData = dupMatch.data();
+      return NextResponse.json({
+        message: `Deduplication Guardrail Violation: This question duplicates or is a loop/template variant of existing question ${matchData.questionCode || dupMatch.id}.`
+      }, { status: 400 });
+    }
 
     // If adding a new question, or if existing question's code doesn't match canonical counterId prefix
     if (!finalCode || !finalCode.startsWith(`${counterId}-`)) {

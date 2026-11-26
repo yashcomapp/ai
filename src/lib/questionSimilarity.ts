@@ -134,6 +134,11 @@ export function areQuestionsTooSimilar(
 
   const fullWords1 = norm1.split(' ').filter(Boolean);
   const fullWords2 = norm2.split(' ').filter(Boolean);
+  const minW = Math.min(fullWords1.length, fullWords2.length);
+  const maxW = Math.max(fullWords1.length, fullWords2.length);
+  if (maxW > 0 && minW / maxW < 0.45) {
+    return false;
+  }
   const wordSeqSim = calculateWordSequenceSimilarity(fullWords1, fullWords2);
 
   // 1b. Template/loop-based numeric variant check (e.g. "5 pipes... 7 pipes" vs "7 pipes... 9 pipes")
