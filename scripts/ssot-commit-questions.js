@@ -16,6 +16,7 @@ const { validateQuestionCurriculum } = require('../src/lib/curriculumGuard.ts');
 const { syncTopicCountsToSyllabus } = require('../src/lib/syllabusSync.ts');
 
 const PLACEHOLDER_REGEX = /\b(todo|tbd|placeholder|lorem ipsum|sample question|dummy question|test question|coming soon|insert text)\b/i;
+const BAD_TEMPLATE_REGEX = /(recall the established principles|scientifically accurate conclusion when|identify the scientifically verified fact concerning|which principle governs .+ regarding|accurately applied when|correct scientific outcome is|in maharashtra state board class \d+|in balbharti class \d+)/i;
 
 async function commitQuestionsFoolproof(questions, { dryRun = false, sourceLabel = 'manual' } = {}) {
   if (!Array.isArray(questions) || questions.length === 0) {
@@ -36,6 +37,10 @@ async function commitQuestionsFoolproof(questions, { dryRun = false, sourceLabel
     }
     if (PLACEHOLDER_REGEX.test(text) || PLACEHOLDER_REGEX.test(String(q.solution || ''))) {
       errors.push(`#${i + 1} (${q.questionCode || '?'}): Placeholder text detected.`);
+      continue;
+    }
+    if (BAD_TEMPLATE_REGEX.test(text) || BAD_TEMPLATE_REGEX.test(String(q.solution || q.explanation || ''))) {
+      errors.push(`#${i + 1} (${q.questionCode || '?'}): Prohibited synthetic template/board-prefix wording detected.`);
       continue;
     }
     if (!q.topicCode || !q.boardCode || !q.class || !q.subjectCode) {
