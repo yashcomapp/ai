@@ -127,6 +127,17 @@ async function commitQuestionsFoolproof(questions, { dryRun = false, sourceLabel
   }
 
   // 4. Allocate canonical sequence numbers transactionally via questionCounters
+  const maxExistingSeq = {};
+  for (const [tc, list] of existingByTopic.entries()) {
+    for (const ex of list) {
+      const t = toCanonicalQuestionType(ex.type || 'OSC');
+      const cid = `${tc}-${t}`;
+      const m = String(ex.questionCode || ex.id || '').match(/-(\d+)$/);
+      const seq = m ? parseInt(m[1], 10) : 0;
+      if (seq > (maxExistingSeq[cid] || 0)) maxExistingSeq[cid] = seq;
+    }
+  }
+
   const counterNeeds = {};
   for (const q of questions) {
     const typeCode = toCanonicalQuestionType(q.type || 'OSC');
@@ -142,7 +153,8 @@ async function commitQuestionsFoolproof(questions, { dryRun = false, sourceLabel
       const refs = chunkCids.map(cid => adminDb.collection('questionCounters').doc(cid));
       const snaps = await tx.getAll(...refs);
       for (const s of snaps) {
-        const current = s.exists && s.data() ? (s.data().nextSequence || 1) : 1;
+        const counterCurrent = s.exists && s.data() ? (s.data().nextSequence || 1) : 1;
+        const current = Math.max(counterCurrent, (maxExistingSeq[s.id] || 0) + 1);
         startSeqMap[s.id] = current;
         tx.set(s.ref, { nextSequence: current + counterNeeds[s.id] }, { merge: true });
       }
