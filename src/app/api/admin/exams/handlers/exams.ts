@@ -1113,7 +1113,7 @@ export async function POST(req: NextRequest) {
       
       questions.forEach((q: any) => {
         const qType = String(q.type || '').toUpperCase();
-        if (qType === 'OAR' || qType === 'ASSERTION_REASON' || qType.startsWith('S') || !Array.isArray(q.options) || q.options.length < 2) {
+        if (qType !== 'OSC' || !Array.isArray(q.options) || q.options.length < 2) {
           updatedQuestions.push(q);
           return;
         }
@@ -1138,10 +1138,14 @@ export async function POST(req: NextRequest) {
           });
         }
 
+        const movedOpt = newOptions[targetIdx];
+        const movedText = isObjectFormat ? String(movedOpt?.text || movedOpt?.label || movedOpt?.value || '').trim() : String(movedOpt || '').trim();
+
         const qRef = adminDb.collection('questions').doc(q.id || q.questionCode);
         batch.update(qRef, {
           options: newOptions,
           correctAnswer: targetLetter,
+          correctAnswers: movedText ? [movedText] : [targetLetter],
           updatedAt: admin.firestore.FieldValue.serverTimestamp()
         });
 

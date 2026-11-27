@@ -5,7 +5,7 @@ import { verifyRole, verifyAnyRole, isStudentLimited } from '@/lib/auth';
 import { ExamRepository } from '@/repositories/exam.repository';
 import { ExamService, isAssignmentApplicableToStudent } from '@/services/exam.service';
 import { AttemptService } from '@/services/attempt.service';
-import { deriveTopicCodeFromQuestionCode, evaluateQuestionAnswer, sanitizeQuestionsForStudent } from '@/lib/questionTypes';
+import { deriveTopicCodeFromQuestionCode, evaluateQuestionAnswer, isMultipleChoiceType, sanitizeQuestionsForStudent } from '@/lib/questionTypes';
 import { invalidateCache } from '@/lib/firebase/cache';
 import { ExamReviewService } from '@/services/examReview.service';
 import { parseDateInput, getMidnightIST } from '@/lib/dateUtils';
@@ -613,9 +613,12 @@ export async function POST(req: NextRequest) {
         const uAns = userAnswers[idx]?.answer;
         const qMarks = q.marks || 1;
         totalMarks += qMarks;
+        const expectedAns = isMultipleChoiceType(q.type)
+          ? (Array.isArray(q.correctAnswers) && q.correctAnswers.length > 0 ? q.correctAnswers : q.correctAnswer)
+          : (q.correctAnswer || q.answer);
         if (!uAns || uAns === '') {
           unattemptedQuestions.push({ questionId: q.id || q.questionCode, qIdx: idx, marks: qMarks });
-        } else if (evaluateQuestionAnswer(q.type || 'OSC', uAns, q.correctAnswer || q.answer, q.options)) {
+        } else if (evaluateQuestionAnswer(q.type || 'OSC', uAns, expectedAns, q.options)) {
           score += qMarks;
         } else {
           wrongAnswers.push({ questionId: q.id || q.questionCode, qIdx: idx, marks: qMarks, userAnswer: uAns });

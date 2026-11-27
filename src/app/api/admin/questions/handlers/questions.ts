@@ -4,7 +4,7 @@ import { adminDb } from '@/lib/firebase/admin';
 import { verifyRole } from '@/lib/auth';
 import { QuestionRepository } from '@/repositories/question.repository';
 import { ChunkedBatch } from '@/lib/firebase/batch';
-import { validateQuestion, normalizeBloomLevel, OBJECTIVE_QUESTION_TYPES, SUBJECTIVE_QUESTION_TYPES, QUESTION_TYPE_MAP, cleanStringForMatch, toCanonicalQuestionType, isObjectiveType, isSubjectiveType, stripCitations, canonicalizeQuestionAnswers, isQuestionInVault } from '@/lib/questionTypes';
+import { validateQuestion, normalizeBloomLevel, OBJECTIVE_QUESTION_TYPES, SUBJECTIVE_QUESTION_TYPES, QUESTION_TYPE_MAP, cleanStringForMatch, toCanonicalQuestionType, isObjectiveType, isSubjectiveType, stripCitations, canonicalizeQuestionAnswers, isQuestionInVault, isMultipleChoiceType } from '@/lib/questionTypes';
 import { validateBatchDistinctness, areQuestionsTooSimilar } from '@/lib/questionSimilarity';
 import { validateQuestionCurriculum } from '@/lib/curriculumGuard';
 import { getFromCache, setInCache, invalidateCache } from '@/lib/firebase/cache';
@@ -685,6 +685,9 @@ export async function POST(req: NextRequest) {
 
     const { correctAnswer: canonicalAns, correctAnswers: canonicalAnsList } = canonicalizeQuestionAnswers({
       ...body,
+      // When editing a single question and correctAnswer is explicitly provided for single-choice/OAR,
+      // do not let stale correctAnswers from the form override the updated correctAnswer.
+      ...(id && body.correctAnswer !== undefined && !isMultipleChoiceType(typeCode) ? { correctAnswers: undefined } : {}),
       type: typeCode,
       options: cleanOptions
     });

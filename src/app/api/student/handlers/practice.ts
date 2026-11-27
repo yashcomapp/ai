@@ -5,7 +5,8 @@ import { adminDb } from '@/lib/firebase/admin';
 import { verifyRole, isStudentLimited } from '@/lib/auth';
 import { QuestionRepository } from '@/repositories/question.repository';
 import { PracticeService } from '@/services/practice.service';
-import { shuffleArray, isObjectiveType, isSingleChoiceType, isMultipleChoiceType, isAssertionReasonType, isQuestionQuarantined, DEFAULT_ASSERTION_REASON_OPTIONS, isQuestionInVault } from '@/lib/questionTypes';
+import { shuffleArray, isObjectiveType, isSingleChoiceType, isMultipleChoiceType, isAssertionReasonType, isQuestionQuarantined, DEFAULT_ASSERTION_REASON_OPTIONS, isQuestionInVault, validateQuestion } from '@/lib/questionTypes';
+import { evaluateQuestionConsistency } from '@/app/api/admin/questions/handlers/auditConsistency';
 import { getDateKeyIST } from '@/lib/dateUtils';
 import { getRequiredConfidence } from '@/lib/studentDb';
 import { MASTERY_THRESHOLDS } from '@/lib/dashboardMetrics';
@@ -301,6 +302,9 @@ export async function GET(req: NextRequest) {
     const validObjectiveQuestions = rawTopicQuestions.filter((q: any) => {
       if (!q.type || !isObjectiveType(q.type)) return false;
       if (isQuestionQuarantined(q)) return false;
+      if (validateQuestion(q, 'objective').length > 0) return false;
+      const consistencyAnomaly = evaluateQuestionConsistency(q, q.id);
+      if (consistencyAnomaly && consistencyAnomaly.confidence === 'HIGH') return false;
       if (q.type === 'ONE' && isTopicPurelyQualitative(q.topicCode || topicCode, q.chapterName || q.chapterTitle, q.subject)) {
         return false;
       }
