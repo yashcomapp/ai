@@ -44,8 +44,16 @@ export default function AdminAttendancePage() {
 
   const todayStr = getISTDateString();
   const [selectedDate, setSelectedDate] = useState(todayStr);
-  const [batches, setBatches] = useState<Batch[]>([]);
   const [selectedBatchId, setSelectedBatchId] = useState('');
+
+  // Shared SWR Batches
+  const { batches } = useAdminBatches<Batch>();
+
+  useEffect(() => {
+    if (batches.length > 0) {
+      setSelectedBatchId(prev => prev || batches[0].id);
+    }
+  }, [batches]);
 
   const [roster, setRoster] = useState<StudentRecord[]>([]);
   const [rosterLoading, setRosterLoading] = useState(false);
@@ -67,16 +75,6 @@ export default function AdminAttendancePage() {
   const [newLeaveType, setNewLeaveType] = useState('sick');
   const [newLeaveRemarks, setNewLeaveRemarks] = useState('');
   const [leaveLoading, setLeaveLoading] = useState(false);
-
-  // Shared SWR Batches
-  const { batches: swrBatches } = useAdminBatches();
-
-  useEffect(() => {
-    if (swrBatches && swrBatches.length > 0) {
-      setBatches(swrBatches);
-      setSelectedBatchId(prev => prev || swrBatches[0].id);
-    }
-  }, [swrBatches]);
 
   // Fetch leaves list
   async function loadLeaves(limit = leavesLimit) {

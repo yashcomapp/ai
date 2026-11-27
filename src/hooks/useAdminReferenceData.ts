@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo } from 'react';
 import useSWR, { mutate as globalMutate } from 'swr';
 import { useAuth } from '@/context/AuthContext';
 import { fetchWithToken } from '@/lib/swrFetcher';
@@ -24,9 +25,18 @@ export function useAdminBatches<TBatch = any, TStudent = any>(options?: { enable
     }
   );
 
+  const batches = useMemo(
+    () => sortBatchesAscending((data?.batches || []) as TBatch[]),
+    [data?.batches]
+  );
+  const students = useMemo(
+    () => ((data?.students || []) as TStudent[]),
+    [data?.students]
+  );
+
   return {
-    batches: sortBatchesAscending((data?.batches || []) as TBatch[]),
-    students: ((data?.students || []) as TStudent[]),
+    batches,
+    students,
     raw: data,
     isLoading: !data && !error && isLoading,
     isValidating,
@@ -59,10 +69,23 @@ export function useAdminStudents<TStudent = any, TBatch = any>(options?: { enabl
     }
   );
 
+  const students = useMemo(
+    () => ((data?.students || []) as TStudent[]),
+    [data?.students]
+  );
+  const batches = useMemo(
+    () => sortBatchesAscending((data?.batches || []) as TBatch[]),
+    [data?.batches]
+  );
+  const alerts = useMemo(
+    () => (data?.alerts || []),
+    [data?.alerts]
+  );
+
   return {
-    students: ((data?.students || []) as TStudent[]),
-    batches: sortBatchesAscending((data?.batches || []) as TBatch[]),
-    alerts: data?.alerts || [],
+    students,
+    batches,
+    alerts,
     raw: data,
     isLoading: !data && !error && isLoading,
     isValidating,
