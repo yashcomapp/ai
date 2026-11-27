@@ -3,6 +3,7 @@ import { adminDb } from '@/lib/firebase/admin';
 import { verifyRole } from '@/lib/auth';
 import * as admin from 'firebase-admin';
 import { isTopicPurelyQualitative } from '@/lib/curriculumGuard';
+import { QuestionResolutionService } from '@/services/questionResolution.service';
 
 export interface ConsistencyAnomaly {
   docId: string;
@@ -104,6 +105,29 @@ export function evaluateQuestionConsistency(q: any, docId: string): ConsistencyA
           currentCorrectAnswer: cAns,
           fixedCorrectAnswer: expectedLetter,
           reason: `Option ${expectedLetter} has isCorrect: true, but correctAnswer is ${cAns}.`,
+          confidence: 'HIGH'
+        };
+      }
+    }
+  }
+
+  // 2b. Check: OSC correctAnswer letter contradicting single-element correctAnswers text
+  if (type === 'OSC' && /^[A-D]$/.test(cAns) && Array.isArray(q.correctAnswers) && q.correctAnswers.length === 1 && options.length > 0) {
+    const cIdx = cAns.charCodeAt(0) - 65;
+    const currentOptText = getOptText(cIdx);
+    const expectedText = String(q.correctAnswers[0] || '').trim();
+    if (expectedText && currentOptText !== expectedText) {
+      const matchingIdx = options.findIndex((_: any, i: number) => getOptText(i) === expectedText);
+      if (matchingIdx !== -1) {
+        const expectedLetter = String.fromCharCode(65 + matchingIdx);
+        return {
+          docId,
+          qCode,
+          topicCode: q.topicCode || '',
+          type,
+          currentCorrectAnswer: cAns,
+          fixedCorrectAnswer: expectedLetter,
+          reason: `correctAnswers[0] ("${expectedText}") is at Option ${expectedLetter}, but correctAnswer is ${cAns} ("${currentOptText}").`,
           confidence: 'HIGH'
         };
       }
@@ -255,10 +279,28 @@ export async function POST(req: NextRequest) {
 
     await batch.commit();
 
+    // Rescore any affected Exam & Practice submissions via SSOT
+    const rescoreResults = [];
+    for (const fix of fixes) {
+      if (!fix.docId || !fix.fixedCorrectAnswer) continue;
+      const prev = backupData[fix.docId];
+      if (!prev) continue;
+      const updatedDoc = {
+        ...prev,
+        id: fix.docId,
+        questionCode: prev.questionCode || fix.qCode || fix.docId,
+        correctAnswer: fix.fixedCorrectAnswer,
+        ...(fix.fixedNumericalValue !== undefined ? { numericalValue: fix.fixedNumericalValue } : {}),
+      };
+      const res = await QuestionResolutionService.rescoreQuestionAcrossAllSubmissions(updatedDoc);
+      rescoreResults.push(res);
+    }
+
     return NextResponse.json({
       success: true,
       backupId,
-      appliedCount: fixes.length
+      appliedCount: fixes.length,
+      rescoreResults,
     });
   } catch (err: any) {
     console.error('Audit Consistency POST Error:', err);

@@ -5,7 +5,7 @@ import { adminDb } from '@/lib/firebase/admin';
 import { getCachedBatches } from '@/lib/firebase/cache';
 import { verifyRole } from '@/lib/auth';
 import { ChunkedBatch } from '@/lib/firebase/batch';
-import { evaluateQuestionAnswer, isMultipleChoiceType, parseAnswerList } from '@/lib/questionTypes';
+import { QuestionResolutionService } from '@/services/questionResolution.service';
 import { getCachedSyllabus, getFromCache, setInCache } from '@/lib/firebase/cache';
 import { ReportCacheManager } from '@/lib/reportCache';
 import { isDemoUser, resolveTopicNames } from '@/lib/studentDb';
@@ -450,108 +450,18 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ message: 'Missing parameters (examId, questionId, newCorrectAnswer).' }, { status: 400 });
       }
 
-      // 1. Update question in questions collection
-      let questionRef: any = adminDb.collection('questions').doc(questionId);
-      let questionSnap: any = await questionRef.get();
-      if (!questionSnap.exists) {
-        const queryByCode = await adminDb.collection('questions').where('questionCode', '==', questionId).limit(1).get();
-        if (!queryByCode.empty) {
-          questionSnap = queryByCode.docs[0];
-          questionRef = questionSnap.ref;
-        } else {
-          return NextResponse.json({ message: 'Question not found.' }, { status: 404 });
-        }
-      }
-      const questionData = questionSnap.data()!;
-      const qType = questionData.type || 'single_mcq';
-      const isMulti = isMultipleChoiceType(qType);
-      
-      let newAnswersList: string[] = [];
-      if (Array.isArray(newCorrectAnswer)) {
-        newAnswersList = newCorrectAnswer.map(s => String(s).trim()).filter(Boolean);
-      } else if (isMulti) {
-        newAnswersList = parseAnswerList(newCorrectAnswer);
-      } else {
-        newAnswersList = [String(newCorrectAnswer).trim()];
-      }
-
-      const primaryAnswer = isMulti ? newAnswersList.join(', ') : (newAnswersList[0] || String(newCorrectAnswer));
-
-      await questionRef.update({ 
-        correctAnswer: primaryAnswer,
-        correctAnswers: newAnswersList
+      const summary = await QuestionResolutionService.resolveAndRescoreQuestion({
+        questionCode: questionId,
+        updates: { correctAnswer: newCorrectAnswer },
+        clearDisputed: true,
+        resolvedBy: adminUser.decodedToken?.email || adminUser.userData?.email || 'admin',
       });
 
-      const qOptions = questionData.options || [];
-
-      // 2. Fetch all reviews for this exam to re-score
-      const reviewsSnap = await adminDb.collection('reviews').where('examId', '==', finalExamId).get();
-      const { snap: examSnap } = await resolveObjectiveExam(finalExamId || examId);
-      const examData = examSnap && examSnap.exists ? examSnap.data()! : {};
-      const negativePerWrong = Number(examData.negativeMarks) || 0;
-
-      const batch = new ChunkedBatch(adminDb);
-      let updatedCount = 0;
-
-      for (const doc of reviewsSnap.docs) {
-        const r = doc.data();
-        const details = r.questionDetails || [];
-        const idx = details.findIndex((qd: any) => qd.questionCode === questionId);
-        if (idx === -1) continue;
-
-        const qd = details[idx];
-        const wasCorrect = qd.isCorrect;
-        const wasAttempted = qd.isAttempted;
-        
-        let nowCorrect = false;
-        if (wasAttempted) {
-          nowCorrect = evaluateQuestionAnswer(qType, qd.userAnswer, isMulti ? newAnswersList : primaryAnswer, qOptions);
-        }
-
-        const isAnswerUnchanged = isMulti
-          ? (Array.isArray(qd.correctAnswers) && JSON.stringify(qd.correctAnswers.sort()) === JSON.stringify(newAnswersList.sort()))
-          : String(qd.correctAnswer) === String(primaryAnswer);
-
-        if (wasCorrect === nowCorrect && isAnswerUnchanged) continue;
-
-        const updatedDetails = [...details];
-        updatedDetails[idx] = { 
-          ...qd, 
-          correctAnswer: isMulti ? newAnswersList : primaryAnswer,
-          ...(isMulti ? { correctAnswers: newAnswersList } : {}),
-          isCorrect: nowCorrect 
-        };
-        
-        const marks = qd.marks || 1;
-        let newScore = r.score || 0;
-        if (wasCorrect && !nowCorrect) {
-          newScore -= marks;
-          if (wasAttempted) newScore -= negativePerWrong;
-        } else if (!wasCorrect && nowCorrect) {
-          newScore += marks;
-          if (wasAttempted) newScore += negativePerWrong;
-        }
-        // Negative marks awarded across all classes per grading policy
-        const newPct = r.totalMarks ? parseFloat(((newScore / r.totalMarks) * 100).toFixed(1)) : r.percentage;
-
-        batch.update(doc.ref, {
-          questionDetails: updatedDetails,
-          score: newScore,
-          percentage: newPct
-        });
-
-        // Also update matching examAttempts document
-        const attemptRef = adminDb.collection('examAttempts').doc(doc.id);
-        batch.update(attemptRef, {
-          score: newScore,
-          percentage: newPct
-        });
-        updatedCount++;
-      }
-
-      await batch.commit();
-      await ReportCacheManager.invalidatePattern(finalExamId || examId);
-      return NextResponse.json({ message: 'Answer updated and all attempts re-scored successfully.', updatedCount });
+      return NextResponse.json({
+        message: 'Answer updated and all exam/practice attempts re-scored via SSOT successfully.',
+        updatedCount: summary.updatedReviews + summary.updatedPracticeSubmissions,
+        summary,
+      });
     }
 
     if (!attemptId) {
