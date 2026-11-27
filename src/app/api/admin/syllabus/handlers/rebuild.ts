@@ -3,6 +3,7 @@ import * as admin from 'firebase-admin';
 import { adminDb } from '@/lib/firebase/admin';
 import { verifyRole } from '@/lib/auth';
 import { getCanonicalBoardCode, getCanonicalBoardName } from '@/lib/syllabusUtils';
+import { markSyllabusStatsStale } from '@/lib/syllabusStats';
 
 // Rebuild helper logic (adapted from syllabusIndexService.js)
 export async function runIndexRebuild() {
@@ -294,6 +295,7 @@ export async function POST(req: NextRequest) {
 
     // Default action: rebuild index
     const summary = await runIndexRebuild();
+    await markSyllabusStatsStale({ type: 'all' });
     return NextResponse.json({ success: true, summary });
 
   } catch (error: any) {

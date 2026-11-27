@@ -17,6 +17,15 @@ import {
 import { getCachedSyllabus, getCachedTemplates, invalidateCache } from '@/lib/firebase/cache';
 import { assertCanonicalExamPayload } from '@/lib/canonicalValidation';
 import { isTopicPurelyQualitative } from '@/lib/curriculumGuard';
+import {
+  SYLLABUS_STATS_COLLECTION,
+  SYLLABUS_STATS_VERSION,
+  SyllabusStatsDoc,
+  applySyllabusStatsToSubjectDoc,
+  markSyllabusStatsStale,
+  ChapterStatsEntry,
+  TopicStatsEntry,
+} from '@/lib/syllabusStats';
 
 
 const INITIAL_METADATA_TTL = 300000; // 5 minutes
@@ -259,40 +268,78 @@ export async function GET(req: NextRequest) {
     const reqClass = searchParams.get('classNum') || searchParams.get('class') || '';
     const reqSubject = searchParams.get('subject') || '';
     const reqCategory = searchParams.get('examCategory') || searchParams.get('vault') || 'standard';
+    const refresh = searchParams.get('refresh') === 'true';
     const activeVault = (reqCategory === 'foundation' || reqCategory === 'mock') ? 'foundation' : (reqCategory === 'practice' ? 'practice' : 'exam');
     const isSingleDocQuery = Boolean(docId || (reqBoard && reqClass && reqSubject));
 
     if (isSingleDocQuery) {
       const cacheKey = docId ? `${docId}_${activeVault}` : `${reqBoard}_${reqClass}_${reqSubject}_${activeVault}`;
-      const cached = SYLLABUS_DOC_CACHE.get(cacheKey);
-      if (cached && (Date.now() - cached.timestamp < SYLLABUS_DOC_TTL)) {
-        return NextResponse.json(cached.data);
+      if (!refresh) {
+        const cached = SYLLABUS_DOC_CACHE.get(cacheKey);
+        if (cached && (Date.now() - cached.timestamp < SYLLABUS_DOC_TTL)) {
+          return NextResponse.json(cached.data);
+        }
       }
 
-      let docSnap: admin.firestore.DocumentSnapshot | null = null;
+      let resolvedDocId = docId;
+      let subjectData: any = null;
+
       if (docId) {
-        docSnap = await adminDb.collection('syllabus').doc(docId).get();
+        const cachedSyllabus = await getCachedSyllabus();
+        const cachedDoc = cachedSyllabus.docs.find((d: any) => d.id === docId);
+        if (cachedDoc) {
+          subjectData = JSON.parse(JSON.stringify(cachedDoc.data()));
+        } else {
+          const docSnap = await adminDb.collection('syllabus').doc(docId).get();
+          if (docSnap.exists) {
+            subjectData = docSnap.data()!;
+          }
+        }
       } else {
         const bCode = getCanonicalBoardCode(reqBoard);
         const cNum = getCanonicalClass(reqClass);
-        const sSnap = await adminDb.collection('syllabus')
-          .where('class', 'in', [cNum, Number(cNum)])
-          .get();
-        for (const sDoc of sSnap.docs) {
+        const cachedSyllabus = await getCachedSyllabus();
+        for (const sDoc of cachedSyllabus.docs) {
           const sData = sDoc.data();
           const sBCode = getCanonicalBoardCode(sData.boardCode || sData.board);
-          if (sBCode === bCode && (sData.subject === reqSubject || sData.subjectCode === reqSubject)) {
-            docSnap = sDoc;
+          const sClass = getCanonicalClass(sData.class);
+          if (sBCode === bCode && sClass === cNum && (sData.subject === reqSubject || sData.subjectCode === reqSubject)) {
+            resolvedDocId = sDoc.id;
+            subjectData = JSON.parse(JSON.stringify(sData));
             break;
           }
         }
       }
 
-      if (!docSnap || !docSnap.exists) {
+      if (!subjectData || !resolvedDocId) {
         return NextResponse.json({ message: 'Subject syllabus not found.' }, { status: 404 });
       }
 
-      const subjectData = docSnap.data()!;
+      // Check Firestore-persisted syllabusStats/{resolvedDocId} (1 read instead of 12,000+ question reads)
+      let existingStats: SyllabusStatsDoc | null = null;
+      if (!refresh) {
+        try {
+          const statsSnap = await adminDb.collection(SYLLABUS_STATS_COLLECTION).doc(resolvedDocId).get();
+          if (statsSnap.exists) {
+            const candidate = statsSnap.data() as SyllabusStatsDoc;
+            if (candidate && candidate.version === SYLLABUS_STATS_VERSION) {
+              existingStats = candidate;
+            }
+          }
+        } catch (statsErr) {
+          console.warn('Failed to read syllabusStats cache:', statsErr);
+        }
+      }
+
+      if (existingStats && !existingStats.questionsStale && !existingStats.examsStale) {
+        applySyllabusStatsToSubjectDoc(subjectData, existingStats, activeVault);
+        SYLLABUS_DOC_CACHE.set(cacheKey, { data: subjectData, timestamp: Date.now() });
+        SYLLABUS_DOC_CACHE.set(`${resolvedDocId}_${activeVault}`, { data: subjectData, timestamp: Date.now() });
+        SYLLABUS_DOC_CACHE.set(resolvedDocId, { data: subjectData, timestamp: Date.now() });
+        return NextResponse.json(subjectData);
+      }
+
+      const needQuestionsRecompute = refresh || !existingStats || Boolean(existingStats.questionsStale);
       let questionsList: any[] = [];
 
       const boardVal = subjectData.board || '';
@@ -307,79 +354,93 @@ export async function GET(req: NextRequest) {
       const sCode = getCanonicalSubjectCode(bCode, cls, subjectCodeVal || subjectVal);
       const canonicalTopicPrefix = `${bCode}-${cls}-${sCode}`;
 
-      try {
-
-        let questionsSnap: admin.firestore.QuerySnapshot | null = null;
-        if (subjectCodeVal) {
-          const subjectAliases = [
-            subjectCodeVal, 
-            subjectCodeVal.toLowerCase(), 
-            subjectCodeVal.toUpperCase(),
-            ...(subjectCodeVal === 'MTH' ? ['MATH'] : subjectCodeVal === 'MATH' ? ['MTH'] : [])
+      if (needQuestionsRecompute) {
+        try {
+          const questionSelectFields = [
+            'boardCode', 'board', 'class', 'subjectCode', 'subject', 'questionCode',
+            'chapterNumber', 'chapter', 'topicNumber', 'subtopicNumber',
+            'topicCode', 'subtopicCode', 'topic', 'topicName',
+            'subtopic', 'subtopicName', 'conceptTag', 'type',
+            'vault', 'examCategory', 'category'
           ];
-          questionsSnap = await adminDb.collection('questions')
-            .where('class', 'in', classVariations)
-            .where('subjectCode', 'in', subjectAliases)
-            .get()
-            .catch(() => null);
+
+          let questionsSnap: admin.firestore.QuerySnapshot | null = null;
+          if (subjectCodeVal) {
+            const subjectAliases = [
+              subjectCodeVal, 
+              subjectCodeVal.toLowerCase(), 
+              subjectCodeVal.toUpperCase(),
+              ...(subjectCodeVal === 'MTH' ? ['MATH'] : subjectCodeVal === 'MATH' ? ['MTH'] : [])
+            ];
+            questionsSnap = await adminDb.collection('questions')
+              .where('class', 'in', classVariations)
+              .where('subjectCode', 'in', subjectAliases)
+              .select(...questionSelectFields)
+              .get()
+              .catch(() => null);
+          }
+
+          if (!questionsSnap || questionsSnap.empty) {
+            questionsSnap = await adminDb.collection('questions')
+              .where('class', 'in', classVariations)
+              .select(...questionSelectFields)
+              .get();
+          }
+
+          questionsList = questionsSnap.docs
+            .map(doc => {
+              const q = doc.data();
+              const qBCode = getCanonicalBoardCode(q.boardCode || q.board);
+              const targetBCode = getCanonicalBoardCode(boardVal || subjectData.boardCode || subjectData.board);
+              if (qBCode !== targetBCode) return null;
+
+              const qSubjCode = getCanonicalSubjectCode(qBCode, q.class || cleanClassVal, q.subjectCode || (q.questionCode ? q.questionCode.split('-')[2] : '') || q.subject);
+              const targetSubjCode = getCanonicalSubjectCode(targetBCode, cleanClassVal, subjectCodeVal || subjectVal);
+              if (qSubjCode !== targetSubjCode) return null;
+
+              let chNum = String(q.chapterNumber || q.chapter || '').replace(/^Ch\.?\s*/i, '').trim();
+              const topNum = String(q.topicNumber || '').trim();
+              const subNum = String(q.subtopicNumber || '').trim();
+              const tCode = String(q.topicCode || '').trim();
+              const sCode = String(q.subtopicCode || '').trim();
+              const tName = String(q.topic || q.topicName || '').trim();
+              const sName = String(q.subtopic || q.subtopicName || '').trim();
+              const cTag = String(q.conceptTag || '').trim();
+              const qtype = q.type || '';
+              const isObjective = !qtype.startsWith('subjective');
+
+              if (!chNum && tCode.includes('-')) {
+                const parts = tCode.split('-');
+                if (parts.length >= 4) { chNum = parts[3]; }
+              }
+              if (!chNum && doc.id.includes('-')) {
+                const parts = doc.id.split('-');
+                if (parts.length >= 4) { chNum = parts[3]; }
+              }
+
+              const qVault = getCanonicalQuestionVault(q);
+              return { id: doc.id, chNum, topNum, subNum, tCode, sCode, tName, sName, cTag, isObjective, vault: qVault };
+            })
+            .filter(Boolean) as any[];
+        } catch (err) {
+          console.warn('Questions count query bypassed:', err);
         }
-
-        if (!questionsSnap || questionsSnap.empty) {
-          questionsSnap = await adminDb.collection('questions')
-            .where('class', 'in', classVariations)
-            .get();
-        }
-
-        questionsList = questionsSnap.docs
-          .map(doc => {
-            const q = doc.data();
-            const qBCode = getCanonicalBoardCode(q.boardCode || q.board);
-            const targetBCode = getCanonicalBoardCode(boardVal || subjectData.boardCode || subjectData.board);
-            if (qBCode !== targetBCode) return null;
-
-            const qSubjCode = getCanonicalSubjectCode(qBCode, q.class || cleanClassVal, q.subjectCode || (q.questionCode ? q.questionCode.split('-')[2] : '') || q.subject);
-            const targetSubjCode = getCanonicalSubjectCode(targetBCode, cleanClassVal, subjectCodeVal || subjectVal);
-            if (qSubjCode !== targetSubjCode) return null;
-
-            let chNum = String(q.chapterNumber || q.chapter || '').replace(/^Ch\.?\s*/i, '').trim();
-            const topNum = String(q.topicNumber || '').trim();
-            const subNum = String(q.subtopicNumber || '').trim();
-            const tCode = String(q.topicCode || '').trim();
-            const sCode = String(q.subtopicCode || '').trim();
-            const tName = String(q.topic || q.topicName || '').trim();
-            const sName = String(q.subtopic || q.subtopicName || '').trim();
-            const cTag = String(q.conceptTag || '').trim();
-            const qtype = q.type || '';
-            const isObjective = !qtype.startsWith('subjective');
-
-            if (!chNum && tCode.includes('-')) {
-              const parts = tCode.split('-');
-              if (parts.length >= 4) { chNum = parts[3]; }
-            }
-            if (!chNum && doc.id.includes('-')) {
-              const parts = doc.id.split('-');
-              if (parts.length >= 4) { chNum = parts[3]; }
-            }
-
-            const qVault = getCanonicalQuestionVault(q);
-            return { id: doc.id, chNum, topNum, subNum, tCode, sCode, tName, sName, cTag, isObjective, vault: qVault };
-          })
-          .filter(Boolean) as any[];
-      } catch (err) {
-        console.warn('Questions count query bypassed:', err);
       }
 
-      // SSOT: Fetch exams and subjective exams to compute topic & chapter coverage
+      // SSOT: Fetch exams and subjective exams (strictly with .select() to avoid downloading embedded question payloads)
       let examsList: any[] = [];
       let subjectiveExamsList: any[] = [];
       try {
+        const examSelectFields = ['boardCode', 'board', 'class', 'subjectCode', 'subject', 'subjects', 'type', 'isPractice', 'topicCodes', 'questionIds', 'topics'];
         const [examsSnap, subjectiveExamsSnap] = await Promise.all([
           adminDb.collection('exams')
             .where('class', 'in', classVariations)
+            .select(...examSelectFields)
             .get()
             .catch(() => null),
           adminDb.collection('subjectiveExams')
             .where('class', 'in', classVariations)
+            .select(...examSelectFields)
             .get()
             .catch(() => null)
         ]);
@@ -597,7 +658,8 @@ export async function GET(req: NextRequest) {
                   return false;
                 });
 
-                sub.vaultCounts = {
+                const cachedSubStats = !needQuestionsRecompute ? (existingStats?.topics?.[cleanSubCode] || existingStats?.topics?.[`${chapNumStr}:${subNumStr}`]) : null;
+                sub.vaultCounts = cachedSubStats?.vaultCounts || {
                   exam: {
                     objective: subQuestions.filter(q => q.isObjective && q.vault === 'exam').length,
                     subjective: subQuestions.filter(q => !q.isObjective && q.vault === 'exam').length
@@ -667,7 +729,8 @@ export async function GET(req: NextRequest) {
               return tCode === cleanTopicCode || String(q.topNum || '') === topNumStr;
             }).length;
 
-            top.vaultCounts = {
+            const cachedTopStats = !needQuestionsRecompute ? (existingStats?.topics?.[cleanTopicCode] || existingStats?.topics?.[`${chapNumStr}:${topNumStr}`]) : null;
+            top.vaultCounts = cachedTopStats?.vaultCounts || {
               exam: {
                 objective: subtopics.length > 0 ? (directObjExam + subtopics.reduce((acc: number, s: any) => acc + (s.vaultCounts?.exam?.objective || 0), 0)) : topicBranchQuestions.filter(q => q.isObjective && q.vault === 'exam').length,
                 subjective: subtopics.length > 0 ? (directSubjExam + subtopics.reduce((acc: number, s: any) => acc + (s.vaultCounts?.exam?.subjective || 0), 0)) : topicBranchQuestions.filter(q => !q.isObjective && q.vault === 'exam').length
@@ -695,7 +758,8 @@ export async function GET(req: NextRequest) {
           });
 
           // Chapter total strictly reflects the active vault
-          chap.vaultCounts = {
+          const cachedChapStats = !needQuestionsRecompute ? existingStats?.chapters?.[chapNumStr] : null;
+          chap.vaultCounts = cachedChapStats?.vaultCounts || {
             exam: {
               objective: chapQuestions.filter(q => q.isObjective && q.vault === 'exam').length,
               subjective: chapQuestions.filter(q => !q.isObjective && q.vault === 'exam').length
@@ -718,19 +782,62 @@ export async function GET(req: NextRequest) {
             ? 'all_conducted'
             : (leafTopicsTested > 0 ? 'partial_conducted' : 'unconducted');
         });
+
+        // Persist computed stats to syllabusStats/{resolvedDocId} for instant, 1-read future loads
+        const chaptersStatsMap: Record<string, ChapterStatsEntry> = {};
+        const topicsStatsMap: Record<string, TopicStatsEntry> = {};
+        chapters.forEach((chap: any) => {
+          if (!chap || typeof chap !== 'object') return;
+          const chapNumStr = String(chap.number ?? '').trim();
+          chaptersStatsMap[chapNumStr] = {
+            vaultCounts: chap.vaultCounts,
+            totalTopicsCount: chap.totalTopicsCount || 0,
+            conductedTopicsCount: chap.conductedTopicsCount || 0,
+            examStatus: chap.examStatus || 'unconducted',
+            testsCount: chap.testsCount || 0,
+          };
+          (Array.isArray(chap.topics) ? chap.topics : []).forEach((top: any) => {
+            if (!top || typeof top !== 'object') return;
+            const topNumStr = String(top.number ?? '').trim();
+            const cleanTopicCode = String(top.topicCode || `${canonicalTopicPrefix}-${chapNumStr}-${topNumStr}`).trim();
+            topicsStatsMap[cleanTopicCode] = {
+              vaultCounts: top.vaultCounts,
+              testsCount: top.testsCount || 0,
+            };
+            (Array.isArray(top.subtopics) ? top.subtopics : []).forEach((sub: any) => {
+              if (!sub || typeof sub !== 'object') return;
+              const subNumStr = String(sub.number ?? '').trim();
+              const cleanSubCode = String(sub.subtopicCode || sub.topicCode || `${canonicalTopicPrefix}-${chapNumStr}-${subNumStr}`).trim();
+              topicsStatsMap[cleanSubCode] = {
+                vaultCounts: sub.vaultCounts,
+                testsCount: sub.testsCount || 0,
+              };
+            });
+          });
+        });
+
+        const statsToSave: SyllabusStatsDoc = {
+          version: SYLLABUS_STATS_VERSION,
+          docId: resolvedDocId,
+          boardCode: bCode,
+          class: cls,
+          subjectCode: sCode,
+          questionsStale: false,
+          examsStale: false,
+          updatedAt: Date.now(),
+          chapters: chaptersStatsMap,
+          topics: topicsStatsMap,
+        };
+        adminDb.collection(SYLLABUS_STATS_COLLECTION).doc(resolvedDocId).set(statsToSave).catch(saveErr => {
+          console.warn('Failed to persist syllabusStats:', saveErr);
+        });
       } catch (countErr) {
         console.warn('Chapter questions aggregation error bypassed:', countErr);
       }
 
       SYLLABUS_DOC_CACHE.set(cacheKey, { data: subjectData, timestamp: Date.now() });
-      if (docId) {
-        SYLLABUS_DOC_CACHE.set(`${docId}_${activeVault}`, { data: subjectData, timestamp: Date.now() });
-        SYLLABUS_DOC_CACHE.set(docId, { data: subjectData, timestamp: Date.now() });
-      }
-      if (docSnap && docSnap.id) {
-        SYLLABUS_DOC_CACHE.set(`${docSnap.id}_${activeVault}`, { data: subjectData, timestamp: Date.now() });
-        SYLLABUS_DOC_CACHE.set(docSnap.id, { data: subjectData, timestamp: Date.now() });
-      }
+      SYLLABUS_DOC_CACHE.set(`${resolvedDocId}_${activeVault}`, { data: subjectData, timestamp: Date.now() });
+      SYLLABUS_DOC_CACHE.set(resolvedDocId, { data: subjectData, timestamp: Date.now() });
       return NextResponse.json(subjectData);
     }
 
@@ -1069,6 +1176,7 @@ export async function POST(req: NextRequest) {
       }
 
       invalidateCache('admin_exams_full_payload');
+      await markSyllabusStatsStale({ type: 'exams', boardCode, classNum: cleanClass, subjectCode });
       return NextResponse.json({ success: true, examId });
     }
 

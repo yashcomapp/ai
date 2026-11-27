@@ -15,6 +15,7 @@ import { getObjectiveExamTopics, getSubjectiveExamTopics, getExamDateKey, isExam
 import { ExamService, getAssignmentsForBatches } from '@/services/exam.service';
 import { ExamRepository } from '@/repositories/exam.repository';
 import { getCachedBatches, getFromCache, setInCache, invalidateCache } from '@/lib/firebase/cache';
+import { markSyllabusStatsStale } from '@/lib/syllabusStats';
 import { sortBatchesAscending } from '@/lib/batchUtils';
 import { assertCanonicalStudentCode } from '@/lib/canonicalValidation';
 import { shouldBypassCache } from '@/lib/cacheBypassGuard';
@@ -1565,6 +1566,7 @@ export async function DELETE(req: NextRequest) {
 
     const result = await ExamService.deleteExamCompletely(examId, type);
     invalidateCache('admin_exams_full_payload');
+    await markSyllabusStatsStale({ type: 'exams' });
     return NextResponse.json(result);
 
   } catch (error: any) {

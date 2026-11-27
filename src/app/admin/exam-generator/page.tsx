@@ -392,7 +392,7 @@ export default function AdminExamGeneratorPage() {
     setAvailablePool([]);
   };
 
-  const triggerLoadChapters = async (subs: Set<string>) => {
+  const triggerLoadChapters = async (subs: Set<string>, forceRefresh = false) => {
     if (subs.size === 0) {
       prevSubsKeyRef.current = '';
       resetChaptersTopics();
@@ -407,7 +407,7 @@ export default function AdminExamGeneratorPage() {
     const clientCacheKey = `${selectedBoard}_${selectedClass}_${newSubsKey}_${activeVault}`;
     const cachedEntry = CLIENT_CHAPTERS_CACHE.get(clientCacheKey);
 
-    if (cachedEntry && (Date.now() - cachedEntry.timestamp < 300000)) {
+    if (!forceRefresh && cachedEntry && (Date.now() - cachedEntry.timestamp < 300000)) {
       setAvailableChapters(cachedEntry.chapters);
       setAvailableTopics(cachedEntry.topics);
       if (subjectsChanged) {
@@ -415,6 +415,7 @@ export default function AdminExamGeneratorPage() {
         setShortfalls([]);
         setAvailablePool([]);
       }
+      return;
     } else if (subjectsChanged) {
       resetChaptersTopics();
     }
@@ -524,9 +525,10 @@ export default function AdminExamGeneratorPage() {
       await Promise.all(
         Array.from(subs).map(async (subject) => {
           const entry = resolveSyllabusEntry(subject);
+          const refreshParam = forceRefresh ? '&refresh=true' : '';
           const queryUrl = entry && entry.docId
-            ? `/api/admin/exams/generate?docId=${entry.docId}&vault=${activeVault}`
-            : `/api/admin/exams/generate?board=${encodeURIComponent(selectedBoard)}&classNum=${encodeURIComponent(selectedClass)}&subject=${encodeURIComponent(subject)}&vault=${activeVault}`;
+            ? `/api/admin/exams/generate?docId=${entry.docId}&vault=${activeVault}${refreshParam}`
+            : `/api/admin/exams/generate?board=${encodeURIComponent(selectedBoard)}&classNum=${encodeURIComponent(selectedClass)}&subject=${encodeURIComponent(subject)}&vault=${activeVault}${refreshParam}`;
           const res = await fetch(queryUrl, {
             headers: { 'Authorization': `Bearer ${idToken}` }
           });
@@ -629,7 +631,7 @@ export default function AdminExamGeneratorPage() {
     CLIENT_CHAPTERS_CACHE.clear();
     setIsRefreshingCounts(true);
     try {
-      await triggerLoadChapters(selectedSubjects);
+      await triggerLoadChapters(selectedSubjects, true);
     } finally {
       setIsRefreshingCounts(false);
     }
@@ -1394,6 +1396,7 @@ Return ONLY valid JSON. No markdown wrappers or extra commentary.`;
         throw new Error('Failed to save exam.');
       }
       const data = await res.json();
+      CLIENT_CHAPTERS_CACHE.clear();
       router.push(`/admin/exams?assign=${data.examId}`);
     } catch (err: any) {
       alert(err.message || 'Error occurred compiling exam.');

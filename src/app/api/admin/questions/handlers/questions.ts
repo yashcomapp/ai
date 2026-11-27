@@ -8,6 +8,7 @@ import { validateQuestion, normalizeBloomLevel, OBJECTIVE_QUESTION_TYPES, SUBJEC
 import { validateBatchDistinctness, areQuestionsTooSimilar } from '@/lib/questionSimilarity';
 import { validateQuestionCurriculum } from '@/lib/curriculumGuard';
 import { getFromCache, setInCache, invalidateCache } from '@/lib/firebase/cache';
+import { markSyllabusStatsStale } from '@/lib/syllabusStats';
 import { 
   getCanonicalBoardCode, 
   getCanonicalBoardName, 
@@ -564,6 +565,7 @@ export async function POST(req: NextRequest) {
 
       await batch.commit();
       invalidateCache('qb_base_');
+      markSyllabusStatsStale({ type: 'questions' }).catch(() => {});
       uniqueTopicCodes.forEach(tc => QuestionRepository.clearTopicCache(tc));
 
       // Zero-lag SSOT sync for all affected topics in syllabus & syllabusTopicIndex
@@ -753,6 +755,7 @@ export async function POST(req: NextRequest) {
 
     await adminDb.collection('questions').doc(finalCode).set(questionDoc, { merge: true });
     invalidateCache('qb_base_');
+      markSyllabusStatsStale({ type: 'questions' }).catch(() => {});
     QuestionRepository.clearTopicCache(topicCode);
 
     // Zero-lag SSOT sync for the topic in syllabus & syllabusTopicIndex
@@ -805,6 +808,7 @@ export async function DELETE(req: NextRequest) {
       const topicCode = qData.topicCode || '';
       await qRef.delete();
       invalidateCache('qb_base_');
+      markSyllabusStatsStale({ type: 'questions' }).catch(() => {});
 
       if (topicCode) {
         await syncTopicCountsToSyllabus([topicCode]);
@@ -850,6 +854,7 @@ export async function DELETE(req: NextRequest) {
     });
     await batch.commit();
     invalidateCache('qb_base_');
+      markSyllabusStatsStale({ type: 'questions' }).catch(() => {});
     affectedTopicCodes.forEach(tc => QuestionRepository.clearTopicCache(tc));
 
     if (affectedTopicCodes.length > 0) {
