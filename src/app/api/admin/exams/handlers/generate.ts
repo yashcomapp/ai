@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import * as admin from 'firebase-admin';
 import { adminDb } from '@/lib/firebase/admin';
-import { OBJECTIVE_QUESTION_TYPES, SUBJECTIVE_QUESTION_TYPES, toCanonicalQuestionType, CANONICAL_OBJECTIVE_TYPES, CANONICAL_SUBJECTIVE_TYPES, cleanStringForMatch, isQuestionQuarantined, getCanonicalQuestionVault, isQuestionInVault } from '@/lib/questionTypes';
+import { OBJECTIVE_QUESTION_TYPES, SUBJECTIVE_QUESTION_TYPES, toCanonicalQuestionType, CANONICAL_OBJECTIVE_TYPES, CANONICAL_SUBJECTIVE_TYPES, cleanStringForMatch, isQuestionQuarantined, getCanonicalQuestionVault, isQuestionInVault, validateQuestion } from '@/lib/questionTypes';
+import { evaluateQuestionConsistency } from '@/app/api/admin/questions/handlers/auditConsistency';
 import { verifyRole } from '@/lib/auth';
 import { ChunkedBatch } from '@/lib/firebase/batch';
 import { ExamRepository } from '@/repositories/exam.repository';
@@ -158,6 +159,10 @@ export async function GET(req: NextRequest) {
       const pool = questionsDocs.map(doc => ({ id: doc.id, ...doc.data() as any }))
         .filter(q => {
           if (isQuestionQuarantined(q)) return false;
+          // Pre-publish SSOT integrity gate: never pull a question with answer-key/option/LaTeX defects into an exam
+          if (validateQuestion(q, questionType === 'subjective' ? 'subjective' : 'objective').length > 0) return false;
+          const consistencyAnomaly = evaluateQuestionConsistency(q, q.id);
+          if (consistencyAnomaly && consistencyAnomaly.confidence === 'HIGH') return false;
           if (board) {
             const qBCode = getCanonicalBoardCode(q.boardCode || q.board);
             const targetBCode = getCanonicalBoardCode(board);
