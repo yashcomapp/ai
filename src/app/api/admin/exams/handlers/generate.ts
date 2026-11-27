@@ -111,11 +111,11 @@ export async function GET(req: NextRequest) {
         questionsQuery.get(),
         adminDb.collection('exams')
           .where('class', 'in', classVariations)
-          .select('questionCodes', 'questionIds', 'questions')
+          .select('questionCodes', 'questionIds')
           .get(),
         adminDb.collection('subjectiveExams')
           .where('class', 'in', classVariations)
-          .select('questionCodes', 'questionIds', 'questions')
+          .select('questionCodes', 'questionIds')
           .get()
       ]);
 
