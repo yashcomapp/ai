@@ -1462,7 +1462,7 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
         return matched || cleaned || str;
       }).filter(Boolean);
 
-      finalCorrectAnswer = finalCorrectAnswers[0] || '';
+      finalCorrectAnswer = finalCorrectAnswers.join(', ');
 
       if (cleanOptions.length >= 2) {
         cleanOptions = shuffleArray(cleanOptions);
