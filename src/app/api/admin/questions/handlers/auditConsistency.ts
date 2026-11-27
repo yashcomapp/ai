@@ -134,6 +134,52 @@ export function evaluateQuestionConsistency(q: any, docId: string): ConsistencyA
     }
   }
 
+  // 2c. Check: OMC correctAnswer letters contradicting correctAnswers or option isCorrect flags
+  if (type === 'OMC' && options.length > 0) {
+    const caLetters = String(q.correctAnswer || '')
+      .split(/[,\s]+/)
+      .map(s => s.trim().toUpperCase())
+      .filter(s => /^[A-D]$/.test(s));
+    const flagged = options
+      .map((opt: any, idx: number) => (opt && typeof opt === 'object' && (opt.isCorrect === true || opt.correct === true) ? String.fromCharCode(65 + idx) : null))
+      .filter(Boolean) as string[];
+    if (flagged.length > 0 && caLetters.length > 0 && [...flagged].sort().join(',') !== [...caLetters].sort().join(',')) {
+      return {
+        docId,
+        qCode,
+        topicCode: q.topicCode || '',
+        type,
+        currentCorrectAnswer: caLetters.join(', '),
+        fixedCorrectAnswer: [...flagged].sort().join(', '),
+        reason: `OMC options have isCorrect:true at [${flagged.join(', ')}], but correctAnswer is [${caLetters.join(', ')}].`,
+        confidence: 'HIGH',
+      };
+    }
+    const cas = Array.isArray(q.correctAnswers) ? q.correctAnswers : [];
+    if (cas.length > 0 && caLetters.length > 0) {
+      const casLetters = cas
+        .map((c: any) => {
+          const s = String(c || '').trim();
+          if (/^[A-D]$/i.test(s)) return s.toUpperCase();
+          const idx = options.findIndex((_: any, i: number) => getOptText(i).toLowerCase() === s.toLowerCase());
+          return idx !== -1 ? String.fromCharCode(65 + idx) : null;
+        })
+        .filter(Boolean) as string[];
+      if (casLetters.length === cas.length && [...casLetters].sort().join(',') !== [...caLetters].sort().join(',')) {
+        return {
+          docId,
+          qCode,
+          topicCode: q.topicCode || '',
+          type,
+          currentCorrectAnswer: caLetters.join(', '),
+          fixedCorrectAnswer: [...casLetters].sort().join(', '),
+          reason: `OMC correctAnswers map to [${casLetters.join(', ')}], but correctAnswer is [${caLetters.join(', ')}].`,
+          confidence: 'HIGH',
+        };
+      }
+    }
+  }
+
   // 3. Check: Explicit "Correct Choice is (X)" in explanation
   const choiceMatches = [
     ...sol.matchAll(/Correct\s+(?:Choice|Option)\s+(?:is\s+)?\(?([A-D])\)?/gi),

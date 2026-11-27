@@ -1827,6 +1827,18 @@ export function validateQuestion(q: any, questionType: 'objective' | 'subjective
         if (!isMatched) {
           errors.push('Correct answer does not match any items in options list.');
         }
+        // Cross-check OSC correctAnswer letter vs single-element correctAnswers text
+        const caUpper = String(q.correctAnswer).trim().toUpperCase();
+        if (canonicalType === 'OSC' && /^[A-D]$/.test(caUpper) && Array.isArray(q.correctAnswers) && q.correctAnswers.length === 1) {
+          const cIdx = caUpper.charCodeAt(0) - 65;
+          const expTxt = String(q.correctAnswers[0] || '').trim();
+          if (expTxt && !/^[A-D]$/i.test(expTxt) && cIdx < q.options.length && !isOptionMatch(q.options[cIdx], expTxt)) {
+            const matchIdx = q.options.findIndex((o: any) => isOptionMatch(o, expTxt));
+            if (matchIdx !== -1 && matchIdx !== cIdx) {
+              errors.push(`OSC correctAnswer "${caUpper}" contradicts correctAnswers[0] (at Option ${String.fromCharCode(65 + matchIdx)}).`);
+            }
+          }
+        }
       }
     } else if (canonicalType === 'OMC') {
       if (!q.correctAnswers || !Array.isArray(q.correctAnswers) || q.correctAnswers.length === 0) {
@@ -1838,6 +1850,10 @@ export function validateQuestion(q: any, questionType: 'objective' | 'subjective
             errors.push(`Correct answer "${ans}" not found in options list.`);
           }
         });
+        const caLetters = parseAnswerList(q.correctAnswer).map(s => s.toUpperCase()).filter(s => /^[A-D]$/.test(s));
+        if (caLetters.length > 0 && caLetters.length !== q.correctAnswers.length) {
+          errors.push(`OMC correctAnswer (${caLetters.join(',')}) count does not match correctAnswers (${q.correctAnswers.length} items).`);
+        }
       }
     } else if (canonicalType === 'OAR') {
       const correctNorm = String(q.correctAnswer || '').trim().toUpperCase();

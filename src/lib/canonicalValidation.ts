@@ -394,6 +394,55 @@ export function assertCanonicalQuestionPayload(questionData: any): void {
       if (cIdx >= opts.length) {
         throw new Error(`[CANONICAL BARRIER VIOLATION] correctAnswer "${cAns}" is out of bounds for options length ${opts.length}.`);
       }
+      if (qType === 'OSC') {
+        const getOptTxt = (o: any) => (typeof o === 'object' && o ? String(o.text || o.label || o.value || '') : String(o || '')).trim();
+        const flagged = opts
+          .map((o: any, i: number) => (o && typeof o === 'object' && (o.isCorrect === true || o.correct === true) ? String.fromCharCode(65 + i) : null))
+          .filter(Boolean);
+        if (flagged.length === 1 && flagged[0] !== cAns) {
+          throw new Error(`[CANONICAL BARRIER VIOLATION] OSC option ${flagged[0]} has isCorrect:true, contradicting correctAnswer "${cAns}".`);
+        }
+        const cas = Array.isArray(questionData.correctAnswers) ? questionData.correctAnswers : [];
+        if (cas.length === 1) {
+          const expTxt = String(cas[0] || '').trim();
+          const curTxt = getOptTxt(opts[cIdx]);
+          if (expTxt && !/^[A-D]$/i.test(expTxt) && curTxt.toLowerCase() !== expTxt.toLowerCase()) {
+            const matchIdx = opts.findIndex((o: any) => getOptTxt(o).toLowerCase() === expTxt.toLowerCase());
+            if (matchIdx !== -1 && matchIdx !== cIdx) {
+              throw new Error(
+                `[CANONICAL BARRIER VIOLATION] OSC correctAnswers[0] ("${expTxt}") is at Option ${String.fromCharCode(65 + matchIdx)}, contradicting correctAnswer "${cAns}" ("${curTxt}").`
+              );
+            }
+          }
+        }
+      }
+    }
+
+    if (qType === 'OMC') {
+      const getOptTxt = (o: any) => (typeof o === 'object' && o ? String(o.text || o.label || o.value || '') : String(o || '')).trim();
+      const caLetters = String(questionData.correctAnswer || '')
+        .split(/[,\s]+/)
+        .map(s => s.trim().toUpperCase())
+        .filter(s => /^[A-D]$/.test(s));
+      const cas = Array.isArray(questionData.correctAnswers) ? questionData.correctAnswers : [];
+      if (caLetters.length === 0) {
+        throw new Error(`[CANONICAL BARRIER VIOLATION] OMC correctAnswer must contain option letters (e.g. "A, C"), got "${questionData.correctAnswer}".`);
+      }
+      if (cas.length > 0) {
+        const casLetters = cas
+          .map((c: any) => {
+            const s = String(c || '').trim();
+            if (/^[A-D]$/i.test(s)) return s.toUpperCase();
+            const idx = opts.findIndex((o: any) => getOptTxt(o).toLowerCase() === s.toLowerCase());
+            return idx !== -1 ? String.fromCharCode(65 + idx) : null;
+          })
+          .filter(Boolean) as string[];
+        if (casLetters.length === cas.length && [...casLetters].sort().join(',') !== [...caLetters].sort().join(',')) {
+          throw new Error(
+            `[CANONICAL BARRIER VIOLATION] OMC correctAnswer (${caLetters.join(',')}) contradicts correctAnswers (${casLetters.join(',')}).`
+          );
+        }
+      }
     }
 
     if (qType === 'OTF') {
